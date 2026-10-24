@@ -6,6 +6,8 @@ use crate::model::{Game, Source};
 use crate::sys;
 use dioxus::prelude::*;
 
+/// Bild mit Ersatzliste. Ändert sich die Liste (z. B. Cover nachträglich gefunden),
+/// wird die innere Komponente über den Schlüssel neu aufgebaut.
 #[component]
 pub fn ArtImage(
     srcs: Vec<String>,
@@ -13,6 +15,15 @@ pub fn ArtImage(
     #[props(into, default)] alt: String,
     fallback: Element,
 ) -> Element {
+    rsx! {
+        {std::iter::once(rsx! {
+            ArtImageInner { key: "{k}", srcs, class, alt, fallback }
+        })}
+    }
+}
+
+#[component]
+fn ArtImageInner(srcs: Vec<String>, class: String, alt: String, fallback: Element) -> Element {
     let mut idx = use_signal(|| 0usize);
     let i = idx();
     match srcs.get(i) {
@@ -20,7 +31,6 @@ pub fn ArtImage(
             let src = src.clone();
             rsx! {
                 img {
-                    key: "{src}",
                     src: "{src}",
                     class: "{class}",
                     alt: "{alt}",
@@ -65,7 +75,6 @@ pub fn CoverFallback(game: Game, #[props(default = true)] show_name: bool) -> El
     let name = game.name.clone();
     let ini = initials(&game.name);
     let icons = game.art.icon.clone();
-    let k = art_key(&icons);
     let src_icon = match game.source {
         Source::Steam => "gamepad",
         Source::Epic => "layers",
@@ -78,7 +87,6 @@ pub fn CoverFallback(game: Game, #[props(default = true)] show_name: bool) -> El
             }
             div { class: "relative w-[42%] min-w-12 max-w-28 aspect-square rounded-2xl bg-white/10 backdrop-blur ring-1 ring-white/20 grid place-items-center shadow-xl overflow-hidden",
                 ArtImage {
-                    key: "{k}",
                     srcs: icons,
                     class: "size-[78%] object-contain drop-shadow-lg",
                     fallback: rsx! {
@@ -100,11 +108,9 @@ pub fn GameIcon(game: Game, #[props(into, default)] class: String) -> Element {
     let grad = gradient_for(&game.name);
     let ini = initials(&game.name);
     let icons = game.art.icon.clone();
-    let k = art_key(&icons);
     rsx! {
         div { class: "relative shrink-0 overflow-hidden rounded {cls}",
             ArtImage {
-                key: "{k}",
                 srcs: icons,
                 class: "absolute inset-0 size-full object-cover",
                 fallback: rsx! {

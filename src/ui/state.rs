@@ -244,9 +244,11 @@ pub fn refresh_custom(app: App, id: String) {
                 app.update(|s| s.art_lookup.extend(found));
             }
             let mut games = app.games;
-            if let Some(g) = games.write().iter_mut().find(|g| g.id == game.id) {
+            let mut list = games.write();
+            if let Some(g) = list.iter_mut().find(|g| g.id == game.id) {
                 *g = game;
             }
+            drop(list);
         }
     });
 }

@@ -1,6 +1,6 @@
 //! Die Bibliothek – in drei Ansichten: MAZ (eigene), Steam-Stil und Epic-Stil.
 
-use super::art::{art_key, ArtImage, CoverFallback, GameIcon};
+use super::art::{ArtImage, CoverFallback, GameIcon};
 use super::components::*;
 use super::detail::SteamDetail;
 use super::icons::{Icon, MazLogo};
@@ -276,7 +276,6 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
     } else {
         "absolute inset-0 size-full object-cover grayscale opacity-60 transition-transform duration-500 group-hover:scale-105"
     };
-    let k = art_key(&covers);
     let play_icon = if installed { "play" } else { "download" };
     let play_title = if installed { "Spielen" } else { "Installieren" };
     let g2 = game.clone();
@@ -287,7 +286,6 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
             onclick: move |_| app.open(Modal::Detail(id.clone())),
             div { class: "relative aspect-[2/3] rounded-xl overflow-hidden bg-muted ring-1 ring-white/5 shadow-lg shadow-black/30 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:ring-2 group-hover:ring-primary group-hover:shadow-2xl card-shine",
                 ArtImage {
-                    key: "{k}",
                     srcs: covers.clone(),
                     class: img_cls,
                     alt: name.clone(),
@@ -452,13 +450,10 @@ fn ContinueHero() -> Element {
     let logos = g.art.logo.clone();
     let id = g.id.clone();
     let id2 = g.id.clone();
-    let k = art_key(&hero);
-    let kl = art_key(&logos);
     let grad = super::art::gradient_for(&g.name);
     rsx! {
         div { class: "relative h-64 rounded-2xl overflow-hidden mb-8 ring-1 ring-white/5 shadow-2xl shadow-black/40 group animate-slide-up",
             ArtImage {
-                key: "{k}",
                 srcs: hero,
                 class: "absolute inset-0 size-full object-cover transition-transform duration-[2000ms] group-hover:scale-105",
                 fallback: rsx! { div { class: "absolute inset-0 {grad}" } },
@@ -468,7 +463,6 @@ fn ContinueHero() -> Element {
                 div { class: "text-xs font-semibold uppercase tracking-[0.2em] text-white/70", "Weiterspielen · {ago}" }
                 div { class: "max-w-[420px] h-20 flex items-end",
                     ArtImage {
-                        key: "{kl}",
                         srcs: logos,
                         class: "max-h-20 max-w-full object-contain object-left drop-shadow-2xl",
                         fallback: rsx! { h2 { class: "text-4xl font-black text-white drop-shadow-lg leading-tight font-display", "{name}" } },
@@ -634,7 +628,7 @@ fn SteamLayout() -> Element {
                 {match sel_game {
                     Some(g) => {
                         let k = g.id.clone();
-                        rsx! { SteamDetail { key: "{k}", game: g } }
+                        rsx! { {std::iter::once(rsx! { SteamDetail { key: "{k}", game: g } })} }
                     }
                     None => rsx! { SteamHome { games } },
                 }}
@@ -649,7 +643,6 @@ fn SteamCapsule(game: Game, covers: Vec<String>, #[props(default = false)] big: 
     let id = game.id.clone();
     let id2 = game.id.clone();
     let name = game.name.clone();
-    let k = art_key(&covers);
     let img_cls = if game.installed {
         "absolute inset-0 size-full object-cover"
     } else {
@@ -666,7 +659,6 @@ fn SteamCapsule(game: Game, covers: Vec<String>, #[props(default = false)] big: 
             },
             ondoubleclick: move |_| play(app, id2.clone()),
             ArtImage {
-                key: "{k}",
                 srcs: covers,
                 class: img_cls,
                 alt: name.clone(),
@@ -846,7 +838,6 @@ fn EpicCard(game: Game, covers: Vec<String>, favorite: bool) -> Element {
     let id = game.id.clone();
     let id2 = game.id.clone();
     let name = game.name.clone();
-    let k = art_key(&covers);
     let status = if !game.installed {
         "Nicht installiert".to_string()
     } else {
@@ -862,7 +853,6 @@ fn EpicCard(game: Game, covers: Vec<String>, favorite: bool) -> Element {
         div { class: "group cursor-pointer animate-pop-in", onclick: move |_| app.open(Modal::Detail(id.clone())),
             div { class: "relative aspect-[3/4] rounded-lg overflow-hidden bg-card transition-all duration-200 group-hover:brightness-110",
                 ArtImage {
-                    key: "{k}",
                     srcs: covers,
                     class: "absolute inset-0 size-full object-cover",
                     alt: name.clone(),

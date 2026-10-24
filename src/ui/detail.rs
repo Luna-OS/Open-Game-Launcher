@@ -1,6 +1,6 @@
 //! Spiel-Details: als Fenster (MAZ/Epic) oder direkt in der Seite (Steam-Stil).
 
-use super::art::{art_key, gradient_for, ArtImage, CoverFallback, GameIcon};
+use super::art::{gradient_for, ArtImage, CoverFallback, GameIcon};
 use super::components::*;
 use super::icons::Icon;
 use super::library::SourceBadge;
@@ -134,7 +134,6 @@ pub fn DetailModal(id: String) -> Element {
     let rows = info_rows(app, &game);
     let name = game.name.clone();
     let grad = gradient_for(&game.name);
-    let (kh, kc, kl) = (art_key(&hero), art_key(&covers), art_key(&logos));
     let installed = game.installed;
     let play_label = if installed { "Spielen" } else { "Installieren" };
     let play_icon = if installed { "play" } else { "download" };
@@ -151,7 +150,6 @@ pub fn DetailModal(id: String) -> Element {
         Dialog { on_close: move |_| app.close_modal(), class: "max-w-4xl",
             div { class: "relative h-72 overflow-hidden rounded-t-2xl",
                 ArtImage {
-                    key: "{kh}",
                     srcs: hero,
                     class: "absolute inset-0 size-full object-cover",
                     fallback: rsx! { div { class: "absolute inset-0 {grad}" } },
@@ -160,7 +158,6 @@ pub fn DetailModal(id: String) -> Element {
                 div { class: "absolute inset-x-0 bottom-0 p-8 flex items-end gap-6",
                     div { class: "relative w-32 aspect-[2/3] rounded-lg overflow-hidden shadow-2xl ring-1 ring-white/10 shrink-0",
                         ArtImage {
-                            key: "{kc}",
                             srcs: covers,
                             class: "absolute inset-0 size-full object-cover",
                             fallback: rsx! { CoverFallback { game: g2.clone(), show_name: false } },
@@ -175,7 +172,6 @@ pub fn DetailModal(id: String) -> Element {
                         }
                         div { class: "h-20 flex items-end",
                             ArtImage {
-                                key: "{kl}",
                                 srcs: logos,
                                 class: "max-h-20 max-w-[380px] object-contain object-left drop-shadow-2xl",
                                 fallback: rsx! { h2 { class: "text-3xl font-black leading-tight font-display drop-shadow-lg line-clamp-2", "{name}" } },
@@ -231,7 +227,6 @@ pub fn SteamDetail(game: Game) -> Element {
     let logos = game.art.logo.clone();
     let name = game.name.clone();
     let grad = gradient_for(&game.name);
-    let (kh, kl) = (art_key(&hero), art_key(&logos));
     let installed = game.installed;
     let id = game.id.clone();
     let play_cls = if installed {
@@ -248,7 +243,6 @@ pub fn SteamDetail(game: Game) -> Element {
         div { class: "animate-fade-in",
             div { class: "relative h-[380px] overflow-hidden",
                 ArtImage {
-                    key: "{kh}",
                     srcs: hero,
                     class: "absolute inset-0 size-full object-cover",
                     fallback: rsx! { div { class: "absolute inset-0 {grad}" } },
@@ -256,7 +250,6 @@ pub fn SteamDetail(game: Game) -> Element {
                 div { class: "absolute inset-0 steam-hero-fade" }
                 div { class: "absolute left-10 bottom-10 max-w-[480px] h-36 flex items-end",
                     ArtImage {
-                        key: "{kl}",
                         srcs: logos,
                         class: "max-h-36 max-w-full object-contain object-left drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]",
                         fallback: rsx! { h1 { class: "text-5xl font-black text-white drop-shadow-lg font-display", "{name}" } },

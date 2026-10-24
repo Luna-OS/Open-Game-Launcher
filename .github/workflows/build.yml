@@ -53,10 +53,9 @@ jobs:
           New-Item -ItemType Directory -Force ../ci | Out-Null
           if (Test-Path build.log) { Copy-Item build.log ../ci/ }
           if (Test-Path test.log) { Copy-Item test.log ../ci/ }
-          git checkout --orphan ci-log
-          git rm -rf --cached . | Out-Null
-          Get-ChildItem -Force | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
-          Copy-Item ../ci/* .
+          git worktree add --orphan -b ci-log ../cilog
+          Copy-Item ../ci/* ../cilog/
+          Set-Location ../cilog
           git add -A
           git commit -m "CI-Log ${{ github.sha }}"
           git push -f origin ci-log
