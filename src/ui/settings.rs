@@ -1,9 +1,12 @@
-//! Einstellungen: Design, Verbindungen (Steam/Epic), eigene Spiele, Allgemein, Über.
+//! Einstellungen: Design (inkl. Design-Editor), Sprache, Verbindungen,
+//! eigene Spiele, Allgemein, Über.
 
 use super::components::*;
 use super::icons::{Icon, MazLogo};
 use super::state::*;
-use crate::model::{default_checklist, layout, StoreStatus, THEMES};
+use crate::i18n::{self, t, tf};
+use crate::model::{default_checklist, layout, StoreStatus};
+use crate::theme::{self, CustomTheme, PRESETS};
 use crate::{install, sys};
 use dioxus::prelude::*;
 
@@ -15,29 +18,30 @@ pub fn SettingsPage() -> Element {
         _ => SettingsTab::Design,
     };
     let tabs = [
-        (SettingsTab::Design, "Design", "palette"),
-        (SettingsTab::Connections, "Verbindungen", "plug"),
-        (SettingsTab::Custom, "Eigene Spiele", "rocket"),
-        (SettingsTab::General, "Allgemein", "settings"),
-        (SettingsTab::About, "Über", "info"),
+        (SettingsTab::Design, t("set.tab.design"), "palette"),
+        (SettingsTab::Language, t("set.tab.language"), "globe"),
+        (SettingsTab::Connections, t("set.tab.connections"), "plug"),
+        (SettingsTab::Custom, t("set.tab.custom"), "rocket"),
+        (SettingsTab::General, t("set.tab.general"), "settings"),
+        (SettingsTab::About, t("set.tab.about"), "info"),
     ];
     rsx! {
         div { class: "flex h-full min-h-0 maz-ambient",
             aside { class: "w-64 shrink-0 border-r border-border/60 bg-sidenav/60 p-4 flex flex-col gap-1",
                 Button { variant: ButtonVariant::Ghost, class: "justify-start mb-4 -ml-1", onclick: move |_| app.go(Page::Library),
                     Icon { name: "arrow-left", class: "size-4" }
-                    "Zurück zur Bibliothek"
+                    {t("set.back")}
                 }
-                div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", "Einstellungen" }
-                {tabs.into_iter().map(|(t, label, icon)| {
-                    let active = t == tab;
+                div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", {t("nav.settings")} }
+                {tabs.into_iter().map(|(tb, label, icon)| {
+                    let active = tb == tab;
                     let cls = if active {
                         "w-full flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium bg-sidenav-accent text-foreground cursor-pointer"
                     } else {
                         "w-full flex items-center gap-3 px-3 h-10 rounded-lg text-sm text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground cursor-pointer"
                     };
                     rsx! {
-                        button { key: "{label}", class: "{cls}", onclick: move |_| app.go(Page::Settings(t)),
+                        button { key: "{label}", class: "{cls}", onclick: move |_| app.go(Page::Settings(tb)),
                             Icon { name: icon, class: "size-4" }
                             "{label}"
                         }
@@ -48,6 +52,7 @@ pub fn SettingsPage() -> Element {
                 div { class: "max-w-3xl mx-auto px-10 py-8 animate-fade-in",
                     {match tab {
                         SettingsTab::Design => rsx! { DesignTab {} },
+                        SettingsTab::Language => rsx! { LanguageTab {} },
                         SettingsTab::Connections => rsx! { ConnectionsTab {} },
                         SettingsTab::Custom => rsx! { CustomTab {} },
                         SettingsTab::General => rsx! { GeneralTab {} },
@@ -74,6 +79,117 @@ fn Section(#[props(into)] title: String, #[props(into, default)] description: St
     }
 }
 
+#[component]
+fn PageTitle(#[props(into)] title: String, #[props(into)] sub: String) -> Element {
+    rsx! {
+        h1 { class: "text-3xl font-bold font-display mb-2", "{title}" }
+        p { class: "text-muted-foreground mb-8", "{sub}" }
+    }
+}
+
+// ----------------------------------------------------------------------
+// Sprache
+// ----------------------------------------------------------------------
+
+/// Sprachauswahl (auch im Willkommensfenster)
+#[component]
+pub fn LanguagePicker() -> Element {
+    let app = use_app();
+    let current = app.settings.read().language.clone();
+    let mut options: Vec<(String, String)> = vec![("auto".to_string(), t("lang.auto"))];
+    options.extend(i18n::available());
+    rsx! {
+        div { class: "grid grid-cols-3 gap-2",
+            {options.into_iter().map(|(code, name)| {
+                let active = current == code || (current.is_empty() && code == "auto");
+                let cls = if active {
+                    "h-11 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground cursor-pointer flex items-center gap-2"
+                } else {
+                    "h-11 px-3 rounded-lg text-sm font-medium bg-muted text-foreground hover:bg-accent cursor-pointer flex items-center gap-2"
+                };
+                let c2 = code.clone();
+                rsx! {
+                    button { key: "{code}", class: "{cls}",
+                        onclick: move |_| {
+                            let c = c2.clone();
+                            i18n::set_language(&c);
+                            app.update(|s| s.language = c);
+                        },
+                        if active {
+                            Icon { name: "check", class: "size-4" }
+                        }
+                        span { class: "truncate", "{name}" }
+                    }
+                }
+            })}
+        }
+    }
+}
+
+/// Kompakte Sprachauswahl (Dropdown), z. B. im Installer
+#[component]
+pub fn LanguageSelect() -> Element {
+    let app = use_app();
+    let current = app.settings.read().language.clone();
+    let mut options: Vec<(String, String)> = vec![("auto".to_string(), t("lang.auto"))];
+    options.extend(i18n::available());
+    rsx! {
+        div { class: "relative flex items-center gap-2 text-sm",
+            Icon { name: "globe", class: "size-4 text-muted-foreground" }
+            select {
+                class: "h-9 rounded-md border border-input bg-background/60 px-2 text-sm outline-none cursor-pointer",
+                onchange: move |e| {
+                    let c = e.value();
+                    i18n::set_language(&c);
+                    app.update(|s| s.language = c);
+                },
+                {options.into_iter().map(|(code, name)| {
+                    let sel = current == code || (current.is_empty() && code == "auto");
+                    rsx! { option { key: "{code}", value: "{code}", selected: sel, "{name}" } }
+                })}
+            }
+        }
+    }
+}
+
+#[component]
+fn LanguageTab() -> Element {
+    let folder = i18n::user_lang_folder();
+    let folder_s = folder.to_string_lossy().to_string();
+    let app = use_app();
+    rsx! {
+        PageTitle { title: t("set.tab.language"), sub: t("lang.sub") }
+        Section { title: t("lang.choose"),
+            LanguagePicker {}
+        }
+        Section { title: t("lang.own"), description: t("lang.own_text"),
+            div { class: "flex flex-wrap gap-2",
+                Button { variant: ButtonVariant::Outline,
+                    onclick: move |_| {
+                        let dir = i18n::user_lang_folder();
+                        let _ = std::fs::create_dir_all(&dir);
+                        if let Some(text) = i18n::builtin("en") {
+                            let _ = std::fs::write(dir.join("template-en.txt"), text);
+                        }
+                        app.toast(&t("lang.template_saved"), "check-circle");
+                        sys::open_folder(&dir.to_string_lossy());
+                    },
+                    Icon { name: "download", class: "size-4" }
+                    {t("lang.template")}
+                }
+                Button { variant: ButtonVariant::Ghost,
+                    onclick: move |_| {
+                        let _ = std::fs::create_dir_all(&folder);
+                        sys::open_folder(&folder_s);
+                    },
+                    Icon { name: "folder", class: "size-4" }
+                    {t("lang.folder")}
+                }
+            }
+        }
+    }
+}
+
 // ----------------------------------------------------------------------
 // Design
 // ----------------------------------------------------------------------
@@ -84,9 +200,9 @@ pub fn LayoutPicker() -> Element {
     let app = use_app();
     let current = app.settings.read().layout.clone();
     let options = [
-        (layout::MAZ, "MAZ (eigener Stil)", "Modern mit großem Weiterspielen-Banner"),
-        (layout::STEAM, "Wie Steam", "Spieleliste links, Details mit großem Bild"),
-        (layout::EPIC, "Wie Epic Games", "Große Karten, Filter oben"),
+        (layout::MAZ, t("layout.maz"), t("layout.maz_desc")),
+        (layout::STEAM, t("layout.steam"), t("layout.steam_desc")),
+        (layout::EPIC, t("layout.epic"), t("layout.epic_desc")),
     ];
     rsx! {
         div { class: "grid grid-cols-3 gap-4",
@@ -165,60 +281,366 @@ fn LayoutPreview(kind: &'static str) -> Element {
     }
 }
 
+/// Farbvorschau eines Designs (Kachel)
+#[component]
+fn ThemeTile(theme: CustomTheme, #[props(into)] name: String, active: bool, onselect: EventHandler<()>, #[props(optional)] onedit: Option<EventHandler<()>>) -> Element {
+    let ring = if active { "ring-2 ring-primary" } else { "ring-1 ring-border hover:ring-primary/50" };
+    let bg = format!(
+        "background: linear-gradient(135deg, {} 0%, {} 55%, {} 150%);",
+        theme.bg, theme.card, theme.accent
+    );
+    let side = format!("background: {};", theme.sidebar);
+    let acc = format!("background: linear-gradient(90deg, {}, {});", theme.accent, theme.accent2);
+    let txt = format!("background: {};", theme.text);
+    let mtx = format!("background: {};", theme.muted);
+    let has_edit = onedit.is_some();
+    rsx! {
+        div { class: "group relative rounded-xl overflow-hidden cursor-pointer text-left transition-all {ring}",
+            onclick: move |_| onselect.call(()),
+            div { class: "h-16 relative flex", style: "{bg}",
+                div { class: "w-1/4 h-full opacity-90", style: "{side}" }
+                div { class: "flex-1 p-2 flex flex-col gap-1.5",
+                    div { class: "h-1.5 w-3/4 rounded-full", style: "{txt}" }
+                    div { class: "h-1.5 w-1/2 rounded-full opacity-70", style: "{mtx}" }
+                    div { class: "mt-auto h-3 w-10 rounded-full", style: "{acc}" }
+                }
+                if active {
+                    div { class: "absolute top-2 right-2 size-5 rounded-full bg-white text-black grid place-items-center shadow",
+                        Icon { name: "check", class: "size-3" }
+                    }
+                }
+            }
+            div { class: "px-3 py-2 text-xs font-medium bg-muted flex items-center gap-1",
+                span { class: "truncate flex-1", "{name}" }
+                if has_edit {
+                    button { class: "p-1 -m-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer",
+                        title: t("theme.edit"),
+                        onclick: move |e| {
+                            e.stop_propagation();
+                            if let Some(h) = &onedit {
+                                h.call(());
+                            }
+                        },
+                        Icon { name: "pencil", class: "size-3.5" }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum ColorField {
+    Bg,
+    Card,
+    Sidebar,
+    Text,
+    Muted,
+    Accent,
+    Accent2,
+    Border,
+}
+
+fn set_field(th: &mut CustomTheme, f: ColorField, v: String) {
+    match f {
+        ColorField::Bg => th.bg = v,
+        ColorField::Card => th.card = v,
+        ColorField::Sidebar => th.sidebar = v,
+        ColorField::Text => th.text = v,
+        ColorField::Muted => th.muted = v,
+        ColorField::Accent => th.accent = v,
+        ColorField::Accent2 => th.accent2 = v,
+        ColorField::Border => th.border = v,
+    }
+}
+
+fn update_theme(app: App, id: &str, f: impl FnOnce(&mut CustomTheme)) {
+    let id = id.to_string();
+    app.update(|s| {
+        if let Some(th) = s.custom_themes.iter_mut().find(|c| c.id == id) {
+            f(th);
+        }
+    });
+}
+
+/// Aktuelle Farben (fertiges oder eigenes Design) als Startwert für ein neues Design
+fn current_colors(app: App) -> CustomTheme {
+    let s = app.settings.peek();
+    s.custom_themes
+        .iter()
+        .find(|c| c.id == s.theme)
+        .cloned()
+        .or_else(|| theme::preset(&s.theme))
+        .unwrap_or_default()
+}
+
+fn new_custom_id() -> String {
+    let n = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    format!("custom:{n:x}")
+}
+
+#[component]
+fn ColorRow(#[props(into)] label: String, value: String, onchange: EventHandler<String>) -> Element {
+    let hex = value.clone();
+    rsx! {
+        div { class: "flex items-center gap-3 py-2",
+            input {
+                r#type: "color",
+                class: "h-9 w-12 shrink-0 rounded-md border border-input bg-transparent cursor-pointer",
+                value: "{value}",
+                oninput: move |e| onchange.call(e.value()),
+            }
+            span { class: "flex-1 text-sm", "{label}" }
+            Input {
+                class: "w-28 h-9 font-mono text-xs",
+                value: hex,
+                oninput: move |v: String| {
+                    if theme::parse_hex(&v).is_some() {
+                        onchange.call(v);
+                    }
+                },
+            }
+        }
+    }
+}
+
+#[component]
+fn ThemeEditor(id: String, on_done: EventHandler<()>) -> Element {
+    let app = use_app();
+    let Some(th) = app.settings.read().custom_themes.iter().find(|c| c.id == id).cloned() else {
+        return rsx! {};
+    };
+    let fields = [
+        (ColorField::Bg, t("theme.c.bg"), th.bg.clone()),
+        (ColorField::Card, t("theme.c.card"), th.card.clone()),
+        (ColorField::Sidebar, t("theme.c.sidebar"), th.sidebar.clone()),
+        (ColorField::Text, t("theme.c.text"), th.text.clone()),
+        (ColorField::Muted, t("theme.c.muted"), th.muted.clone()),
+        (ColorField::Accent, t("theme.c.accent"), th.accent.clone()),
+        (ColorField::Accent2, t("theme.c.accent2"), th.accent2.clone()),
+        (ColorField::Border, t("theme.c.border"), th.border.clone()),
+    ];
+    let radius = match th.radius {
+        0..=3 => "0",
+        4..=9 => "6",
+        10..=15 => "12",
+        _ => "20",
+    }
+    .to_string();
+    let (id_n, id_r, id_dup, id_del, id_code) = (id.clone(), id.clone(), id.clone(), id.clone(), id.clone());
+    let name = th.name.clone();
+    rsx! {
+        Card { class: "mb-6 border-primary/50 ring-1 ring-primary/30 animate-slide-up",
+            CardHeader {
+                div { class: "flex items-center gap-2",
+                    Icon { name: "palette", class: "size-5 text-primary" }
+                    CardTitle { {t("theme.editor")} }
+                }
+                CardDescription { {t("theme.editor_text")} }
+            }
+            CardContent {
+                div { class: "grid gap-2 mb-4",
+                    Label { {t("theme.name")} }
+                    Input { value: name, oninput: move |v: String| update_theme(app, &id_n, |th| th.name = v) }
+                }
+                div { class: "grid grid-cols-2 gap-x-6 divide-border",
+                    {fields.into_iter().map(|(f, label, value)| {
+                        let tid = id.clone();
+                        let key = label.clone();
+                        rsx! {
+                            ColorRow { key: "{key}", label, value,
+                                onchange: move |v: String| update_theme(app, &tid, |th| set_field(th, f, v)) }
+                        }
+                    })}
+                }
+                div { class: "flex items-center justify-between mt-4 py-2",
+                    span { class: "text-sm", {t("theme.radius")} }
+                    Segmented {
+                        options: vec![
+                            ("0".to_string(), t("theme.r0")),
+                            ("6".to_string(), t("theme.r1")),
+                            ("12".to_string(), t("theme.r2")),
+                            ("20".to_string(), t("theme.r3")),
+                        ],
+                        value: radius,
+                        onchange: move |v: String| {
+                            let r = v.parse::<u8>().unwrap_or(12);
+                            update_theme(app, &id_r, |th| th.radius = r);
+                        },
+                    }
+                }
+                div { class: "flex flex-wrap gap-2 mt-5",
+                    Button { variant: ButtonVariant::Glow, onclick: move |_| on_done.call(()),
+                        Icon { name: "check", class: "size-4" }
+                        {t("theme.done")}
+                    }
+                    Button { variant: ButtonVariant::Outline,
+                        onclick: move |_| {
+                            let code = app.settings.peek().custom_themes.iter().find(|c| c.id == id_code).map(|c| c.to_code());
+                            if let Some(code) = code {
+                                if sys::copy_to_clipboard(&code) {
+                                    app.toast(&t("theme.copied"), "copy");
+                                }
+                            }
+                        },
+                        Icon { name: "copy", class: "size-4" }
+                        {t("theme.share")}
+                    }
+                    Button { variant: ButtonVariant::Outline,
+                        onclick: move |_| {
+                            let src = app.settings.peek().custom_themes.iter().find(|c| c.id == id_dup).cloned();
+                            if let Some(mut c) = src {
+                                c.id = new_custom_id();
+                                c.name = tf("theme.copy_of", &[("name", &c.name)]);
+                                let nid = c.id.clone();
+                                app.update(|s| {
+                                    s.custom_themes.push(c);
+                                    s.theme = nid;
+                                });
+                            }
+                        },
+                        Icon { name: "layers", class: "size-4" }
+                        {t("theme.duplicate")}
+                    }
+                    Button { variant: ButtonVariant::Ghost, class: "text-destructive",
+                        onclick: move |_| {
+                            let did = id_del.clone();
+                            app.update(|s| {
+                                s.custom_themes.retain(|c| c.id != did);
+                                if s.theme == did {
+                                    s.theme = "maz".into();
+                                }
+                            });
+                            on_done.call(());
+                        },
+                        Icon { name: "trash", class: "size-4" }
+                        {t("theme.delete")}
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[component]
 fn DesignTab() -> Element {
     let app = use_app();
     let s = app.settings.read().clone();
+    let mut editing = use_signal(|| None::<String>);
+    let mut import_code = use_signal(String::new);
     let accent_value = if s.accent.is_empty() { "#8b5cf6".to_string() } else { s.accent.clone() };
     let has_accent = !s.accent.is_empty();
     let size = s.card_size.to_string();
+    let wallpaper = s.wallpaper.clone();
+    let has_wallpaper = !wallpaper.is_empty();
+    let dim = s.wallpaper_dim;
+    let presets: Vec<CustomTheme> = PRESETS.iter().filter_map(|(id, _)| theme::preset(id)).collect();
+    let customs = s.custom_themes.clone();
+    let editing_id = editing();
+    let current = s.theme.clone();
     rsx! {
-        h1 { class: "text-3xl font-bold font-display mb-2", "Design" }
-        p { class: "text-muted-foreground mb-8", "Mach den Launcher zu deinem. Änderungen werden sofort übernommen." }
+        PageTitle { title: t("set.tab.design"), sub: t("design.sub") }
 
-        Section { title: "Bibliotheks-Ansicht", description: "Wie sollen deine Spiele angezeigt werden?",
+        Section { title: t("design.layout"), description: t("design.layout_text"),
             LayoutPicker {}
             div { class: "mt-4",
                 SwitchRow {
-                    title: "Original-Farben im Steam- und Epic-Stil",
-                    description: "An = sieht aus wie das Original. Aus = nutzt dein Farbschema (unten).",
+                    title: t("design.authentic"),
+                    description: t("design.authentic_text"),
                     checked: s.authentic_colors,
                     onchange: move |v: bool| app.update(|s| s.authentic_colors = v),
                 }
             }
         }
 
-        Section { title: "Farbschema", description: "Wähle deine Lieblingsfarben.",
+        {editing_id.map(|id| rsx! {
+            ThemeEditor { id, on_done: move |_| editing.set(None) }
+        })}
+
+        Section { title: t("design.my_themes"), description: t("design.my_themes_text"),
             div { class: "grid grid-cols-4 gap-3",
-                {THEMES.iter().map(|(id, name, bg, acc)| {
-                    let active = s.theme == *id;
-                    let ring = if active { "ring-2 ring-primary" } else { "ring-1 ring-border hover:ring-primary/50" };
-                    let id = id.to_string();
-                    let name = name.to_string();
-                    let style = format!("background: linear-gradient(135deg, {bg} 55%, {acc} 160%);");
-                    let dot = format!("background: {acc};");
+                {customs.into_iter().map(|c| {
+                    let active = current == c.id;
+                    let (id1, id2) = (c.id.clone(), c.id.clone());
+                    let name = if c.name.is_empty() { t("theme.unnamed") } else { c.name.clone() };
+                    let key = c.id.clone();
                     rsx! {
-                        button {
-                            key: "{id}",
-                            class: "rounded-xl overflow-hidden cursor-pointer text-left transition-all {ring}",
-                            onclick: move |_| { let t = id.clone(); app.update(|s| s.theme = t); },
-                            div { class: "h-16 relative", style: "{style}",
-                                div { class: "absolute bottom-2 left-2 size-5 rounded-full ring-2 ring-white/40", style: "{dot}" }
-                                if active {
-                                    div { class: "absolute top-2 right-2 size-5 rounded-full bg-white text-black grid place-items-center",
-                                        Icon { name: "check", class: "size-3" }
-                                    }
+                        ThemeTile { key: "{key}", theme: c, name, active,
+                            onselect: move |_| { let i = id1.clone(); app.update(|s| s.theme = i); },
+                            onedit: move |_| {
+                                let i = id2.clone();
+                                app.update(|s| s.theme = i.clone());
+                                editing.set(Some(i));
+                            },
+                        }
+                    }
+                })}
+                button {
+                    class: "rounded-xl border-2 border-dashed border-border hover:border-primary hover:text-primary text-muted-foreground min-h-[100px] flex flex-col items-center justify-center gap-2 text-xs font-medium cursor-pointer transition-colors",
+                    onclick: move |_| {
+                        let mut c = current_colors(app);
+                        c.id = new_custom_id();
+                        let n = app.settings.peek().custom_themes.len() + 1;
+                        c.name = tf("theme.new_name", &[("n", &n.to_string())]);
+                        let nid = c.id.clone();
+                        app.update(|s| {
+                            s.custom_themes.push(c);
+                            s.theme = nid.clone();
+                        });
+                        editing.set(Some(nid));
+                    },
+                    Icon { name: "plus", class: "size-6" }
+                    {t("theme.new")}
+                }
+            }
+            div { class: "flex gap-2 mt-5",
+                Input { class: "font-mono text-xs", placeholder: t("theme.import_ph"), value: import_code(), oninput: move |v: String| import_code.set(v) }
+                Button { variant: ButtonVariant::Secondary, class: "h-10",
+                    onclick: move |_| {
+                        match CustomTheme::from_code(&import_code.peek()) {
+                            Some(mut c) => {
+                                c.id = new_custom_id();
+                                if c.name.is_empty() {
+                                    c.name = t("theme.imported");
                                 }
+                                let nid = c.id.clone();
+                                app.update(|s| {
+                                    s.custom_themes.push(c);
+                                    s.theme = nid;
+                                });
+                                import_code.set(String::new());
+                                app.toast(&t("theme.import_ok"), "check-circle");
                             }
-                            div { class: "px-3 py-2 text-xs font-medium bg-muted", "{name}" }
+                            None => app.toast(&t("theme.import_bad"), "alert"),
+                        }
+                    },
+                    Icon { name: "download", class: "size-4" }
+                    {t("theme.import")}
+                }
+            }
+        }
+
+        Section { title: t("design.presets"), description: t("design.presets_text"),
+            div { class: "grid grid-cols-4 gap-3",
+                {presets.into_iter().map(|p| {
+                    let active = current == p.id;
+                    let id = p.id.clone();
+                    let name = t(&format!("theme.{}", p.id));
+                    let key = p.id.clone();
+                    rsx! {
+                        ThemeTile { key: "{key}", theme: p, name, active,
+                            onselect: move |_| { let i = id.clone(); app.update(|s| s.theme = i); },
                         }
                     }
                 })}
             }
             div { class: "mt-5 flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3",
                 div {
-                    div { class: "text-sm font-medium", "Eigene Akzentfarbe" }
-                    div { class: "text-xs text-muted-foreground mt-1", "Färbt Knöpfe, Markierungen und Leuchteffekte." }
+                    div { class: "text-sm font-medium", {t("design.accent")} }
+                    div { class: "text-xs text-muted-foreground mt-1", {t("design.accent_text")} }
                 }
                 div { class: "flex items-center gap-2",
                     input {
@@ -228,34 +650,78 @@ fn DesignTab() -> Element {
                         oninput: move |e| { let v = e.value(); app.update(|s| s.accent = v); },
                     }
                     if has_accent {
-                        Button { variant: ButtonVariant::Ghost, size: ButtonSize::Sm, onclick: move |_| app.update(|s| s.accent.clear()), "Zurücksetzen" }
+                        Button { variant: ButtonVariant::Ghost, size: ButtonSize::Sm, onclick: move |_| app.update(|s| s.accent.clear()), {t("common.reset")} }
                     }
                 }
             }
         }
 
-        Section { title: "Darstellung",
+        Section { title: t("design.wallpaper"), description: t("design.wallpaper_text"),
+            div { class: "flex flex-wrap items-center gap-2",
+                Button { variant: ButtonVariant::Outline,
+                    onclick: move |_| {
+                        if let Some(p) = pick_image_file() {
+                            app.update(|s| s.wallpaper = p);
+                        }
+                    },
+                    Icon { name: "image", class: "size-4" }
+                    {t("design.wallpaper_pick")}
+                }
+                if has_wallpaper {
+                    Button { variant: ButtonVariant::Ghost, onclick: move |_| app.update(|s| s.wallpaper.clear()),
+                        Icon { name: "x", class: "size-4" }
+                        {t("design.wallpaper_remove")}
+                    }
+                    span { class: "text-xs text-muted-foreground font-mono truncate max-w-xs", title: "{wallpaper}", "{wallpaper}" }
+                }
+            }
+            if has_wallpaper {
+                div { class: "flex items-center gap-4 mt-4",
+                    span { class: "text-sm w-40", {t("design.wallpaper_dim")} }
+                    input {
+                        r#type: "range",
+                        class: "flex-1 accent-[var(--primary)] cursor-pointer",
+                        min: "0",
+                        max: "90",
+                        step: "5",
+                        value: "{dim}",
+                        oninput: move |e| {
+                            let v = e.value().parse::<u8>().unwrap_or(60).min(90);
+                            app.update(|s| s.wallpaper_dim = v);
+                        },
+                    }
+                    span { class: "text-sm tabular-nums w-10 text-right", "{dim} %" }
+                }
+                SwitchRow {
+                    title: t("design.wallpaper_blur"),
+                    checked: s.wallpaper_blur,
+                    onchange: move |v: bool| app.update(|s| s.wallpaper_blur = v),
+                }
+            }
+        }
+
+        Section { title: t("design.display"),
             div { class: "flex items-center justify-between py-3",
                 div {
-                    div { class: "text-sm font-medium", "Größe der Spiele-Karten" }
-                    div { class: "text-xs text-muted-foreground mt-1", "S = viele kleine, L = wenige große" }
+                    div { class: "text-sm font-medium", {t("design.card_size")} }
+                    div { class: "text-xs text-muted-foreground mt-1", {t("design.card_size_text")} }
                 }
                 Segmented {
-                    options: vec![("1".to_string(), "Klein".to_string()), ("2".to_string(), "Mittel".to_string()), ("3".to_string(), "Groß".to_string())],
+                    options: vec![("1".to_string(), t("design.small")), ("2".to_string(), t("design.medium")), ("3".to_string(), t("design.large"))],
                     value: size,
                     onchange: move |v: String| { let n = v.parse::<u8>().unwrap_or(2); app.update(|s| s.card_size = n); },
                 }
             }
             Separator {}
             SwitchRow {
-                title: "Spielnamen unter den Covern anzeigen",
+                title: t("design.names"),
                 checked: s.show_names,
                 onchange: move |v: bool| app.update(|s| s.show_names = v),
             }
             Separator {}
             SwitchRow {
-                title: "Animationen",
-                description: "Ausschalten, wenn dein PC langsam ist oder dich Bewegungen stören.",
+                title: t("design.animations"),
+                description: t("design.animations_text"),
                 checked: s.animations,
                 onchange: move |v: bool| app.update(|s| s.animations = v),
             }
@@ -270,19 +736,19 @@ fn DesignTab() -> Element {
 #[component]
 fn StatusLine(status: StoreStatus, #[props(into)] store: String) -> Element {
     let (cls, icon, text) = if status.found {
-        ("text-success", "check-circle", format!("{store} ist verbunden"))
+        ("text-success", "check-circle", tf("conn.connected", &[("store", &store)]))
     } else {
-        ("text-muted-foreground", "x-circle", format!("{store} wurde nicht gefunden"))
+        ("text-muted-foreground", "x-circle", tf("conn.not_found", &[("store", &store)]))
     };
     let mut details: Vec<String> = Vec::new();
     if let Some(a) = &status.account {
-        details.push(format!("Angemeldet als {a}"));
+        details.push(tf("conn.account", &[("name", a)]));
     }
     if status.found {
-        details.push(format!("{} installierte Spiele", status.installed));
+        details.push(tf("conn.installed", &[("n", &status.installed.to_string())]));
     }
     if status.owned > 0 {
-        details.push(format!("{} Spiele insgesamt im Konto", status.owned));
+        details.push(tf("conn.owned", &[("n", &status.owned.to_string())]));
     }
     let detail = details.join(" · ");
     let path = status.path.clone().unwrap_or_default();
@@ -315,11 +781,9 @@ fn ConnectionsTab() -> Element {
     let scanning = *app.scanning.read();
     let steam_found = steam.found;
     let epic_found = epic.found;
+    let key_steps = i18n::tl("conn.key_steps");
     rsx! {
-        h1 { class: "text-3xl font-bold font-display mb-2", "Verbindungen" }
-        p { class: "text-muted-foreground mb-8",
-            "Der MAZ Launcher findet deine Spiele automatisch auf deinem PC. Du musst dich nirgends anmelden – deine Passwörter bleiben bei Steam und Epic."
-        }
+        PageTitle { title: t("set.tab.connections"), sub: t("conn.sub") }
 
         Section { title: "Steam",
             StatusLine { status: steam, store: "Steam" }
@@ -327,53 +791,49 @@ fn ConnectionsTab() -> Element {
                 div { class: "mt-3",
                     Button { variant: ButtonVariant::Outline, onclick: move |_| { let _ = sys::open_url("https://store.steampowered.com/about/"); },
                         Icon { name: "download", class: "size-4" }
-                        "Steam herunterladen"
+                        {t("fix.steam_dl")}
                     }
                 }
             }
             div { class: "mt-2",
                 SwitchRow {
-                    title: "Steam-Spiele anzeigen",
+                    title: t("conn.show_steam"),
                     checked: s.steam_enabled,
                     onchange: move |v: bool| { app.update(|s| s.steam_enabled = v); rescan(app); },
                 }
             }
             Separator { class: "my-2" }
             div { class: "py-3",
-                div { class: "text-sm font-medium", "Alle gekauften Steam-Spiele anzeigen (optional)" }
-                p { class: "text-xs text-muted-foreground mt-1 mb-3 leading-relaxed",
-                    "Ohne Schlüssel siehst du alle installierten Spiele. Mit einem kostenlosen Steam-API-Schlüssel siehst du ALLE Spiele in deinem Konto – auch nicht installierte – plus deine Spielzeit."
-                }
+                div { class: "text-sm font-medium", {t("conn.all_title")} }
+                p { class: "text-xs text-muted-foreground mt-1 mb-3 leading-relaxed", {t("conn.all_text")} }
                 ol { class: "text-xs text-muted-foreground space-y-1 mb-4 list-decimal pl-5 leading-relaxed",
-                    li { "Klick auf „API-Schlüssel holen“ und melde dich bei Steam an." }
-                    li { "Bei „Domainname“ einfach localhost eintragen, Haken setzen, „Registrieren“ klicken." }
-                    li { "Den Schlüssel (32 Zeichen) kopieren und hier einfügen. Fertig!" }
+                    {key_steps.into_iter().enumerate().map(|(i, st)| rsx! { li { key: "{i}", "{st}" } })}
                 }
                 div { class: "grid gap-3",
                     div { class: "flex gap-2",
                         Input {
                             kind: "password",
                             class: "font-mono text-xs",
-                            placeholder: "Steam-API-Schlüssel",
+                            placeholder: t("conn.key_ph"),
                             value: s.steam_api_key.clone(),
                             oninput: move |v: String| app.update(|s| s.steam_api_key = v.trim().to_string()),
                         }
                         Button { variant: ButtonVariant::Secondary, class: "h-10", onclick: move |_| { let _ = sys::open_url("https://steamcommunity.com/dev/apikey"); },
                             Icon { name: "external", class: "size-4" }
-                            "API-Schlüssel holen"
+                            {t("fix.api_key")}
                         }
                     }
                     Input {
                         class: "font-mono text-xs",
-                        placeholder: "Steam-ID (leer lassen = wird automatisch erkannt)",
+                        placeholder: t("conn.id_ph"),
                         value: s.steam_id.clone(),
                         oninput: move |v: String| app.update(|s| s.steam_id = v.trim().to_string()),
                     }
                 }
                 div { class: "mt-2",
                     SwitchRow {
-                        title: "Nicht installierte Spiele zeigen",
-                        description: "Werden grau angezeigt. Ein Klick öffnet die Installation in Steam.",
+                        title: t("conn.uninstalled"),
+                        description: t("conn.uninstalled_text"),
                         checked: s.steam_show_uninstalled,
                         onchange: move |v: bool| app.update(|s| s.steam_show_uninstalled = v),
                     }
@@ -385,25 +845,25 @@ fn ConnectionsTab() -> Element {
             StatusLine { status: epic, store: "Epic Games" }
             if !epic_found {
                 div { class: "mt-3",
-                    Button { variant: ButtonVariant::Outline, onclick: move |_| { let _ = sys::open_url("https://store.epicgames.com/de/download"); },
+                    Button { variant: ButtonVariant::Outline, onclick: move |_| { let _ = sys::open_url("https://store.epicgames.com/download"); },
                         Icon { name: "download", class: "size-4" }
-                        "Epic Games Launcher herunterladen"
+                        {t("fix.epic_dl")}
                     }
                 }
             }
             div { class: "mt-2",
                 SwitchRow {
-                    title: "Epic-Spiele anzeigen",
+                    title: t("conn.show_epic"),
                     checked: s.epic_enabled,
                     onchange: move |v: bool| { app.update(|s| s.epic_enabled = v); rescan(app); },
                 }
             }
         }
 
-        Section { title: "Bilder",
+        Section { title: t("conn.images"),
             SwitchRow {
-                title: "Cover-Bilder aus dem Internet laden",
-                description: "Holt schöne Original-Cover (auch für Epic- und eigene Spiele aus dem Steam-Store). Aus = nur Bilder, die schon auf deinem PC sind.",
+                title: t("conn.online_art"),
+                description: t("conn.online_art_text"),
                 checked: s.online_art,
                 onchange: move |v: bool| app.update(|s| s.online_art = v),
             }
@@ -412,7 +872,7 @@ fn ConnectionsTab() -> Element {
         div { class: "flex justify-end",
             Button { variant: ButtonVariant::Glow, size: ButtonSize::Lg, disabled: scanning, onclick: move |_| rescan(app),
                 if scanning { Spinner {} } else { Icon { name: "refresh", class: "size-4" } }
-                "Jetzt neu laden"
+                {t("conn.reload_now")}
             }
         }
     }
@@ -426,48 +886,65 @@ fn ConnectionsTab() -> Element {
 fn CustomTab() -> Element {
     let app = use_app();
     let s = app.settings.read().clone();
-    let items = s.checklist.clone();
+    let items = s.effective_checklist();
     let games = s.custom_games.clone();
     rsx! {
-        h1 { class: "text-3xl font-bold font-display mb-2", "Eigene Spiele" }
-        p { class: "text-muted-foreground mb-8", "Spiele, die du selbst hinzugefügt hast, und die Sicherheitsfrage vor dem Start." }
+        PageTitle { title: t("set.tab.custom"), sub: t("custom.sub") }
 
-        Section {
-            title: "Sicherheitsfrage vor jedem Start",
-            description: "Bevor ein eigenes Spiel startet, fragt der Launcher: „Hast du alles Wichtige deaktiviert?“ Bei „Nein“ startet das Spiel nicht. Hier legst du fest, welche Punkte dabei angezeigt werden.",
+        Section { title: t("custom.check_title"), description: t("custom.check_text"),
             div { class: "grid gap-2",
                 {items.iter().cloned().enumerate().map(|(i, it)| rsx! {
                     div { key: "{i}", class: "flex gap-2",
                         Input {
                             value: it,
                             oninput: move |v: String| app.update(|s| {
+                                if s.checklist.is_empty() {
+                                    s.checklist = default_checklist();
+                                }
                                 if let Some(x) = s.checklist.get_mut(i) {
                                     *x = v;
                                 }
                             }),
                         }
-                        Button { variant: ButtonVariant::Ghost, size: ButtonSize::Icon, class: "size-10", title: "Punkt löschen",
-                            onclick: move |_| app.update(|s| { if i < s.checklist.len() { s.checklist.remove(i); } }),
+                        Button { variant: ButtonVariant::Ghost, size: ButtonSize::Icon, class: "size-10", title: t("custom.delete_item"),
+                            onclick: move |_| app.update(|s| {
+                                if s.checklist.is_empty() {
+                                    s.checklist = default_checklist();
+                                }
+                                if i < s.checklist.len() {
+                                    s.checklist.remove(i);
+                                }
+                                if s.checklist.is_empty() {
+                                    // Leere Liste würde wieder die Standardliste bedeuten → Platzhalter behalten
+                                    s.checklist.push(String::new());
+                                }
+                            }),
                             Icon { name: "trash", class: "size-4" }
                         }
                     }
                 })}
             }
             div { class: "flex gap-2 mt-4",
-                Button { variant: ButtonVariant::Outline, onclick: move |_| app.update(|s| s.checklist.push(String::new())),
+                Button { variant: ButtonVariant::Outline,
+                    onclick: move |_| app.update(|s| {
+                        if s.checklist.is_empty() {
+                            s.checklist = default_checklist();
+                        }
+                        s.checklist.push(String::new());
+                    }),
                     Icon { name: "plus", class: "size-4" }
-                    "Punkt hinzufügen"
+                    {t("custom.add_item")}
                 }
-                Button { variant: ButtonVariant::Ghost, onclick: move |_| app.update(|s| s.checklist = default_checklist()),
+                Button { variant: ButtonVariant::Ghost, onclick: move |_| app.update(|s| s.checklist.clear()),
                     Icon { name: "refresh", class: "size-4" }
-                    "Standard wiederherstellen"
+                    {t("custom.reset")}
                 }
             }
         }
 
-        Section { title: "Deine Spiele", description: "Bearbeiten oder entfernen (das Spiel selbst wird dabei nie gelöscht).",
+        Section { title: t("custom.games"), description: t("custom.games_text"),
             if games.is_empty() {
-                div { class: "text-sm text-muted-foreground py-2", "Du hast noch keine eigenen Spiele hinzugefügt." }
+                div { class: "text-sm text-muted-foreground py-2", {t("custom.none")} }
             }
             div { class: "divide-y divide-border",
                 {games.into_iter().map(|g| {
@@ -483,7 +960,7 @@ fn CustomTab() -> Element {
                             }
                             Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm, onclick: move |_| app.open(Modal::EditGame(Some(id1.clone()))),
                                 Icon { name: "pencil", class: "size-3.5" }
-                                "Bearbeiten"
+                                {t("common.edit")}
                             }
                             Button { variant: ButtonVariant::Ghost, size: ButtonSize::Sm, class: "text-destructive", onclick: move |_| app.open(Modal::DeleteGame(id2.clone())),
                                 Icon { name: "trash", class: "size-3.5" }
@@ -495,7 +972,7 @@ fn CustomTab() -> Element {
             div { class: "mt-4",
                 Button { variant: ButtonVariant::Glow, onclick: move |_| app.open(Modal::EditGame(None)),
                     Icon { name: "plus", class: "size-4" }
-                    "Spiel hinzufügen"
+                    {t("lib.add")}
                 }
             }
         }
@@ -517,38 +994,37 @@ fn GeneralTab() -> Element {
     let installed = install::installed_location().is_some();
     let exe2 = exe.clone();
     rsx! {
-        h1 { class: "text-3xl font-bold font-display mb-2", "Allgemein" }
-        p { class: "text-muted-foreground mb-8", "Verhalten, Installation und Daten." }
+        PageTitle { title: t("set.tab.general"), sub: t("general.sub") }
 
-        Section { title: "Verhalten",
+        Section { title: t("general.behavior"),
             SwitchRow {
-                title: "Launcher minimieren, wenn ein Spiel startet",
-                description: "Macht Platz fürs Spiel. Stürzt ein eigenes Spiel direkt ab, kommt der Launcher mit einer Erklärung zurück.",
+                title: t("general.minimize"),
+                description: t("general.minimize_text"),
                 checked: s.minimize_on_launch,
                 onchange: move |v: bool| app.update(|s| s.minimize_on_launch = v),
             }
         }
 
-        Section { title: "Installation",
+        Section { title: t("general.install"),
             div { class: "rounded-xl bg-muted p-4 mb-4",
-                div { class: "text-xs text-muted-foreground", if installed { "Installiert in" } else { "Läuft ohne Installation (portabel) aus" } }
+                div { class: "text-xs text-muted-foreground", {t(if installed { "general.installed_in" } else { "general.portable" })} }
                 div { class: "text-sm font-mono mt-1 truncate select-text", title: "{exe}", "{exe}" }
             }
             div { class: "flex flex-wrap gap-2",
                 Button { variant: ButtonVariant::Outline, onclick: move |_| sys::open_folder(&exe_dir),
                     Icon { name: "folder", class: "size-4" }
-                    "App-Ordner öffnen"
+                    {t("fix.folder_app")}
                 }
                 Button { variant: ButtonVariant::Outline,
                     onclick: move |_| {
                         let lnk = sys::desktop_dir().join(format!("{}.lnk", sys::APP_NAME));
                         match install::create_shortcut(&lnk, std::path::Path::new(&exe2)) {
-                            Ok(()) => app.toast("Desktop-Verknüpfung erstellt", "check-circle"),
+                            Ok(()) => app.toast(&t("toast.shortcut"), "check-circle"),
                             Err(e) => app.show_problem(crate::problem::Problem::shortcut_failed(&exe2, &e), None),
                         }
                     },
                     Icon { name: "monitor", class: "size-4" }
-                    "Desktop-Verknüpfung erstellen"
+                    {t("general.shortcut")}
                 }
                 if installed {
                     Button { variant: ButtonVariant::Ghost, class: "text-destructive",
@@ -559,27 +1035,27 @@ fn GeneralTab() -> Element {
                             }
                         },
                         Icon { name: "trash", class: "size-4" }
-                        "Deinstallieren"
+                        {t("general.uninstall")}
                     }
                 }
             }
         }
 
-        Section { title: "Daten",
+        Section { title: t("general.data"),
             div { class: "flex flex-wrap gap-2",
                 Button { variant: ButtonVariant::Outline, onclick: move |_| sys::open_folder(&sys::roaming_dir().to_string_lossy()),
                     Icon { name: "folder", class: "size-4" }
-                    "Einstellungsordner öffnen"
+                    {t("general.settings_folder")}
                 }
                 Button { variant: ButtonVariant::Outline,
                     onclick: move |_| {
                         let _ = std::fs::remove_dir_all(sys::icon_cache_dir());
                         app.update(|s| s.art_lookup.clear());
-                        app.toast("Bilder-Cache geleert – lade neu …", "refresh");
+                        app.toast(&t("toast.cache_cleared"), "refresh");
                         rescan(app);
                     },
                     Icon { name: "image", class: "size-4" }
-                    "Bilder neu laden"
+                    {t("general.reload_images")}
                 }
             }
         }
@@ -592,28 +1068,24 @@ fn GeneralTab() -> Element {
 
 #[component]
 fn AboutTab() -> Element {
-    let version = sys::VERSION;
+    let version = tf("about.version", &[("v", sys::VERSION)]);
     rsx! {
         div { class: "flex flex-col items-center text-center pt-6",
             MazLogo { class: "size-24 text-2xl rounded-3xl" }
             h1 { class: "text-4xl font-black font-display mt-6", span { class: "maz-gradient-text", "MAZ Launcher" } }
-            p { class: "text-muted-foreground mt-2", "Version {version}" }
-            p { class: "text-sm text-muted-foreground mt-6 max-w-md leading-relaxed",
-                "Alle deine Spiele von Steam, Epic Games und deine eigenen an einem Ort. Gebaut zu 100 % in Rust mit Dioxus und Komponenten im Stil von rust-ui."
-            }
+            p { class: "text-muted-foreground mt-2", "{version}" }
+            p { class: "text-sm text-muted-foreground mt-6 max-w-md leading-relaxed", {t("about.text")} }
             div { class: "flex gap-3 mt-8",
                 Button { variant: ButtonVariant::Glow, onclick: move |_| { let _ = sys::open_url(sys::GITHUB_URL); },
                     Icon { name: "code", class: "size-4" }
-                    "Auf GitHub ansehen"
+                    {t("about.github")}
                 }
                 Button { variant: ButtonVariant::Outline, onclick: move |_| { let _ = sys::open_url(&format!("{}/issues", sys::GITHUB_URL)); },
                     Icon { name: "alert", class: "size-4" }
-                    "Fehler melden"
+                    {t("fix.report")}
                 }
             }
-            p { class: "text-xs text-muted-foreground mt-12 max-w-md leading-relaxed",
-                "Steam ist eine Marke der Valve Corporation, Epic Games ist eine Marke von Epic Games, Inc. Der MAZ Launcher ist ein unabhängiges Projekt und mit keinem der beiden verbunden. Es werden keine Spiele heruntergeladen und kein Kopierschutz umgangen – Spiele starten immer über den jeweiligen Original-Launcher."
-            }
+            p { class: "text-xs text-muted-foreground mt-12 max-w-md leading-relaxed", {t("about.legal")} }
         }
     }
 }

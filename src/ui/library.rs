@@ -6,6 +6,7 @@ use super::detail::SteamDetail;
 use super::icons::{Icon, MazLogo};
 use super::state::*;
 use crate::model::{layout, Game, Settings, Source};
+use crate::i18n::{t, tf};
 use crate::sys;
 use dioxus::prelude::*;
 
@@ -101,7 +102,7 @@ pub fn SourceBadge(source: Source) -> Element {
     match source {
         Source::Steam => rsx! { Badge { variant: BadgeVariant::Steam, "STEAM" } },
         Source::Epic => rsx! { Badge { variant: BadgeVariant::Epic, "EPIC" } },
-        Source::Custom => rsx! { Badge { variant: BadgeVariant::Custom, "EIGENES" } },
+        Source::Custom => rsx! { Badge { variant: BadgeVariant::Custom, {t("badge.custom")} } },
     }
 }
 
@@ -116,7 +117,7 @@ fn Toolbar(#[props(into)] title: String, count: usize) -> Element {
         div { class: "flex flex-wrap items-center gap-3 mb-6",
             div { class: "flex items-baseline gap-3 mr-auto",
                 h1 { class: "text-2xl font-bold tracking-tight font-display", "{title}" }
-                span { class: "text-sm text-muted-foreground", "{count} Spiele" }
+                span { class: "text-sm text-muted-foreground", {tf("lib.count", &[("n", &count.to_string())])} }
             }
             div { class: "relative w-64",
                 span { class: "absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none",
@@ -124,7 +125,7 @@ fn Toolbar(#[props(into)] title: String, count: usize) -> Element {
                 }
                 Input {
                     class: "pl-9 h-9",
-                    placeholder: "Spiel suchen …",
+                    placeholder: t("lib.search"),
                     value: search,
                     oninput: move |v: String| {
                         let mut s = app.search;
@@ -144,7 +145,7 @@ fn Toolbar(#[props(into)] title: String, count: usize) -> Element {
             Button {
                 variant: ButtonVariant::Outline,
                 size: ButtonSize::Icon,
-                title: "Bibliothek neu laden (sucht neue Spiele)",
+                title: t("lib.reload_tip"),
                 disabled: scanning,
                 onclick: move |_| rescan(app),
                 if scanning {
@@ -160,19 +161,20 @@ fn Toolbar(#[props(into)] title: String, count: usize) -> Element {
 #[component]
 fn SortSelect(value: String) -> Element {
     let app = use_app();
+    let sort_title = t("sort.title");
     rsx! {
         select {
             class: "h-9 rounded-md border border-input bg-background/60 px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 cursor-pointer",
             value: "{value}",
-            title: "Sortieren",
+            title: "{sort_title}",
             onchange: move |e| {
                 let v = e.value();
                 app.update(|s| s.sort = v);
             },
-            option { value: "name", selected: value == "name", "Name (A–Z)" }
-            option { value: "recent", selected: value == "recent", "Zuletzt gespielt" }
-            option { value: "playtime", selected: value == "playtime", "Meiste Spielzeit" }
-            option { value: "installed", selected: value == "installed", "Installierte zuerst" }
+            option { value: "name", selected: value == "name", {t("sort.name")} }
+            option { value: "recent", selected: value == "recent", {t("sort.recent")} }
+            option { value: "playtime", selected: value == "playtime", {t("sort.playtime")} }
+            option { value: "installed", selected: value == "installed", {t("sort.installed")} }
         }
     }
 }
@@ -197,11 +199,11 @@ fn WarningBanner() -> Element {
                         variant: ButtonVariant::Outline,
                         size: ButtonSize::Sm,
                         onclick: move |_| app.show_problem(w2.clone(), None),
-                        "So behebst du es"
+                        {t("lib.how_fix")}
                     }
                     button {
                         class: "p-1 text-muted-foreground hover:text-foreground cursor-pointer",
-                        title: "Ausblenden",
+                        title: t("lib.dismiss"),
                         onclick: move |_| {
                             let mut ws = app.warnings;
                             ws.write().retain(|x| x.title != w.title);
@@ -230,16 +232,16 @@ fn EmptyState() -> Element {
         };
     }
     let (title, text) = if searching {
-        ("Nichts gefunden".to_string(), "Kein Spiel passt zu deiner Suche. Prüfe die Schreibweise oder lösche den Suchtext.".to_string())
+        (t("empty.search.title"), t("empty.search.text"))
     } else {
         match filter {
-            Filter::Favorites => ("Noch keine Favoriten".into(), "Öffne ein Spiel und klick auf den Stern – dann taucht es hier auf.".into()),
-            Filter::Recent => ("Noch nichts gespielt".into(), "Sobald du ein Spiel über den MAZ Launcher startest, erscheint es hier.".into()),
-            Filter::Custom => ("Noch keine eigenen Spiele".into(), "Füge Spiele hinzu, die nicht über Steam oder Epic laufen – z. B. Minecraft, Emulatoren oder Indie-Spiele.".into()),
-            Filter::Hidden => ("Keine ausgeblendeten Spiele".into(), "Hier landen Spiele, die du ausgeblendet hast.".into()),
-            Filter::Steam => ("Keine Steam-Spiele gefunden".into(), "Ist Steam installiert und hast du dort Spiele installiert? Dann klick auf „Neu laden“. Alle gekauften Spiele (auch nicht installierte) siehst du mit einem Steam-API-Schlüssel (Einstellungen → Verbindungen).".into()),
-            Filter::Epic => ("Keine Epic-Spiele gefunden".into(), "Ist der Epic Games Launcher installiert und hast du dort Spiele installiert? Dann klick auf „Neu laden“.".into()),
-            _ => ("Hier ist noch alles leer".into(), "Es wurden keine Spiele gefunden. Installiere Spiele über Steam oder Epic Games – oder füge deine eigenen Spiele hinzu.".into()),
+            Filter::Favorites => (t("empty.fav.title"), t("empty.fav.text")),
+            Filter::Recent => (t("empty.recent.title"), t("empty.recent.text")),
+            Filter::Custom => (t("empty.custom.title"), t("empty.custom.text")),
+            Filter::Hidden => (t("empty.hidden.title"), t("empty.hidden.text")),
+            Filter::Steam => (t("empty.steam.title"), t("empty.steam.text")),
+            Filter::Epic => (t("empty.epic.title"), t("empty.epic.text")),
+            _ => (t("empty.all.title"), t("empty.all.text")),
         }
     };
     rsx! {
@@ -252,11 +254,11 @@ fn EmptyState() -> Element {
             div { class: "flex gap-3 mt-6",
                 Button { variant: ButtonVariant::Glow, onclick: move |_| app.open(Modal::EditGame(None)),
                     Icon { name: "plus", class: "size-4" }
-                    "Eigenes Spiel hinzufügen"
+                    {t("lib.add_custom")}
                 }
                 Button { variant: ButtonVariant::Outline, onclick: move |_| rescan(app),
                     Icon { name: "refresh", class: "size-4" }
-                    "Neu laden"
+                    {t("lib.reload")}
                 }
             }
         }
@@ -277,7 +279,7 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
         "absolute inset-0 size-full object-cover grayscale opacity-60 transition-transform duration-500 group-hover:scale-105"
     };
     let play_icon = if installed { "play" } else { "download" };
-    let play_title = if installed { "Spielen" } else { "Installieren" };
+    let play_title = t(if installed { "game.play" } else { "game.install" });
     let g2 = game.clone();
     let g3 = game.clone();
     rsx! {
@@ -301,7 +303,7 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
                     }
                 }
                 if !installed {
-                    div { class: "absolute top-2 right-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/80", "NICHT INSTALLIERT" }
+                    div { class: "absolute top-2 right-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/80", {t("badge.not_installed")} }
                 }
                 div { class: "absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                     button {
@@ -398,14 +400,14 @@ pub fn MazSidebar() -> Element {
         aside { class: "w-60 shrink-0 flex flex-col bg-sidenav border-r border-border/60",
             div { class: "flex-1 overflow-y-auto px-3 py-4 space-y-6",
                 div { class: "space-y-0.5",
-                    div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", "Bibliothek" }
+                    div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", {t("nav.library")} }
                     NavItem { filter: Filter::All, count: count_for(app, Filter::All) }
                     NavItem { filter: Filter::Installed, count: count_for(app, Filter::Installed) }
                     NavItem { filter: Filter::Favorites, count: count_for(app, Filter::Favorites) }
                     NavItem { filter: Filter::Recent, count: count_for(app, Filter::Recent) }
                 }
                 div { class: "space-y-0.5",
-                    div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", "Plattformen" }
+                    div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", {t("nav.platforms")} }
                     NavItem { filter: Filter::Steam, count: count_for(app, Filter::Steam) }
                     NavItem { filter: Filter::Epic, count: count_for(app, Filter::Epic) }
                     NavItem { filter: Filter::Custom, count: count_for(app, Filter::Custom) }
@@ -419,11 +421,11 @@ pub fn MazSidebar() -> Element {
             div { class: "p-3 space-y-2 border-t border-border/60",
                 Button { variant: ButtonVariant::Glow, class: "w-full", onclick: move |_| app.open(Modal::EditGame(None)),
                     Icon { name: "plus", class: "size-4" }
-                    "Spiel hinzufügen"
+                    {t("lib.add")}
                 }
                 button { class: "{set_cls}", onclick: move |_| app.go(Page::Settings(SettingsTab::Design)),
                     Icon { name: "settings", class: "size-4" }
-                    "Einstellungen"
+                    {t("nav.settings")}
                 }
             }
         }
@@ -460,7 +462,7 @@ fn ContinueHero() -> Element {
             }
             div { class: "absolute inset-0 bg-linear-to-r from-black/85 via-black/40 to-transparent" }
             div { class: "absolute inset-0 p-8 flex flex-col justify-end gap-4",
-                div { class: "text-xs font-semibold uppercase tracking-[0.2em] text-white/70", "Weiterspielen · {ago}" }
+                div { class: "text-xs font-semibold uppercase tracking-[0.2em] text-white/70", {tf("hero.continue", &[("ago", &ago)])} }
                 div { class: "max-w-[420px] h-20 flex items-end",
                     ArtImage {
                         srcs: logos,
@@ -471,10 +473,10 @@ fn ContinueHero() -> Element {
                 div { class: "flex gap-3",
                     Button { variant: ButtonVariant::Glow, size: ButtonSize::Lg, onclick: move |_| play(app, id.clone()),
                         Icon { name: "play", class: "size-5", filled: true }
-                        "Spielen"
+                        {t("game.play")}
                     }
                     Button { variant: ButtonVariant::Secondary, size: ButtonSize::Lg, class: "bg-white/10 text-white hover:bg-white/20 backdrop-blur", onclick: move |_| app.open(Modal::Detail(id2.clone())),
-                        "Details"
+                        {t("game.details")}
                     }
                 }
             }
@@ -538,7 +540,7 @@ fn SteamLayout() -> Element {
                             app.go(Page::Library);
                         },
                         Icon { name: "home", class: "size-4" }
-                        "Startseite"
+                        {t("steam.home")}
                     }
                     div { class: "flex gap-2",
                         select {
@@ -557,14 +559,14 @@ fn SteamLayout() -> Element {
                                 let mut fs = app.filter;
                                 fs.set(f);
                             },
-                            option { value: "all", selected: filter == Filter::All, "SPIELE: ALLE" }
-                            option { value: "installed", selected: filter == Filter::Installed, "INSTALLIERT" }
+                            option { value: "all", selected: filter == Filter::All, {t("steam.f_all")} }
+                            option { value: "installed", selected: filter == Filter::Installed, {t("filter.installed").to_uppercase()} }
                             option { value: "steam", selected: filter == Filter::Steam, "STEAM" }
                             option { value: "epic", selected: filter == Filter::Epic, "EPIC GAMES" }
-                            option { value: "custom", selected: filter == Filter::Custom, "MEINE SPIELE" }
-                            option { value: "fav", selected: filter == Filter::Favorites, "FAVORITEN" }
-                            option { value: "recent", selected: filter == Filter::Recent, "ZULETZT GESPIELT" }
-                            option { value: "hidden", selected: filter == Filter::Hidden, "AUSGEBLENDET" }
+                            option { value: "custom", selected: filter == Filter::Custom, {t("filter.custom").to_uppercase()} }
+                            option { value: "fav", selected: filter == Filter::Favorites, {t("filter.favorites").to_uppercase()} }
+                            option { value: "recent", selected: filter == Filter::Recent, {t("filter.recent").to_uppercase()} }
+                            option { value: "hidden", selected: filter == Filter::Hidden, {t("filter.hidden").to_uppercase()} }
                         }
                     }
                     div { class: "relative",
@@ -573,7 +575,7 @@ fn SteamLayout() -> Element {
                         }
                         Input {
                             class: "pl-8 h-8 rounded-sm text-xs bg-input/40 border-black/30",
-                            placeholder: "Suchen",
+                            placeholder: t("steam.search"),
                             value: search,
                             oninput: move |v: String| {
                                 let mut s = app.search;
@@ -582,7 +584,7 @@ fn SteamLayout() -> Element {
                         }
                     }
                 }
-                div { class: "px-3 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground", "— {count} Spiele" }
+                div { class: "px-3 pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground", {format!("— {}", tf("lib.count", &[("n", &count.to_string())]))} }
                 div { class: "flex-1 overflow-y-auto pb-2",
                     {rows.into_iter().map(|g| {
                         let id = g.id.clone();
@@ -614,12 +616,12 @@ fn SteamLayout() -> Element {
                 div { class: "p-2 border-t border-black/30 flex gap-2",
                     Button { variant: ButtonVariant::Secondary, size: ButtonSize::Sm, class: "flex-1 rounded-sm", onclick: move |_| app.open(Modal::EditGame(None)),
                         Icon { name: "plus", class: "size-3.5" }
-                        "SPIEL HINZUFÜGEN"
+                        {t("lib.add").to_uppercase()}
                     }
                     Button { variant: ButtonVariant::Secondary, size: ButtonSize::IconSm, class: "rounded-sm", title: "Einstellungen", onclick: move |_| app.go(Page::Settings(SettingsTab::Design)),
                         Icon { name: "settings", class: "size-4" }
                     }
-                    Button { variant: ButtonVariant::Secondary, size: ButtonSize::IconSm, class: "rounded-sm", title: "Neu laden", onclick: move |_| rescan(app),
+                    Button { variant: ButtonVariant::Secondary, size: ButtonSize::IconSm, class: "rounded-sm", title: t("lib.reload"), onclick: move |_| rescan(app),
                         Icon { name: "refresh", class: "size-4" }
                     }
                 }
@@ -696,7 +698,7 @@ fn SteamHome(games: Vec<Game>) -> Element {
             WarningBanner {}
             if !recent.is_empty() {
                 div { class: "mb-8",
-                    div { class: "text-[13px] text-foreground/80 mb-3 tracking-wide", "Zuletzt gespielt" }
+                    div { class: "text-[13px] text-foreground/80 mb-3 tracking-wide", {t("filter.recent")} }
                     div { class: "grid gap-4", style: "grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));",
                         {recent.into_iter().map(|(g, c)| {
                             let key = g.id.clone();
@@ -706,7 +708,7 @@ fn SteamHome(games: Vec<Game>) -> Element {
                 }
             }
             div { class: "flex items-center gap-3 mb-3",
-                div { class: "text-[13px] text-foreground/80 tracking-wide", "Alle Spiele ({n})" }
+                div { class: "text-[13px] text-foreground/80 tracking-wide", {format!("{} ({n})", t("filter.all"))} }
                 div { class: "flex-1 h-px bg-white/10" }
                 SortSelect { value: app.settings.read().sort.clone() }
             }
@@ -767,24 +769,24 @@ fn EpicLayout() -> Element {
     rsx! {
         div { class: "flex h-full min-h-0",
             aside { class: "w-60 shrink-0 bg-sidenav flex flex-col p-4 gap-1",
-                EpicNav { label: "Bibliothek", icon: "grid", active: page == Page::Library && filter != Filter::Custom,
+                EpicNav { label: t("nav.library"), icon: "grid", active: page == Page::Library && filter != Filter::Custom,
                     onclick: move |_| { let mut f = app.filter; f.set(Filter::All); app.go(Page::Library); } }
-                EpicNav { label: "Meine Spiele", icon: "rocket", active: page == Page::Library && filter == Filter::Custom,
+                EpicNav { label: t("filter.custom"), icon: "rocket", active: page == Page::Library && filter == Filter::Custom,
                     onclick: move |_| { let mut f = app.filter; f.set(Filter::Custom); app.go(Page::Library); } }
-                EpicNav { label: "Einstellungen", icon: "settings", active: matches!(page, Page::Settings(_)),
+                EpicNav { label: t("nav.settings"), icon: "settings", active: matches!(page, Page::Settings(_)),
                     onclick: move |_| app.go(Page::Settings(SettingsTab::Design)) }
                 div { class: "flex-1" }
                 Button { variant: ButtonVariant::Default, size: ButtonSize::Lg, class: "w-full", onclick: move |_| app.open(Modal::EditGame(None)),
                     Icon { name: "plus", class: "size-4" }
-                    "Spiel hinzufügen"
+                    {t("lib.add")}
                 }
             }
             main { class: "flex-1 min-w-0 overflow-y-auto",
                 div { class: "px-10 py-8 max-w-[1800px] mx-auto",
                     WarningBanner {}
                     div { class: "flex items-center justify-between mb-6",
-                        h1 { class: "text-4xl font-bold tracking-tight font-display", "Bibliothek" }
-                        Button { variant: ButtonVariant::Ghost, size: ButtonSize::Icon, title: "Neu laden", onclick: move |_| rescan(app),
+                        h1 { class: "text-4xl font-bold tracking-tight font-display", {t("nav.library")} }
+                        Button { variant: ButtonVariant::Ghost, size: ButtonSize::Icon, title: t("lib.reload"), onclick: move |_| rescan(app),
                             Icon { name: "refresh", class: "size-5" }
                         }
                     }
@@ -802,7 +804,7 @@ fn EpicLayout() -> Element {
                             }
                         })}
                         div { class: "flex-1" }
-                        span { class: "text-sm text-muted-foreground mr-2", "{count} Titel" }
+                        span { class: "text-sm text-muted-foreground mr-2", {tf("epic.titles", &[("n", &count.to_string())])} }
                         SortSelect { value: sort }
                         div { class: "relative w-60",
                             span { class: "absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none",
@@ -810,7 +812,7 @@ fn EpicLayout() -> Element {
                             }
                             Input {
                                 class: "pl-9 h-9 rounded-full bg-secondary border-transparent",
-                                placeholder: "Titel suchen",
+                                placeholder: t("epic.search"),
                                 value: search,
                                 oninput: move |v: String| { let mut s = app.search; s.set(v); },
                             }
@@ -839,15 +841,15 @@ fn EpicCard(game: Game, covers: Vec<String>, favorite: bool) -> Element {
     let id2 = game.id.clone();
     let name = game.name.clone();
     let status = if !game.installed {
-        "Nicht installiert".to_string()
+        t("game.not_installed")
     } else {
         match game.source {
             Source::Steam => "Steam".to_string(),
             Source::Epic => "Epic Games".to_string(),
-            Source::Custom => "Eigenes Spiel".to_string(),
+            Source::Custom => t("source.custom"),
         }
     };
-    let action = if game.installed { "Starten" } else { "Installieren" };
+    let action = t(if game.installed { "epic.start" } else { "game.install" });
     let g2 = game.clone();
     rsx! {
         div { class: "group cursor-pointer animate-pop-in", onclick: move |_| app.open(Modal::Detail(id.clone())),

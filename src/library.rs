@@ -26,7 +26,7 @@ pub fn scan(settings: &Settings) -> ScanResult {
             result.warnings.push(w);
         }
     } else {
-        result.steam.note = Some("Steam ist in den Einstellungen ausgeschaltet.".into());
+        result.steam.note = Some(crate::i18n::t("store.steam_off"));
     }
 
     if settings.epic_enabled {
@@ -34,7 +34,7 @@ pub fn scan(settings: &Settings) -> ScanResult {
         result.games.extend(e.games);
         result.epic = e.status;
     } else {
-        result.epic.note = Some("Epic Games ist in den Einstellungen ausgeschaltet.".into());
+        result.epic.note = Some(crate::i18n::t("store.epic_off"));
     }
 
     for g in result.games.iter_mut() {

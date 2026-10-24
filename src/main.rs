@@ -6,6 +6,7 @@
 
 mod config;
 mod epic;
+mod i18n;
 mod icons;
 mod install;
 mod launch;
@@ -14,6 +15,7 @@ mod model;
 mod problem;
 mod steam;
 mod sys;
+mod theme;
 mod ui;
 mod vdf;
 #[cfg(windows)]
@@ -34,6 +36,7 @@ const ICON_PNG: &[u8] = include_bytes!("../assets/icon-256.png");
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     install_panic_hook();
+    i18n::set_language(&config::load().language);
 
     if args.iter().any(|a| a.eq_ignore_ascii_case("--uninstall")) {
         install::uninstall_interactive();
@@ -82,7 +85,7 @@ fn window_icon() -> Option<WindowIcon> {
 /// Zeigt ein Problem als einfaches Windows-Fenster (wenn die Oberfläche nicht starten kann).
 fn show_startup_problem(p: &problem::Problem) {
     let mut text = format!("{}\n\n", p.what_happened);
-    text.push_str("So behebst du es:\n");
+    text.push_str(&format!("{}:\n", i18n::t("problem.steps")));
     for (i, s) in p.steps.iter().enumerate() {
         text.push_str(&format!("{}. {}\n", i + 1, s));
     }
@@ -117,22 +120,11 @@ fn install_panic_hook() {
         let log = sys::local_dir().join("absturz.log");
         let _ = std::fs::create_dir_all(sys::local_dir());
         let _ = std::fs::write(&log, format!("MAZ Launcher {}\n{}\n", sys::VERSION, msg));
-        let p = problem::Problem {
-            severity: problem::Severity::Error,
-            title: "Der MAZ Launcher ist abgestürzt".into(),
-            what_happened: "Leider ist ein unerwarteter Fehler passiert und der Launcher muss sich schließen.".into(),
-            why: "Das ist ein Fehler im Launcher selbst – nicht deine Schuld.".into(),
-            steps: vec![
-                "Starte den MAZ Launcher einfach noch einmal.".into(),
-                "Passiert es immer wieder? Starte den PC neu.".into(),
-                format!("Hilft das nicht: Melde den Fehler auf GitHub und hänge die Datei „{}“ an. Mit „OK“ öffnet sich die GitHub-Seite.", log.display()),
-            ],
-            fixes: vec![problem::Fix::OpenUrl {
-                label: "Fehler melden".into(),
-                url: format!("{}/issues", sys::GITHUB_URL),
-            }],
-            technical: msg,
-        };
+        let p = problem::Problem::app_crashed(
+            &log.display().to_string(),
+            &msg,
+            &format!("{}/issues", sys::GITHUB_URL),
+        );
         show_startup_problem(&p);
     }));
 }

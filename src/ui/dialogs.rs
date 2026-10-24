@@ -2,11 +2,12 @@
 
 use super::components::*;
 use super::detail::DetailModal;
-use super::settings::LayoutPicker;
+use super::settings::{LanguagePicker, LayoutPicker};
 use super::icons::{Icon, MazLogo};
 use super::state::*;
 use crate::model::CustomGame;
 use crate::problem::{Fix, Problem, Severity};
+use crate::i18n::{t, tf};
 use crate::{config, sys};
 use dioxus::prelude::*;
 use std::path::Path;
@@ -29,7 +30,7 @@ pub fn ModalHost() -> Element {
 
 fn checklist_for(app: App, id: &str) -> Vec<String> {
     let s = app.settings.read();
-    let mut items: Vec<String> = s.checklist.iter().filter(|x| !x.trim().is_empty()).cloned().collect();
+    let mut items: Vec<String> = s.effective_checklist().into_iter().filter(|x| !x.trim().is_empty()).collect();
     if let Some(c) = s.custom(id) {
         for line in c.checklist.lines() {
             let l = line.trim();
@@ -73,21 +74,21 @@ fn ConfirmDialog(id: String) -> Element {
                 div { class: "mx-auto size-16 rounded-2xl maz-gradient-bg grid place-items-center text-white shadow-xl mb-5",
                     Icon { name: "shield", class: "size-8" }
                 }
-                h2 { class: "text-2xl font-bold font-display", "Hast du alles Wichtige deaktiviert?" }
+                h2 { class: "text-2xl font-bold font-display", {t("confirm.title")} }
                 p { class: "text-muted-foreground mt-2 mb-6 text-sm leading-relaxed",
-                    "Bevor „{name}“ startet: Bitte prüfe kurz diese Punkte."
+                    {tf("confirm.text", &[("name", &name)])}
                 }
                 Checklist { items }
                 div { class: "grid grid-cols-2 gap-3 mt-8",
                     Button { variant: ButtonVariant::Outline, size: ButtonSize::Lg, class: "w-full",
                         onclick: move |_| app.open(Modal::NotStarted(id_no.clone())),
                         Icon { name: "x", class: "size-4" }
-                        "Nein"
+                        {t("common.no")}
                     }
                     Button { variant: ButtonVariant::Glow, size: ButtonSize::Lg, class: "w-full",
                         onclick: move |_| start_custom(app, id_yes.clone(), false),
                         Icon { name: "check", class: "size-4" }
-                        "Ja, starten"
+                        {t("confirm.yes")}
                     }
                 }
             }
@@ -107,20 +108,20 @@ fn NotStartedDialog(id: String) -> Element {
                 div { class: "mx-auto size-16 rounded-2xl bg-warning/15 text-warning grid place-items-center mb-5",
                     Icon { name: "hand", class: "size-8" }
                 }
-                h2 { class: "text-2xl font-bold font-display", "Okay – das Spiel wurde nicht gestartet" }
+                h2 { class: "text-2xl font-bold font-display", {t("notstarted.title")} }
                 p { class: "text-muted-foreground mt-2 mb-6 text-sm leading-relaxed",
-                    "Kein Problem! „{name}“ bleibt aus. So geht es weiter:"
+                    {tf("notstarted.text", &[("name", &name)])}
                 }
                 ol { class: "space-y-2 text-left text-sm mb-6",
-                    li { class: "flex gap-3", span { class: "font-bold text-primary", "1." } span { "Deaktiviere bzw. schließe die Punkte aus der Liste unten." } }
-                    li { class: "flex gap-3", span { class: "font-bold text-primary", "2." } span { "Komm zurück in den MAZ Launcher." } }
-                    li { class: "flex gap-3", span { class: "font-bold text-primary", "3." } span { "Klick noch einmal auf „Spielen“ und dann auf „Ja, starten“." } }
+                    li { class: "flex gap-3", span { class: "font-bold text-primary", "1." } span { {t("notstarted.s1")} } }
+                    li { class: "flex gap-3", span { class: "font-bold text-primary", "2." } span { {t("notstarted.s2")} } }
+                    li { class: "flex gap-3", span { class: "font-bold text-primary", "3." } span { {t("notstarted.s3")} } }
                 }
                 Checklist { items }
                 div { class: "grid grid-cols-2 gap-3 mt-8",
-                    Button { variant: ButtonVariant::Outline, size: ButtonSize::Lg, class: "w-full", onclick: move |_| app.close_modal(), "Okay, verstanden" }
+                    Button { variant: ButtonVariant::Outline, size: ButtonSize::Lg, class: "w-full", onclick: move |_| app.close_modal(), {t("notstarted.ok")} }
                     Button { variant: ButtonVariant::Secondary, size: ButtonSize::Lg, class: "w-full", onclick: move |_| app.open(Modal::Confirm(id2.clone())),
-                        "Ich bin jetzt bereit"
+                        {t("notstarted.ready")}
                     }
                 }
             }
@@ -169,23 +170,23 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
                         Icon { name: icon, class: "size-7" }
                     }
                     div {
-                        div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1", "Da hat etwas nicht geklappt" }
+                        div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1", {t("problem.header")} }
                         h2 { class: "text-2xl font-bold leading-tight font-display", "{title}" }
                     }
                 }
                 div { class: "grid gap-4 mt-6",
                     div { class: "rounded-xl bg-muted p-4",
-                        div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5", "Was ist passiert?" }
+                        div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5", {t("problem.what")} }
                         p { class: "text-[15px] leading-relaxed", "{what}" }
                     }
                     div { class: "rounded-xl bg-muted p-4",
-                        div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5", "Warum passiert das?" }
+                        div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5", {t("problem.why")} }
                         p { class: "text-[15px] leading-relaxed text-foreground/85", "{why}" }
                     }
                 }
                 h3 { class: "mt-7 mb-4 text-lg font-bold flex items-center gap-2",
                     Icon { name: "wrench", class: "size-5 text-primary" }
-                    "So behebst du es – Schritt für Schritt"
+                    {t("problem.steps")}
                 }
                 ol { class: "space-y-3",
                     {steps.into_iter().enumerate().map(|(i, st)| {
@@ -215,7 +216,7 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
                 }
                 details { class: "mt-7 rounded-xl border border-border group",
                     summary { class: "cursor-pointer px-4 py-3 text-sm text-muted-foreground hover:text-foreground select-none",
-                        "Technische Details (für Profis oder für eine Fehlermeldung auf GitHub)"
+                        {t("problem.tech")}
                     }
                     pre { class: "px-4 pb-4 text-xs text-muted-foreground whitespace-pre-wrap break-all select-text font-mono", "{tech}" }
                 }
@@ -226,9 +227,9 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
                             }
                         },
                         Icon { name: copy_icon, class: "size-4" }
-                        if copied() { "Kopiert!" } else { "Alles kopieren" }
+                        {t(if copied() { "problem.copied" } else { "problem.copy" })}
                     }
-                    Button { variant: ButtonVariant::Secondary, onclick: move |_| app.close_modal(), "Schließen" }
+                    Button { variant: ButtonVariant::Secondary, onclick: move |_| app.close_modal(), {t("common.close")} }
                 }
             }
         }
@@ -295,20 +296,20 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
         let n = name.peek().trim().to_string();
         let e = exe.peek().trim().trim_matches('"').to_string();
         if n.is_empty() {
-            error.set("Bitte gib dem Spiel einen Namen (oben im ersten Feld).".into());
+            error.set(t("edit.err_name"));
             return;
         }
         if e.is_empty() {
-            error.set("Bitte wähle die Start-Datei des Spiels aus. Klick dazu bei „Programm“ auf „Durchsuchen…“.".into());
+            error.set(t("edit.err_exe"));
             return;
         }
         if !Path::new(&e).exists() {
-            error.set("Diese Datei gibt es nicht. Klick bei „Programm“ auf „Durchsuchen…“ und wähle die Datei neu aus.".into());
+            error.set(t("edit.err_exe_missing"));
             return;
         }
         let w = workdir.peek().trim().trim_matches('"').to_string();
         if !w.is_empty() && !Path::new(&w).is_dir() {
-            error.set("Den Arbeitsordner gibt es nicht. Lass das Feld am besten einfach leer.".into());
+            error.set(t("edit.err_workdir"));
             return;
         }
         let mut game = existing.clone().unwrap_or_else(|| CustomGame {
@@ -331,12 +332,13 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
         refresh_custom(app, gid);
         app.close_modal();
         app.toast(
-            &if is_new { format!("„{n}“ wurde hinzugefügt") } else { format!("„{n}“ wurde gespeichert") },
+            &tf(if is_new { "toast.added" } else { "toast.saved" }, &[("name", &n)]),
             "check-circle",
         );
     };
 
-    let title = if is_new { "Eigenes Spiel hinzufügen" } else { "Spiel bearbeiten" };
+    let checklist_ph = t("edit.checklist_ph");
+    let title = t(if is_new { "lib.add_custom" } else { "fix.edit" });
     let head_icon = if is_new { "plus" } else { "pencil" };
     let err = error();
     rsx! {
@@ -349,12 +351,12 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
                     h2 { class: "text-2xl font-bold font-display", "{title}" }
                 }
                 p { class: "text-sm text-muted-foreground mb-6",
-                    "Für Spiele, die nicht über Steam oder Epic laufen – z. B. Minecraft, Emulatoren, Indie-Spiele oder Spiele von CD."
+                    {t("edit.intro")}
                 }
                 div { class: "grid gap-5",
-                    Field { label: "Programm (Start-Datei) *", hint: "Tipp: Die Start-Datei liegt im Ordner des Spiels und heißt meistens wie das Spiel (endet auf .exe). Nicht „unins000.exe“ oder „setup.exe“ nehmen!",
+                    Field { label: t("edit.exe"), hint: t("edit.exe_hint"),
                         div { class: "flex gap-2",
-                            Input { class: "font-mono text-xs", placeholder: "C:\\Spiele\\MeinSpiel\\MeinSpiel.exe", value: exe(),
+                            Input { class: "font-mono text-xs", placeholder: t("edit.exe_ph"), value: exe(),
                                 oninput: move |v: String| exe.set(v) }
                             Button { variant: ButtonVariant::Secondary, class: "h-10",
                                 onclick: move |_| {
@@ -368,23 +370,23 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
                                     }
                                 },
                                 Icon { name: "folder", class: "size-4" }
-                                "Durchsuchen…"
+                                {t("common.browse")}
                             }
                         }
                     }
-                    Field { label: "Name *",
-                        Input { placeholder: "z. B. Minecraft", value: name(), oninput: move |v: String| name.set(v) }
+                    Field { label: t("edit.name"),
+                        Input { placeholder: t("edit.name_ph"), value: name(), oninput: move |v: String| name.set(v) }
                     }
                     div { class: "grid grid-cols-2 gap-4",
-                        Field { label: "Startparameter (optional)", hint: "Nur wenn du weißt, was das ist – z. B. -windowed",
-                            Input { class: "font-mono text-xs", placeholder: "leer lassen", value: args(), oninput: move |v: String| args.set(v) }
+                        Field { label: t("edit.args"), hint: t("edit.args_hint"),
+                            Input { class: "font-mono text-xs", placeholder: t("edit.empty_ph"), value: args(), oninput: move |v: String| args.set(v) }
                         }
-                        Field { label: "Arbeitsordner (optional)", hint: "Leer lassen = Ordner der Start-Datei (passt fast immer)",
+                        Field { label: t("edit.workdir"), hint: t("edit.workdir_hint"),
                             div { class: "flex gap-2",
-                                Input { class: "font-mono text-xs", placeholder: "automatisch", value: workdir(), oninput: move |v: String| workdir.set(v) }
-                                Button { variant: ButtonVariant::Secondary, size: ButtonSize::Icon, class: "size-10", title: "Ordner wählen",
+                                Input { class: "font-mono text-xs", placeholder: t("edit.auto_ph"), value: workdir(), oninput: move |v: String| workdir.set(v) }
+                                Button { variant: ButtonVariant::Secondary, size: ButtonSize::Icon, class: "size-10", title: t("edit.pick_folder"),
                                     onclick: move |_| {
-                                        if let Some(p) = pick_folder("Arbeitsordner wählen") {
+                                        if let Some(p) = pick_folder(&t("edit.workdir")) {
                                             workdir.set(p);
                                         }
                                     },
@@ -393,9 +395,9 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
                             }
                         }
                     }
-                    Field { label: "Cover-Bild (optional)", hint: "Leer lassen = der Launcher sucht automatisch ein passendes Bild bzw. nimmt das Original-Icon.",
+                    Field { label: t("edit.cover"), hint: t("edit.cover_hint"),
                         div { class: "flex gap-2",
-                            Input { class: "font-mono text-xs", placeholder: "automatisch", value: cover(), oninput: move |v: String| cover.set(v) }
+                            Input { class: "font-mono text-xs", placeholder: t("edit.auto_ph"), value: cover(), oninput: move |v: String| cover.set(v) }
                             Button { variant: ButtonVariant::Secondary, class: "h-10",
                                 onclick: move |_| {
                                     if let Some(p) = pick_image_file() {
@@ -403,22 +405,22 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
                                     }
                                 },
                                 Icon { name: "image", class: "size-4" }
-                                "Bild wählen"
+                                {t("edit.pick_image")}
                             }
                         }
                     }
                     div { class: "rounded-xl border border-border px-4",
                         SwitchRow {
-                            title: "Immer als Administrator starten",
-                            description: "Nur einschalten, wenn das Spiel sonst nicht startet. Windows fragt dann jedes Mal nach.",
+                            title: t("edit.admin"),
+                            description: t("edit.admin_hint"),
                             checked: admin(),
                             onchange: move |v: bool| admin.set(v),
                         }
                     }
-                    Field { label: "Zusätzliche Punkte für die Sicherheitsfrage (optional)", hint: "Ein Punkt pro Zeile. Wird zusätzlich zu den allgemeinen Punkten vor jedem Start gefragt.",
+                    Field { label: t("edit.checklist"), hint: t("edit.checklist_hint"),
                         textarea {
                             class: "min-h-20 w-full rounded-md border border-input bg-background/60 px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40",
-                            placeholder: "z. B. Mod-Manager geschlossen",
+                            placeholder: "{checklist_ph}",
                             value: "{checklist}",
                             oninput: move |e| checklist.set(e.value()),
                         }
@@ -431,10 +433,10 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
                     }
                 }
                 div { class: "mt-7 flex justify-end gap-3",
-                    Button { variant: ButtonVariant::Ghost, onclick: move |_| app.close_modal(), "Abbrechen" }
+                    Button { variant: ButtonVariant::Ghost, onclick: move |_| app.close_modal(), {t("common.cancel")} }
                     Button { variant: ButtonVariant::Glow, size: ButtonSize::Lg, onclick: save,
                         Icon { name: "check", class: "size-4" }
-                        if is_new { "Hinzufügen" } else { "Speichern" }
+                        {t(if is_new { "edit.add" } else { "edit.save" })}
                     }
                 }
             }
@@ -450,12 +452,12 @@ fn DeleteDialog(id: String) -> Element {
     rsx! {
         Dialog { on_close: move |_| app.close_modal(), class: "max-w-md",
             div { class: "p-8",
-                h2 { class: "text-xl font-bold", "„{name}“ aus der Liste entfernen?" }
+                h2 { class: "text-xl font-bold", {tf("delete.title", &[("name", &name)])} }
                 p { class: "text-sm text-muted-foreground mt-3 leading-relaxed",
-                    "Keine Sorge: Das Spiel selbst wird NICHT gelöscht. Es verschwindet nur aus dem MAZ Launcher und du kannst es jederzeit wieder hinzufügen."
+                    {t("delete.text")}
                 }
                 div { class: "mt-7 flex justify-end gap-3",
-                    Button { variant: ButtonVariant::Ghost, onclick: move |_| app.close_modal(), "Abbrechen" }
+                    Button { variant: ButtonVariant::Ghost, onclick: move |_| app.close_modal(), {t("common.cancel")} }
                     Button { variant: ButtonVariant::Destructive,
                         onclick: move |_| {
                             let gid = id2.clone();
@@ -465,10 +467,10 @@ fn DeleteDialog(id: String) -> Element {
                             });
                             refresh_custom(app, id2.clone());
                             app.close_modal();
-                            app.toast("Spiel aus der Liste entfernt", "trash");
+                            app.toast(&t("toast.removed"), "trash");
                         },
                         Icon { name: "trash", class: "size-4" }
-                        "Entfernen"
+                        {t("delete.button")}
                     }
                 }
             }
@@ -493,20 +495,22 @@ fn WelcomeDialog() -> Element {
                 div { class: "flex items-center gap-4",
                     MazLogo { class: "size-14 text-base" }
                     div {
-                        h2 { class: "text-3xl font-black font-display", "Willkommen beim " span { class: "maz-gradient-text", "MAZ Launcher" } }
-                        p { class: "text-muted-foreground mt-1", "Alle deine Spiele an einem Ort – Steam, Epic Games und deine eigenen." }
+                        h2 { class: "text-3xl font-black font-display", {t("welcome.title")} " " span { class: "maz-gradient-text", "MAZ Launcher" } }
+                        p { class: "text-muted-foreground mt-1", {t("welcome.sub")} }
                     }
                 }
                 div { class: "grid grid-cols-3 gap-4 mt-8",
-                    WelcomeStep { icon: "plug", title: "Automatisch verbunden", text: "Steam- und Epic-Spiele werden von selbst gefunden. Du musst nichts einrichten." }
-                    WelcomeStep { icon: "plus", title: "Eigene Spiele", text: "Mit „Spiel hinzufügen“ packst du jedes andere Spiel dazu." }
-                    WelcomeStep { icon: "palette", title: "Dein Look", text: "Wähle unten deinen Stil. Mehr Farben gibt es in den Einstellungen." }
+                    WelcomeStep { icon: "plug", title: t("welcome.s1t"), text: t("welcome.s1") }
+                    WelcomeStep { icon: "plus", title: t("welcome.s2t"), text: t("welcome.s2") }
+                    WelcomeStep { icon: "palette", title: t("welcome.s3t"), text: t("welcome.s3") }
                 }
-                h3 { class: "mt-8 mb-3 font-semibold", "Wie soll deine Bibliothek aussehen?" }
+                h3 { class: "mt-8 mb-3 font-semibold", {t("welcome.layout")} }
+                LanguagePicker {}
+                h3 { class: "mt-6 mb-3 font-semibold", {t("welcome.look")} }
                 LayoutPicker {}
                 div { class: "mt-8 flex justify-end",
                     Button { variant: ButtonVariant::Glow, size: ButtonSize::Lg, onclick: move |_| finish(),
-                        "Los geht's"
+                        {t("welcome.go")}
                         Icon { name: "chevron-right", class: "size-4" }
                     }
                 }

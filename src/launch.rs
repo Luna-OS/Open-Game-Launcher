@@ -27,7 +27,7 @@ pub fn launch_store(game: &Game) -> Result<(), Problem> {
             }
             sys::open_url(uri).map_err(|code| Problem::launcher_uri_failed(&game.name, "Epic Games", code, uri))
         }
-        LaunchTarget::Custom => Err(Problem::unknown(&game.name, "Interner Fehler: eigenes Spiel ohne Daten")),
+        LaunchTarget::Custom => Err(Problem::unknown(&game.name, "Internal error: custom game without data")),
     }
 }
 
@@ -35,7 +35,7 @@ pub fn launch_store(game: &Game) -> Result<(), Problem> {
 pub fn precheck_custom(c: &CustomGame) -> Result<(), Problem> {
     let exe = c.exe.trim().trim_matches('"');
     if exe.is_empty() {
-        return Err(Problem::exe_missing(&c.name, "(keine Datei ausgewählt)", true));
+        return Err(Problem::exe_missing(&c.name, "(-)", true));
     }
     if !Path::new(exe).exists() {
         return Err(Problem::exe_missing(&c.name, exe, sys::drive_exists(exe)));

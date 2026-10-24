@@ -340,39 +340,42 @@ pub fn url_encode(s: &str) -> String {
     out
 }
 
+fn decimal(v: f64) -> String {
+    format!("{v:.1}").replace('.', &crate::i18n::t("fmt.decimal"))
+}
+
 pub fn format_bytes(b: u64) -> String {
     let gb = b as f64 / 1_073_741_824.0;
     if gb >= 1.0 {
-        format!("{} GB", format!("{gb:.1}").replace('.', ","))
+        format!("{} GB", decimal(gb))
     } else {
         format!("{:.0} MB", b as f64 / 1_048_576.0)
     }
 }
 
 pub fn format_playtime(min: u64) -> String {
+    use crate::i18n::tf;
     if min < 60 {
-        format!("{min} Min.")
+        tf("fmt.minutes", &[("n", &min.to_string())])
     } else {
         let h = min as f64 / 60.0;
-        if h < 10.0 {
-            format!("{} Std.", format!("{h:.1}").replace('.', ","))
-        } else {
-            format!("{:.0} Std.", h)
-        }
+        let n = if h < 10.0 { decimal(h) } else { format!("{h:.0}") };
+        tf("fmt.hours", &[("n", &n)])
     }
 }
 
 pub fn format_ago(ts: u64) -> String {
+    use crate::i18n::{t, tf};
     if ts == 0 {
-        return "Nie".into();
+        return t("fmt.never");
     }
     let diff = now_secs().saturating_sub(ts);
     match diff {
-        0..=119 => "Gerade eben".into(),
-        120..=3599 => format!("vor {} Min.", diff / 60),
-        3600..=86_399 => format!("vor {} Std.", diff / 3600),
-        86_400..=172_799 => "Gestern".into(),
-        _ => format!("vor {} Tagen", diff / 86_400),
+        0..=119 => t("fmt.just_now"),
+        120..=3599 => tf("fmt.min_ago", &[("n", &(diff / 60).to_string())]),
+        3600..=86_399 => tf("fmt.hours_ago", &[("n", &(diff / 3600).to_string())]),
+        86_400..=172_799 => t("fmt.yesterday"),
+        _ => tf("fmt.days_ago", &[("n", &(diff / 86_400).to_string())]),
     }
 }
 
@@ -398,6 +401,7 @@ mod tests {
 
     #[test]
     fn formatting() {
+        crate::i18n::set_language("de");
         assert_eq!(url_encode("Halo: MCC"), "Halo%3A%20MCC");
         assert_eq!(format_playtime(30), "30 Min.");
         assert_eq!(format_playtime(90), "1,5 Std.");

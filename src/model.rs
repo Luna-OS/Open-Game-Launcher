@@ -11,11 +11,11 @@ pub enum Source {
 }
 
 impl Source {
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Source::Steam => "Steam",
-            Source::Epic => "Epic Games",
-            Source::Custom => "Eigenes Spiel",
+            Source::Steam => "Steam".into(),
+            Source::Epic => "Epic Games".into(),
+            Source::Custom => crate::i18n::t("source.custom"),
         }
     }
 }
@@ -95,33 +95,34 @@ pub mod layout {
     pub const EPIC: &str = "epic";
 }
 
-pub const THEMES: &[(&str, &str, &str, &str)] = &[
-    // (id, Name, Hintergrund, Akzent) – Farben nur für die Vorschau
-    ("maz", "MAZ Violett", "#0a0a12", "#8b5cf6"),
-    ("midnight", "Mitternacht", "#070d1a", "#3b82f6"),
-    ("neon", "Neon", "#0b0613", "#ff2bd6"),
-    ("ember", "Glut", "#120a07", "#f97316"),
-    ("forest", "Wald", "#07110c", "#22c55e"),
-    ("sakura", "Sakura", "#140a10", "#f472b6"),
-    ("oled", "OLED Schwarz", "#000000", "#f5f5f5"),
-    ("light", "Hell", "#f4f5fa", "#6d28d9"),
-];
-
+/// Standard-Punkte der Sicherheitsfrage (in der gewählten Sprache)
 pub fn default_checklist() -> Vec<String> {
-    vec![
-        "Antivirus / Echtzeitschutz (falls das Spiel das braucht)".into(),
-        "Overlays (Discord, Steam, GeForce Experience, Xbox Game Bar)".into(),
-        "Aufnahme- und Streaming-Programme (OBS, Medal, ShadowPlay)".into(),
-        "VPN und Proxy".into(),
-        "Unnötige Programme im Hintergrund (Browser, Downloads)".into(),
-    ]
+    crate::i18n::tl("checklist.default")
 }
+
+/// Frühere deutsche Standardliste – wird beim Laden durch die übersetzte ersetzt
+pub const OLD_GERMAN_CHECKLIST: &[&str] = &[
+    "Antivirus / Echtzeitschutz (falls das Spiel das braucht)",
+    "Overlays (Discord, Steam, GeForce Experience, Xbox Game Bar)",
+    "Aufnahme- und Streaming-Programme (OBS, Medal, ShadowPlay)",
+    "VPN und Proxy",
+    "Unnötige Programme im Hintergrund (Browser, Downloads)",
+];
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
+    /// Sprache ("auto" = Windows-Sprache)
+    pub language: String,
+
     // Design
     pub theme: String,
+    pub custom_themes: Vec<crate::theme::CustomTheme>,
+    /// Hintergrundbild (leer = keins)
+    pub wallpaper: String,
+    /// Wie stark das Hintergrundbild abgedunkelt wird (0–90 %)
+    pub wallpaper_dim: u8,
+    pub wallpaper_blur: bool,
     pub layout: String,
     pub authentic_colors: bool,
     /// Eigene Akzentfarbe (#rrggbb), leer = Farbe des Themes
@@ -140,6 +141,7 @@ pub struct Settings {
     pub online_art: bool,
 
     // Eigene Spiele
+    /// Leer = Standardliste in der gewählten Sprache
     pub checklist: Vec<String>,
     pub custom_games: Vec<CustomGame>,
 
@@ -161,7 +163,12 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
+            language: "auto".into(),
             theme: "maz".into(),
+            custom_themes: Vec::new(),
+            wallpaper: String::new(),
+            wallpaper_dim: 60,
+            wallpaper_blur: false,
             layout: layout::MAZ.into(),
             authentic_colors: true,
             accent: String::new(),
@@ -174,7 +181,7 @@ impl Default for Settings {
             steam_id: String::new(),
             steam_show_uninstalled: true,
             online_art: true,
-            checklist: default_checklist(),
+            checklist: Vec::new(),
             custom_games: Vec::new(),
             minimize_on_launch: true,
             sort: "name".into(),
@@ -198,6 +205,14 @@ impl Settings {
     }
     pub fn custom(&self, id: &str) -> Option<&CustomGame> {
         self.custom_games.iter().find(|c| c.id == id)
+    }
+    /// Punkte der Sicherheitsfrage (eigene oder Standard)
+    pub fn effective_checklist(&self) -> Vec<String> {
+        if self.checklist.is_empty() {
+            default_checklist()
+        } else {
+            self.checklist.clone()
+        }
     }
     pub fn last_played(&self, id: &str) -> u64 {
         self.last_played.get(id).copied().unwrap_or(0)

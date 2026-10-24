@@ -2,6 +2,7 @@
 
 use crate::model::{normalize_name, Game, LaunchTarget, Settings, Source, StoreStatus};
 use crate::problem::{Fix, Problem};
+use crate::i18n::{t, tf};
 use crate::{config, launch, library, sys};
 use dioxus::prelude::*;
 
@@ -18,17 +19,17 @@ pub enum Filter {
 }
 
 impl Filter {
-    pub fn label(self) -> &'static str {
-        match self {
-            Filter::All => "Alle Spiele",
-            Filter::Installed => "Installiert",
-            Filter::Steam => "Steam",
-            Filter::Epic => "Epic Games",
-            Filter::Custom => "Meine Spiele",
-            Filter::Favorites => "Favoriten",
-            Filter::Recent => "Zuletzt gespielt",
-            Filter::Hidden => "Ausgeblendet",
-        }
+    pub fn label(self) -> String {
+        t(match self {
+            Filter::All => "filter.all",
+            Filter::Installed => "filter.installed",
+            Filter::Steam => "filter.steam",
+            Filter::Epic => "filter.epic",
+            Filter::Custom => "filter.custom",
+            Filter::Favorites => "filter.favorites",
+            Filter::Recent => "filter.recent",
+            Filter::Hidden => "filter.hidden",
+        })
     }
     pub fn icon(self) -> &'static str {
         match self {
@@ -47,6 +48,7 @@ impl Filter {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum SettingsTab {
     Design,
+    Language,
     Connections,
     Custom,
     General,
@@ -109,7 +111,7 @@ impl App {
         f(&mut s.write());
         let snapshot = s.peek().clone();
         if let Err(e) = config::save(&snapshot) {
-            self.toast(&format!("Einstellungen konnten nicht gespeichert werden: {e}"), "alert");
+            self.toast(&tf("toast.save_failed", &[("error", &e.to_string())]), "alert");
         }
     }
 
@@ -132,7 +134,7 @@ impl App {
         let mut toasts = self.toasts;
         toasts.write().push(Toast { id, text: text.to_string(), icon });
         spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_millis(3800)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(5000)).await;
             toasts.write().retain(|t| t.id != id);
         });
     }
@@ -283,11 +285,11 @@ pub fn play(app: App, id: String) {
             Ok(()) => {
                 let installing = matches!(game.launch, LaunchTarget::SteamInstall(_));
                 if installing {
-                    app.toast(&format!("Steam öffnet die Installation von „{}“ …", game.name), "download");
+                    app.toast(&tf("toast.installing", &[("name", &game.name)]), "download");
                 } else {
                     mark_played(app, &id);
                     let store = if game.source == Source::Steam { "Steam" } else { "Epic Games" };
-                    app.toast(&format!("„{}“ wird über {store} gestartet …", game.name), "rocket");
+                    app.toast(&tf("toast.started_via", &[("name", &game.name), ("store", store)]), "rocket");
                     if app.settings.peek().minimize_on_launch {
                         minimize_window();
                     }
@@ -313,7 +315,7 @@ pub fn start_custom(app: App, id: String, force_admin: bool) {
     match launch::launch_custom(&c, force_admin) {
         Ok(child) => {
             mark_played(app, &id);
-            app.toast(&format!("„{}“ wird gestartet …", c.name), "rocket");
+            app.toast(&tf("toast.started", &[("name", &c.name)]), "rocket");
             if app.settings.peek().minimize_on_launch {
                 minimize_window();
             }
@@ -391,7 +393,7 @@ pub fn toggle_hidden(app: App, id: &str) {
             hide = true;
         }
     });
-    app.toast(if hide { "Spiel ausgeblendet (wieder einblenden: Filter „Ausgeblendet“)" } else { "Spiel wieder eingeblendet" }, "eye-off");
+    app.toast(&t(if hide { "toast.hidden" } else { "toast.unhidden" }), "eye-off");
 }
 
 /// Eigenes Cover für irgendein Spiel wählen.
@@ -401,7 +403,7 @@ pub fn pick_cover(app: App, id: &str) {
         app.update(|s| {
             s.cover_overrides.insert(id, path);
         });
-        app.toast("Cover geändert", "image");
+        app.toast(&t("toast.cover_changed"), "image");
     }
 }
 
@@ -420,9 +422,9 @@ pub fn pick_game_file(start: Option<&str>) -> Option<String> {
     #[cfg(windows)]
     {
         let mut d = rfd::FileDialog::new()
-            .set_title("Spiel auswählen – wähle die Start-Datei (meistens .exe)")
-            .add_filter("Spiele & Programme", &["exe", "lnk", "bat", "cmd", "url"])
-            .add_filter("Alle Dateien", &["*"]);
+            .set_title(t("pick.game_title"))
+            .add_filter(t("pick.game_filter"), &["exe", "lnk", "bat", "cmd", "url"])
+            .add_filter(t("pick.all_files"), &["*"]);
         if let Some(s) = start.filter(|s| !s.is_empty()) {
             if let Some(parent) = std::path::Path::new(s).parent() {
                 d = d.set_directory(parent);
@@ -456,8 +458,8 @@ pub fn pick_image_file() -> Option<String> {
     #[cfg(windows)]
     {
         rfd::FileDialog::new()
-            .set_title("Cover-Bild auswählen (am besten im Hochformat, z. B. 600×900)")
-            .add_filter("Bilder", &["jpg", "jpeg", "png", "webp", "gif", "bmp"])
+            .set_title(t("pick.cover_title"))
+            .add_filter(t("pick.images"), &["jpg", "jpeg", "png", "webp", "gif", "bmp"])
             .pick_file()
             .map(|p| p.to_string_lossy().to_string())
     }

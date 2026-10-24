@@ -1,0 +1,530 @@
+# MAZ Launcher – Português
+lang.name = Português
+
+common.yes = Sim
+common.no = Não
+common.close = Fechar
+common.cancel = Cancelar
+common.edit = Editar
+common.reset = Redefinir
+common.browse = Procurar…
+
+win.minimize = Minimizar
+win.maximize = Maximizar
+
+fmt.decimal = ,
+fmt.minutes = {n} min
+fmt.hours = {n} h
+fmt.never = Nunca
+fmt.just_now = Agora mesmo
+fmt.min_ago = há {n} min
+fmt.hours_ago = há {n} h
+fmt.yesterday = Ontem
+fmt.days_ago = há {n} dias
+
+source.custom = Jogo próprio
+badge.custom = PRÓPRIO
+badge.not_installed = NÃO INSTALADO
+
+filter.all = Todos os jogos
+filter.installed = Instalados
+filter.steam = Steam
+filter.epic = Epic Games
+filter.custom = Meus jogos
+filter.favorites = Favoritos
+filter.recent = Jogados recentemente
+filter.hidden = Ocultos
+
+nav.library = Biblioteca
+nav.platforms = Plataformas
+nav.settings = Configurações
+
+lib.search = Pesquisar jogos …
+lib.reload = Recarregar
+lib.reload_tip = Recarregar biblioteca (procura jogos novos)
+lib.count = {n} jogos
+lib.add = Adicionar jogo
+lib.add_custom = Adicionar jogo próprio
+lib.how_fix = Como resolver
+lib.dismiss = Ocultar
+
+sort.title = Ordenar
+sort.name = Nome (A–Z)
+sort.recent = Jogados recentemente
+sort.playtime = Mais jogados
+sort.installed = Instalados primeiro
+
+game.play = Jogar
+game.install = Instalar
+game.details = Detalhes
+game.not_installed = Não instalado
+hero.continue = Continuar jogando · {ago}
+
+steam.home = Início
+steam.f_all = JOGOS: TODOS
+steam.search = Pesquisar
+epic.search = Pesquisar títulos
+epic.titles = {n} títulos
+epic.start = Iniciar
+
+empty.search.title = Nada encontrado
+empty.search.text = Nenhum jogo corresponde à sua pesquisa. Verifique a escrita ou apague o texto.
+empty.fav.title = Ainda sem favoritos
+empty.fav.text = Abra um jogo e clique na estrela – ele aparecerá aqui.
+empty.recent.title = Nada jogado ainda
+empty.recent.text = Assim que você iniciar um jogo pelo MAZ Launcher, ele aparece aqui.
+empty.custom.title = Ainda sem jogos próprios
+empty.custom.text = Adicione jogos que não rodam pela Steam ou Epic – por ex. Minecraft, emuladores ou jogos indie.
+empty.hidden.title = Nenhum jogo oculto
+empty.hidden.text = Os jogos que você ocultar aparecem aqui.
+empty.steam.title = Nenhum jogo da Steam encontrado
+empty.steam.text = A Steam está instalada e você instalou jogos nela? Então clique em "Recarregar". Para ver todos os seus jogos (também os não instalados), adicione uma chave de API da Steam (Configurações → Conexões).
+empty.epic.title = Nenhum jogo da Epic encontrado
+empty.epic.text = O Epic Games Launcher está instalado e você instalou jogos nele? Então clique em "Recarregar".
+empty.all.title = Ainda não há nada aqui
+empty.all.text = Nenhum jogo foi encontrado. Instale jogos pela Steam ou Epic Games – ou adicione seus próprios jogos.
+
+info.platform = Plataforma
+info.status = Status
+info.playtime = Tempo de jogo
+info.launches = Iniciado pelo MAZ
+info.size = Tamanho
+info.folder = Pasta
+info.args = Parâmetros de inicialização
+info.admin = Como administrador
+detail.info = Informações
+detail.note_install = Este jogo é seu, mas não está instalado. "Instalar" abre a Steam.
+detail.note_custom = Antes de iniciar, você será perguntado se desativou tudo o que é importante.
+
+act.fav = Adicionar aos favoritos
+act.unfav = Remover dos favoritos
+act.hide = Ocultar
+act.unhide = Mostrar novamente
+act.cover = Escolher capa própria
+act.cover_reset = Restaurar capa original
+act.store = Ver na loja da Steam
+act.remove = Remover da lista
+
+confirm.title = Você desativou tudo o que é importante?
+confirm.text = Antes de "{name}" iniciar: verifique estes pontos.
+confirm.yes = Sim, iniciar
+notstarted.title = Ok – o jogo não foi iniciado
+notstarted.text = Sem problema! "{name}" continua fechado. Veja como seguir:
+notstarted.s1 = Desative ou feche os itens da lista abaixo.
+notstarted.s2 = Volte para o MAZ Launcher.
+notstarted.s3 = Clique novamente em "Jogar" e depois em "Sim, iniciar".
+notstarted.ok = Ok, entendi
+notstarted.ready = Agora estou pronto
+checklist.default = Antivírus / proteção em tempo real (se o jogo precisar)\nOverlays (Discord, Steam, GeForce Experience, Xbox Game Bar)\nProgramas de gravação e streaming (OBS, Medal, ShadowPlay)\nVPN e proxy\nProgramas desnecessários em segundo plano (navegador, downloads)
+
+edit.intro = Para jogos que não rodam pela Steam ou Epic – por ex. Minecraft, emuladores, jogos indie ou jogos em disco.
+edit.exe = Programa (arquivo de início) *
+edit.exe_hint = Dica: o arquivo de início fica na pasta do jogo e geralmente tem o nome do jogo (termina com .exe). Não escolha "unins000.exe" nem "setup.exe"!
+edit.exe_ph = C:\Jogos\MeuJogo\MeuJogo.exe
+edit.name = Nome *
+edit.name_ph = por ex. Minecraft
+edit.args = Parâmetros de inicialização (opcional)
+edit.args_hint = Só se você souber o que é – por ex. -windowed
+edit.empty_ph = deixar vazio
+edit.workdir = Pasta de trabalho (opcional)
+edit.workdir_hint = Vazio = pasta do arquivo de início (quase sempre certo)
+edit.auto_ph = automático
+edit.pick_folder = Escolher pasta
+edit.cover = Imagem de capa (opcional)
+edit.cover_hint = Vazio = o launcher procura uma imagem adequada automaticamente ou usa o ícone original.
+edit.pick_image = Escolher imagem
+edit.admin = Sempre iniciar como administrador
+edit.admin_hint = Ative só se o jogo não iniciar de outra forma. O Windows vai perguntar todas as vezes.
+edit.checklist = Pontos extras para a pergunta de segurança (opcional)
+edit.checklist_hint = Um ponto por linha. É perguntado além dos pontos gerais antes de cada início.
+edit.checklist_ph = por ex. Gerenciador de mods fechado
+edit.err_name = Dê um nome ao jogo.
+edit.err_exe = Escolha o arquivo de início do jogo. Clique em "Procurar…" ao lado de "Programa".
+edit.err_exe_missing = Este arquivo não existe. Clique em "Procurar…" ao lado de "Programa" e escolha-o novamente.
+edit.err_workdir = A pasta de trabalho não existe. O melhor é deixar o campo vazio.
+edit.add = Adicionar
+edit.save = Salvar
+
+delete.title = Remover "{name}" da lista?
+delete.text = Fique tranquilo: o jogo em si NÃO é apagado. Ele só some do MAZ Launcher e você pode adicioná-lo novamente quando quiser.
+delete.button = Remover
+
+toast.save_failed = Não foi possível salvar as configurações: {error}
+toast.installing = A Steam está abrindo a instalação de "{name}" …
+toast.started_via = Iniciando "{name}" pela {store} …
+toast.started = Iniciando "{name}" …
+toast.hidden = Jogo oculto (mostrar novamente: filtro "Ocultos")
+toast.unhidden = O jogo está visível novamente
+toast.cover_changed = Capa alterada
+toast.added = "{name}" foi adicionado
+toast.saved = "{name}" foi salvo
+toast.removed = Jogo removido da lista
+toast.shortcut = Atalho criado na área de trabalho
+toast.cache_cleared = Cache de imagens limpo – recarregando …
+
+pick.game_title = Escolher jogo – selecione o arquivo de início (geralmente .exe)
+pick.game_filter = Jogos e programas
+pick.all_files = Todos os arquivos
+pick.cover_title = Escolher imagem
+pick.images = Imagens
+
+welcome.title = Bem-vindo ao
+welcome.sub = Todos os seus jogos em um só lugar – Steam, Epic Games e os seus.
+welcome.s1t = Conectado automaticamente
+welcome.s1 = Os jogos da Steam e da Epic são encontrados sozinhos. Você não precisa configurar nada.
+welcome.s2t = Seus próprios jogos
+welcome.s2 = Com "Adicionar jogo" você adiciona qualquer outro jogo.
+welcome.s3t = Seu visual
+welcome.s3 = Escolha seu estilo abaixo. Crie seus próprios designs nas configurações.
+welcome.layout = Idioma
+welcome.look = Como sua biblioteca deve parecer?
+welcome.go = Vamos lá
+
+set.back = Voltar à biblioteca
+set.tab.design = Design
+set.tab.language = Idioma
+set.tab.connections = Conexões
+set.tab.custom = Meus jogos
+set.tab.general = Geral
+set.tab.about = Sobre
+
+lang.auto = Automático (Windows)
+lang.sub = Todo o launcher – incluindo todas as explicações de erros – no seu idioma.
+lang.choose = Escolher idioma
+lang.own = Adicionar seu próprio idioma
+lang.own_text = Seu idioma está faltando? Salve o modelo, traduza os textos e salve o arquivo como por ex. "nl.txt" na pasta de idiomas. Depois de reiniciar, ele aparece aqui.
+lang.template = Salvar modelo
+lang.template_saved = Modelo salvo (template-en.txt)
+lang.folder = Abrir pasta de idiomas
+
+design.sub = Deixe o launcher do seu jeito. As alterações são aplicadas na hora.
+design.layout = Visualização da biblioteca
+design.layout_text = Como seus jogos devem ser exibidos?
+design.authentic = Cores originais no estilo Steam e Epic
+design.authentic_text = Ligado = parece o original. Desligado = usa o seu design (abaixo).
+design.my_themes = Meus designs
+design.my_themes_text = Crie seu próprio design com suas cores favoritas – ou cole um design que alguém te enviou.
+design.presets = Designs prontos
+design.presets_text = Basta um clique.
+design.accent = Cor de destaque própria
+design.accent_text = Colore botões, marcações e efeitos de brilho (para designs prontos).
+design.wallpaper = Imagem de fundo
+design.wallpaper_text = Sua própria imagem atrás da biblioteca.
+design.wallpaper_pick = Escolher imagem
+design.wallpaper_remove = Remover
+design.wallpaper_dim = Escurecer
+design.wallpaper_blur = Desfocar
+design.display = Exibição
+design.card_size = Tamanho dos cartões
+design.card_size_text = Pequeno = muitos, Grande = poucos e grandes
+design.small = Pequeno
+design.medium = Médio
+design.large = Grande
+design.names = Mostrar nomes abaixo das capas
+design.animations = Animações
+design.animations_text = Desative se seu PC for lento ou se o movimento te incomodar.
+
+layout.maz = MAZ (estilo próprio)
+layout.maz_desc = Moderno com grande banner de continuar jogando
+layout.steam = Como a Steam
+layout.steam_desc = Lista de jogos à esquerda, detalhes com imagem grande
+layout.epic = Como a Epic Games
+layout.epic_desc = Cartões grandes, filtros no topo
+
+theme.maz = MAZ Violeta
+theme.midnight = Meia-noite
+theme.neon = Neon
+theme.synthwave = Synthwave
+theme.ocean = Oceano
+theme.forest = Floresta
+theme.ember = Brasa
+theme.crimson = Carmesim
+theme.gold = Ouro
+theme.sakura = Sakura
+theme.dracula = Drácula
+theme.nord = Nord
+theme.coffee = Café
+theme.oled = Preto OLED
+theme.light = Claro
+theme.mint = Menta
+theme.new = Novo design
+theme.new_name = Meu design {n}
+theme.unnamed = Sem nome
+theme.edit = Editar
+theme.editor = Editor de design
+theme.editor_text = Mude as cores – você vê o resultado na hora em todo o launcher.
+theme.name = Nome
+theme.c.bg = Fundo
+theme.c.card = Cartões e janelas
+theme.c.sidebar = Barra lateral
+theme.c.text = Texto
+theme.c.muted = Texto (esmaecido)
+theme.c.accent = Destaque
+theme.c.accent2 = Destaque 2 (degradê)
+theme.c.border = Bordas
+theme.radius = Cantos
+theme.r0 = Retos
+theme.r1 = Leves
+theme.r2 = Arredondados
+theme.r3 = Muito arredondados
+theme.done = Pronto
+theme.share = Copiar como código
+theme.copied = Código do design copiado – envie para seus amigos!
+theme.duplicate = Duplicar
+theme.copy_of = {name} (cópia)
+theme.delete = Excluir
+theme.import_ph = Colar código de design (MAZTHEME:…)
+theme.import = Importar
+theme.import_ok = Design importado
+theme.import_bad = Isso não é um código de design válido.
+theme.imported = Design importado
+
+conn.sub = O MAZ Launcher encontra seus jogos no PC automaticamente. Você não precisa entrar em lugar nenhum – suas senhas ficam com a Steam e a Epic.
+conn.connected = {store} está conectado
+conn.not_found = {store} não foi encontrado
+conn.account = Conectado como {name}
+conn.installed = {n} jogos instalados
+conn.owned = {n} jogos na sua conta
+conn.show_steam = Mostrar jogos da Steam
+conn.show_epic = Mostrar jogos da Epic
+conn.all_title = Mostrar todos os seus jogos da Steam (opcional)
+conn.all_text = Sem chave você vê todos os jogos instalados. Com uma chave de API da Steam gratuita você vê TODOS os jogos da sua conta – também os não instalados – e seu tempo de jogo.
+conn.key_steps = Clique em "Obter chave de API" e entre na Steam.\nEm "Nome de domínio" digite simplesmente localhost, marque a caixa e clique em "Registrar".\nCopie a chave (32 caracteres) e cole aqui. Pronto!
+conn.key_ph = Chave de API da Steam
+conn.id_ph = ID da Steam (vazio = detectado automaticamente)
+conn.uninstalled = Mostrar jogos não instalados
+conn.uninstalled_text = Aparecem em cinza. Um clique abre a instalação na Steam.
+conn.images = Imagens
+conn.online_art = Carregar capas da internet
+conn.online_art_text = Busca capas originais bonitas (também para jogos da Epic e próprios, pela loja da Steam). Desligado = só imagens que já estão no seu PC.
+conn.reload_now = Recarregar agora
+store.steam_not_found = A Steam não foi encontrada neste PC.
+store.steam_off = A Steam está desativada nas configurações.
+store.epic_not_found = O Epic Games Launcher não foi encontrado neste PC.
+store.epic_no_games = Epic Games Launcher encontrado, mas ainda sem jogos instalados.
+store.epic_note = A Epic não compartilha jogos não instalados sem login – todos os jogos instalados são exibidos.
+store.epic_off = A Epic Games está desativada nas configurações.
+
+custom.sub = Jogos que você mesmo adicionou e a pergunta de segurança antes de iniciar.
+custom.check_title = Pergunta de segurança antes de cada início
+custom.check_text = Antes de um dos seus jogos iniciar, o launcher pergunta: "Você desativou tudo o que é importante?" Se responder "Não", o jogo não inicia. Aqui você decide quais pontos aparecem.
+custom.delete_item = Excluir ponto
+custom.add_item = Adicionar ponto
+custom.reset = Restaurar padrão
+custom.games = Seus jogos
+custom.games_text = Editar ou remover (o jogo em si nunca é apagado).
+custom.none = Você ainda não adicionou jogos próprios.
+
+general.sub = Comportamento, instalação e dados.
+general.behavior = Comportamento
+general.minimize = Minimizar o launcher quando um jogo iniciar
+general.minimize_text = Abre espaço para o jogo. Se um dos seus jogos fechar na hora, o launcher volta com uma explicação.
+general.install = Instalação
+general.installed_in = Instalado em
+general.portable = Rodando sem instalação (portátil) a partir de
+general.shortcut = Criar atalho na área de trabalho
+general.uninstall = Desinstalar
+general.data = Dados
+general.settings_folder = Abrir pasta de configurações
+general.reload_images = Recarregar imagens
+
+about.version = Versão {v}
+about.text = Todos os seus jogos da Steam, Epic Games e os seus em um só lugar. Feito 100 % em Rust com Dioxus e componentes no estilo do rust-ui.
+about.github = Ver no GitHub
+about.legal = Steam é uma marca da Valve Corporation, Epic Games é uma marca da Epic Games, Inc. O MAZ Launcher é um projeto independente e não é afiliado a nenhuma delas. Nenhum jogo é baixado e nenhuma proteção é contornada – os jogos sempre iniciam pelo launcher original.
+
+inst.tagline = Todos os seus jogos. Um launcher.
+inst.perk1 = Jogos da Steam e da Epic automaticamente
+inst.perk2 = Seus próprios jogos com um clique
+inst.perk3 = Muitos designs – ou o seu
+inst.perk4 = Erros explicados de forma simples
+inst.perk5 = Em vários idiomas
+inst.title = Instalação
+inst.sub = Só um clique. Você não precisa de direitos de administrador.
+inst.exists = O MAZ Launcher já está instalado
+inst.exists_text = "Instalar" atualiza para esta versão. Suas configurações são mantidas.
+inst.open_installed = Abrir versão instalada
+inst.folder = Pasta de instalação
+inst.pick = Onde o MAZ Launcher deve ser instalado?
+inst.change = Alterar…
+inst.tip = Dica: deixe assim – a pasta padrão é perfeita.
+inst.desktop = Criar atalho na área de trabalho
+inst.desktop_text = Inicie o launcher com um clique duplo na área de trabalho.
+inst.startmenu = Mostrar no menu Iniciar
+inst.startmenu_text = Assim você também o encontra pela pesquisa do Windows.
+inst.install = Instalar
+inst.portable = Iniciar sem instalar
+inst.size = Tamanho: {size}
+inst.working = Instalando …
+inst.working_text = Isso leva só um momento.
+inst.done = Pronto! 🎉
+inst.done_text = O MAZ Launcher está instalado. A partir de agora você pode iniciá-lo pelo atalho da área de trabalho.
+inst.what_now = O que fazer?
+inst.open_now = Abrir agora
+inst.retry = Tentar novamente
+
+uninstall.title = Desinstalar MAZ Launcher
+uninstall.confirm = Quer mesmo remover o MAZ Launcher deste PC?\n\nSeus jogos continuam, é claro – só o launcher é apagado.
+uninstall.wipe_title = Apagar configurações?
+uninstall.wipe = Suas configurações e sua lista de jogos próprios também devem ser apagadas?\n\nSim = tudo apagado\nNão = manter (útil se você reinstalar o launcher depois)
+uninstall.done_title = Pronto
+uninstall.done = O MAZ Launcher foi removido. Obrigado por usar!
+
+problem.what = O que aconteceu?
+problem.why = Por que isso acontece?
+problem.steps = Como resolver – passo a passo
+problem.tech_short = Detalhes técnicos:
+problem.tech = Detalhes técnicos (para especialistas ou para um relato de erro no GitHub)
+problem.header = Algo não funcionou
+problem.copy = Copiar tudo
+problem.copied = Copiado!
+
+fix.admin = Iniciar como administrador
+fix.edit = Editar jogo
+fix.rescan = Recarregar biblioteca
+fix.settings = Abrir configurações
+fix.vc64 = Baixar Visual C++ (64 bits)
+fix.vc86 = Baixar Visual C++ (32 bits)
+fix.directx = Baixar DirectX
+fix.nvidia = Drivers NVIDIA
+fix.amd = Drivers AMD
+fix.intel = Drivers Intel
+fix.folder_game = Abrir pasta do jogo
+fix.folder_last = Abrir última pasta
+fix.folder_app = Abrir pasta do app
+fix.defender = Abrir Segurança do Windows
+fix.steam_dl = Baixar Steam
+fix.epic_dl = Baixar Epic Games Launcher
+fix.api_key = Obter chave de API
+fix.webview2 = Baixar WebView2
+fix.report = Relatar um erro
+
+p.drive_missing.title = Unidade {drive} não encontrada
+p.drive_missing.what = "{game}" está na unidade {drive}. Essa unidade não está disponível agora.
+p.drive_missing.why = Normalmente um HD externo ou pen drive não está conectado, ou a unidade recebeu outra letra.
+p.drive_missing.steps = Conecte o HD externo ou pen drive onde está o jogo.\nEspere alguns segundos até o Windows reconhecer a unidade (ela aparece no Explorador em "Este Computador").\nClique novamente em "Jogar" no launcher.\nA unidade agora tem outra letra (por ex. E: em vez de D:)? Clique em "Editar jogo" e escolha o arquivo EXE novamente.
+
+p.exe_missing.title = Arquivo do jogo não encontrado
+p.exe_missing.what = O launcher queria iniciar "{game}", mas o arquivo não existe mais nesse local.
+p.exe_missing.why = O jogo provavelmente foi movido, renomeado, apagado ou reinstalado. Às vezes um antivírus remove o arquivo.
+p.exe_missing.steps = Clique abaixo em "Editar jogo".\nClique em "Procurar…" ao lado de "Programa".\nEncontre a pasta onde o jogo está agora e escolha o arquivo de início (geralmente tem o nome do jogo e termina com .exe).\nClique em "Salvar" e depois em "Jogar" novamente.\nNão acha mais o arquivo? Reinstale o jogo e repita os passos.\nSeu antivírus apagou o arquivo? Veja a quarentena do antivírus e restaure-o (só se confiar no jogo).
+
+p.workdir_missing.title = Pasta de trabalho não encontrada
+p.workdir_missing.what = Há uma pasta de trabalho definida para "{game}" que não existe.
+p.workdir_missing.why = A pasta foi movida ou apagada.
+p.workdir_missing.steps = Clique em "Editar jogo".\nApague o texto do campo "Pasta de trabalho" (deixar vazio está ótimo – o launcher usa a pasta do EXE).\nClique em "Salvar" e inicie o jogo novamente.
+
+p.admin_required.title = O jogo precisa de direitos de administrador
+p.admin_required.what = "{game}" quer ser iniciado com direitos de administrador.
+p.admin_required.why = Alguns jogos (ou seus anti-cheats) precisam de mais direitos para funcionar. Isso é normal.
+p.admin_required.steps = Clique abaixo em "Iniciar como administrador".\nO Windows pergunta "Deseja permitir…" – clique em "Sim".\nPara não ter que fazer isso toda vez: clique em "Editar jogo" e ative "Sempre iniciar como administrador".
+
+p.access_denied.title = Acesso negado
+p.access_denied.what = O Windows não permitiu iniciar "{game}".
+p.access_denied.why = Faltam direitos para a pasta, o Windows bloqueou o arquivo (arquivo baixado) ou um antivírus o bloqueia.
+p.access_denied.steps = Tente primeiro "Iniciar como administrador" (abaixo). O Windows pergunta – clique em "Sim".\nSe não funcionar: abra a pasta do jogo (botão abaixo), clique com o botão direito no arquivo EXE → "Propriedades".\nBem embaixo na aba "Geral" pode haver "Desbloquear". Marque e clique em "OK".\nAinda não? Abra seu antivírus e veja se ele bloqueou o arquivo. Se confiar no jogo, adicione-o como exceção.\nO jogo está em "C:\Arquivos de Programas"? Costuma ajudar instalar o jogo em uma pasta própria como "C:\Jogos".
+
+p.not_an_app.title = Isso não é um arquivo de jogo
+p.not_an_app.what = O Windows não consegue iniciar como programa o arquivo escolhido para "{game}".
+p.not_an_app.why = Provavelmente o arquivo errado foi escolhido, o arquivo está corrompido (por ex. download incompleto) ou o jogo é para outro sistema.
+p.not_an_app.steps = Clique em "Editar jogo".\nClique em "Procurar…" e escolha o arquivo de início correto. Termina com ".exe" e geralmente tem o nome do jogo – não "unins000.exe", "setup.exe" ou "UnityCrashHandler.exe".\nSalve e inicie novamente.\nO arquivo está corrompido? Baixe ou reinstale o jogo.
+
+p.virus.title = Bloqueado pelo antivírus
+p.virus.what = Seu antivírus bloqueou "{game}" porque acha que o arquivo é perigoso.
+p.virus.why = Pode ser um vírus de verdade – ou um alarme falso, o que acontece muito com mods e pequenos jogos indie.
+p.virus.steps = Importante: só continue se tiver certeza de que o arquivo vem de uma fonte confiável!\nAbra a "Segurança do Windows" (botão abaixo).\nClique em "Proteção contra vírus e ameaças" → "Histórico de proteção".\nEncontre a entrada do jogo, clique nela e escolha "Permitir" ou "Permitir no dispositivo".\nUsa outro antivírus (por ex. Avast, Norton, Kaspersky)? Abra-o e adicione o jogo em "Exceções".\nDepois inicie o jogo aqui novamente.
+
+p.blocked.title = Bloqueado pelo Windows
+p.blocked.what = O Windows bloqueou "{game}" com uma regra de segurança (por ex. "Controle Inteligente de Aplicativos" ou políticas do PC do trabalho/escola).
+p.blocked.why = O Windows só deixa iniciar programas em que confia. Jogos desconhecidos são bloqueados.
+p.blocked.steps = É um PC do trabalho ou da escola? Pergunte ao administrador de TI – normalmente você não consegue mudar isso.\nNo seu próprio PC: abra "Segurança do Windows" → "Controle de aplicativos e navegador".\nVeja se o "Controle Inteligente de Aplicativos" está ativado. Se confiar no jogo, você pode desativá-lo (cuidado: não dá para reativar facilmente).\nDepois inicie o jogo aqui novamente.
+
+p.in_use.title = O arquivo está em uso
+p.in_use.what = "{game}" está aberto por outro programa e não pode ser iniciado.
+p.in_use.why = Talvez o jogo já esteja rodando em segundo plano, sendo atualizado ou um antivírus esteja verificando.
+p.in_use.steps = Espere um pouco (cerca de 30 segundos) e tente novamente.\nPressione Ctrl + Shift + Esc para abrir o Gerenciador de Tarefas. Encontre o jogo, clique nele e depois em "Finalizar tarefa".\nSe não ajudar: reinicie o PC.
+
+p.no_assoc.title = Nenhum programa para este tipo de arquivo
+p.no_assoc.what = O Windows não sabe com qual programa abrir o arquivo de "{game}".
+p.no_assoc.why = O arquivo escolhido não é um EXE, mas por ex. uma imagem, um arquivo compactado (.zip/.rar) ou um arquivo desconhecido.
+p.no_assoc.steps = É um arquivo .zip ou .rar? Primeiro você precisa extraí-lo (botão direito → "Extrair tudo…").\nDepois clique aqui em "Editar jogo" e escolha o arquivo .exe na pasta extraída.
+
+p.dll_missing.title = Falta um arquivo importante do Windows (DLL)
+p.dll_missing.what = "{game}" fechou na hora porque falta um arquivo adicional necessário.
+p.dll_missing.why = Quase todos os jogos precisam de pacotes gratuitos da Microsoft ("Visual C++" e "DirectX"). Eles não estão (completamente) instalados no seu PC.
+p.dll_missing.steps = Clique abaixo em "Baixar Visual C++ (64 bits)". Abra o arquivo baixado, marque "Concordo" e clique em "Instalar".\nFaça o mesmo com "Baixar Visual C++ (32 bits)" – sim, os dois! Muitos jogos precisam das duas versões.\nClique em "Baixar DirectX", baixe e instale.\nReinicie o PC.\nInicie o jogo aqui novamente.\nAinda com problema? Procure na pasta do jogo uma subpasta como "_CommonRedist", "Redist" ou "DirectX" e instale tudo o que estiver nela.
+
+p.bad_image.title = Erro 0xc000007b – os arquivos do sistema não combinam
+p.bad_image.what = "{game}" não conseguiu iniciar corretamente (o famoso erro 0xc000007b).
+p.bad_image.why = Faltam ao jogo pacotes da Microsoft adequados, ou arquivos de 32 e 64 bits se misturaram.
+p.bad_image.steps = Instale "Visual C++ (64 bits)" E "Visual C++ (32 bits)" com os botões abaixo. Se perguntar, escolha "Reparar".\nInstale o "DirectX" com o botão abaixo.\nReinicie o PC.\nInicie o jogo novamente. Se ainda não funcionar: reinstale o jogo.
+
+p.dll_init.title = O jogo não conseguiu se preparar
+p.dll_init.what = "{game}" travou ao iniciar e fechou (erro 0xc0000142).
+p.dll_init.why = Geralmente por causa de programas em segundo plano (overlays, gravação, antivírus) ou de um driver de vídeo antigo.
+p.dll_init.steps = Reinicie o PC – isso resolve esse erro com muita frequência.\nFeche overlays e programas de gravação (por ex. overlay do Discord, MSI Afterburner, OBS) e tente novamente.\nAtualize seu driver de vídeo (botões abaixo: NVIDIA, AMD ou Intel – conforme sua placa de vídeo).\nInstale os pacotes Visual C++ (64 e 32 bits).
+
+p.crash.title = O jogo travou na hora
+p.crash.what = "{game}" fechou com uma falha logo após iniciar.
+p.crash.why = Motivos comuns: driver de vídeo antigo, arquivos do jogo corrompidos, falta de direitos ou um programa em segundo plano atrapalhando (por ex. overlay ou antivírus).
+p.crash.steps = Reinicie o PC e tente novamente.\nAtualize seu driver de vídeo (botões abaixo).\nTente "Iniciar como administrador".\nFeche overlays e ferramentas em segundo plano (overlay do Discord, MSI Afterburner, RivaTuner, OBS).\nNada ajuda: reinstale o jogo. Com mods: remova os mods e teste sem eles.
+
+p.quit_early.title = O jogo fechou logo em seguida
+p.quit_early.what = "{game}" foi iniciado, mas fechou depois de alguns segundos com um código de erro.
+p.quit_early.why = O próprio jogo relatou um problema. Muitas vezes faltam arquivos ou direitos, ou ele precisa de outro launcher (por ex. Ubisoft Connect, EA app, Rockstar Launcher) que deve rodar primeiro.
+p.quit_early.steps = O jogo precisa de um launcher próprio (Ubisoft, EA, Rockstar, Battle.net)? Inicie-o primeiro e entre na conta.\nTente "Iniciar como administrador".\nVerifique a pasta de trabalho: clique em "Editar jogo" e deixe o campo "Pasta de trabalho" vazio.\nReinicie o PC e tente novamente.\nInstale os pacotes Visual C++ (botão abaixo) – isso ajuda muito.
+
+p.uac_cancelled.title = Pedido de administrador cancelado
+p.uac_cancelled.what = "{game}" deveria iniciar com direitos de administrador, mas a janela do Windows foi respondida com "Não" ou fechada.
+p.uac_cancelled.why = Sem sua permissão, o Windows não pode iniciar o jogo como administrador.
+p.uac_cancelled.steps = Clique novamente em "Jogar".\nQuando o Windows perguntar "Deseja permitir que este aplicativo faça alterações no seu dispositivo?", clique em "Sim".\nPrefere iniciar o jogo sem direitos de administrador? Clique em "Editar jogo" e desative "Sempre iniciar como administrador".
+
+p.steam_missing.title = A Steam não está instalada
+p.steam_missing.what = Este jogo pertence à Steam, mas a Steam não foi encontrada no seu PC.
+p.steam_missing.why = Jogos da Steam só podem ser iniciados pela Steam (por causa da proteção contra cópia e das atualizações).
+p.steam_missing.steps = Clique abaixo em "Baixar Steam".\nNo site, clique em "Instalar Steam" e abra o arquivo baixado.\nSiga a instalação e entre com sua conta Steam.\nVolte ao MAZ Launcher e clique em "Recarregar biblioteca".
+
+p.epic_missing.title = O Epic Games Launcher não está instalado
+p.epic_missing.what = Este jogo pertence à Epic Games, mas o Epic Games Launcher não foi encontrado.
+p.epic_missing.why = Os jogos da Epic são iniciados pelo Epic Games Launcher (por causa do login e das atualizações).
+p.epic_missing.steps = Clique abaixo em "Baixar Epic Games Launcher".\nAbra o arquivo baixado e instale o launcher.\nEntre com sua conta Epic.\nVolte e clique em "Recarregar biblioteca".
+
+p.uri_failed.title = {store} não conseguiu iniciar o jogo
+p.uri_failed.what = O launcher pediu à {store} para iniciar "{game}" – mas a {store} não respondeu.
+p.uri_failed.why = Talvez a {store} tenha travado, esteja presa no login ou não esteja instalada corretamente.
+p.uri_failed.steps = Abra a {store} uma vez manualmente e entre na conta, se necessário.\nVeja na {store} se o jogo aparece como "instalado" e se há uma atualização em andamento.\nDepois clique aqui em "Jogar" novamente.\nSe não ajudar: feche a {store} completamente (Gerenciador de Tarefas com Ctrl + Shift + Esc → {store} → "Finalizar tarefa") e abra de novo.\nAinda não? Reinstale a {store} – seus jogos são mantidos.
+
+p.shortcut_failed.title = Não foi possível criar o atalho
+p.shortcut_failed.what = A instalação funcionou, mas o atalho não pôde ser criado.
+p.shortcut_failed.why = Talvez sua pasta da área de trabalho esteja redirecionada para o OneDrive ou protegida por um antivírus.
+p.shortcut_failed.steps = Abra a pasta do app (botão abaixo).\nClique com o botão direito em "MAZ-Launcher.exe" → "Mostrar mais opções" → "Enviar para" → "Área de trabalho (criar atalho)".
+
+p.install_failed.title = A instalação falhou
+p.install_failed.what = O MAZ Launcher não pôde ser copiado para a pasta escolhida.
+p.install_failed.why = Faltam direitos para a pasta (por ex. "C:\Arquivos de Programas"), o launcher já está rodando lá ou o disco está cheio.
+p.install_failed.steps = Feche todas as janelas abertas do MAZ Launcher (também no Gerenciador de Tarefas) e tente novamente.\nEscolha outra pasta – o mais fácil é a pasta padrão sugerida (não precisa de direitos de administrador).\nVerifique se ainda há espaço livre no disco.
+
+p.steam_key.title = A chave de API da Steam está errada
+p.steam_key.what = A Steam negou o acesso à sua lista de jogos.
+p.steam_key.why = A chave de API informada está errada, expirou ou não pertence a esta conta.
+p.steam_key.steps = Clique abaixo em "Obter chave de API" e entre na Steam.\nEm "Nome de domínio" digite simplesmente "localhost", marque a caixa e clique em "Registrar".\nCopie a chave longa (32 caracteres) e cole nas configurações em "Chave de API da Steam".\nClique em "Recarregar biblioteca".
+
+p.steam_api.title = Não foi possível carregar os jogos da Steam não instalados
+p.steam_api.what = Seus jogos instalados aparecem normalmente. Só a lista de jogos não instalados não pôde ser carregada da Steam.
+p.steam_api.why = Provavelmente não há conexão com a internet agora, a Steam está com problemas, o ID da Steam está errado ou seu perfil está "Privado".
+p.steam_api.steps = Verifique sua conexão com a internet.\nVerifique nas configurações se o ID da Steam está certo (um número de 17 dígitos que começa com 7656).\nTente novamente em alguns minutos com "Recarregar biblioteca".
+
+p.webview2.title = Falta o Microsoft WebView2
+p.webview2.what = O MAZ Launcher precisa de um pequeno programa gratuito da Microsoft chamado "WebView2" para mostrar sua janela. Ele não está instalado neste PC.
+p.webview2.why = No Windows 10 e 11 o WebView2 normalmente já vem incluído. Em instalações antigas ou muito "limpas" do Windows ele às vezes falta.
+p.webview2.steps = Clique em "OK" – a página de download da Microsoft abre.\nO arquivo "MicrosoftEdgeWebview2Setup.exe" é baixado. Abra-o.\nEspere a instalação terminar (leva cerca de 1 minuto).\nInicie o MAZ Launcher novamente.
+
+p.app_crashed.title = O MAZ Launcher travou
+p.app_crashed.what = Infelizmente ocorreu um erro inesperado e o launcher precisa fechar.
+p.app_crashed.why = É um erro do próprio launcher – não é culpa sua.
+p.app_crashed.steps = Simplesmente inicie o MAZ Launcher novamente.\nAcontece toda hora? Reinicie o PC.\nSe não ajudar: relate o erro no GitHub e anexe o arquivo "{log}". "OK" abre a página do GitHub.
+
+p.unknown.title = Erro desconhecido ao iniciar
+p.unknown.what = "{game}" não pôde ser iniciado por um motivo desconhecido.
+p.unknown.why = O Windows relatou um erro que o launcher não consegue identificar com exatidão.
+p.unknown.steps = Reinicie o PC e tente novamente.\nTente "Iniciar como administrador".\nClique em "Editar jogo" e verifique se o arquivo EXE está certo.\nTente iniciar o jogo diretamente com um clique duplo na pasta dele. Se aparecer uma mensagem de erro, ela costuma ajudar.\nCopie os detalhes técnicos (abaixo) e pesquise na internet ou relate o erro no GitHub.

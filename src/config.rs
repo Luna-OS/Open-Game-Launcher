@@ -15,7 +15,13 @@ pub fn load() -> Settings {
         return Settings::default();
     };
     match serde_json::from_str::<Settings>(&text) {
-        Ok(s) => s,
+        Ok(mut s) => {
+            // Alte deutsche Standardliste → übersetzte Standardliste verwenden
+            if s.checklist.iter().map(|x| x.as_str()).eq(crate::model::OLD_GERMAN_CHECKLIST.iter().copied()) {
+                s.checklist.clear();
+            }
+            s
+        }
         Err(_) => {
             // Kaputte Datei sichern statt überschreiben – so geht nichts verloren.
             let backup = path.with_extension(format!("defekt-{}.json", sys::now_secs()));

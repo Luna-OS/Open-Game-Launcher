@@ -276,3 +276,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 }
 
 .titlebar-btn:hover.is-close { background: #e81123; color: #fff; }
+
+/* Benachrichtigungen: Balken läuft in 5 Sekunden ab */
+@keyframes toast-progress { from { width: 100% } to { width: 0% } }
+.toast-progress { animation: toast-progress 5s linear forwards; }

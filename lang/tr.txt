@@ -1,0 +1,530 @@
+# MAZ Launcher – Türkçe
+lang.name = Türkçe
+
+common.yes = Evet
+common.no = Hayır
+common.close = Kapat
+common.cancel = İptal
+common.edit = Düzenle
+common.reset = Sıfırla
+common.browse = Gözat…
+
+win.minimize = Simge durumuna küçült
+win.maximize = Ekranı kapla
+
+fmt.decimal = ,
+fmt.minutes = {n} dk
+fmt.hours = {n} sa
+fmt.never = Hiç
+fmt.just_now = Az önce
+fmt.min_ago = {n} dk önce
+fmt.hours_ago = {n} sa önce
+fmt.yesterday = Dün
+fmt.days_ago = {n} gün önce
+
+source.custom = Kendi oyunun
+badge.custom = KENDİ
+badge.not_installed = YÜKLÜ DEĞİL
+
+filter.all = Tüm oyunlar
+filter.installed = Yüklü
+filter.steam = Steam
+filter.epic = Epic Games
+filter.custom = Oyunlarım
+filter.favorites = Favoriler
+filter.recent = Son oynananlar
+filter.hidden = Gizli
+
+nav.library = Kütüphane
+nav.platforms = Platformlar
+nav.settings = Ayarlar
+
+lib.search = Oyun ara …
+lib.reload = Yenile
+lib.reload_tip = Kütüphaneyi yenile (yeni oyunları arar)
+lib.count = {n} oyun
+lib.add = Oyun ekle
+lib.add_custom = Kendi oyununu ekle
+lib.how_fix = Nasıl düzeltilir
+lib.dismiss = Gizle
+
+sort.title = Sırala
+sort.name = İsim (A–Z)
+sort.recent = Son oynananlar
+sort.playtime = En çok oynananlar
+sort.installed = Önce yüklüler
+
+game.play = Oyna
+game.install = Yükle
+game.details = Ayrıntılar
+game.not_installed = Yüklü değil
+hero.continue = Oynamaya devam et · {ago}
+
+steam.home = Ana sayfa
+steam.f_all = OYUNLAR: TÜMÜ
+steam.search = Ara
+epic.search = Başlık ara
+epic.titles = {n} başlık
+epic.start = Başlat
+
+empty.search.title = Hiçbir şey bulunamadı
+empty.search.text = Aramana uyan bir oyun yok. Yazımı kontrol et veya arama metnini sil.
+empty.fav.title = Henüz favori yok
+empty.fav.text = Bir oyunu aç ve yıldıza tıkla – burada görünecek.
+empty.recent.title = Henüz hiçbir şey oynanmadı
+empty.recent.text = MAZ Launcher ile bir oyun başlattığın anda burada görünür.
+empty.custom.title = Henüz kendi oyunun yok
+empty.custom.text = Steam veya Epic üzerinden çalışmayan oyunları ekle – örn. Minecraft, emülatörler veya bağımsız oyunlar.
+empty.hidden.title = Gizli oyun yok
+empty.hidden.text = Gizlediğin oyunlar burada görünür.
+empty.steam.title = Steam oyunu bulunamadı
+empty.steam.text = Steam yüklü mü ve orada oyun yükledin mi? O zaman "Yenile"ye tıkla. Sahip olduğun tüm oyunları (yüklü olmayanlar dahil) görmek için bir Steam API anahtarı ekle (Ayarlar → Bağlantılar).
+empty.epic.title = Epic oyunu bulunamadı
+empty.epic.text = Epic Games Launcher yüklü mü ve orada oyun yükledin mi? O zaman "Yenile"ye tıkla.
+empty.all.title = Burada henüz bir şey yok
+empty.all.text = Hiç oyun bulunamadı. Steam veya Epic Games ile oyun yükle – ya da kendi oyunlarını ekle.
+
+info.platform = Platform
+info.status = Durum
+info.playtime = Oynama süresi
+info.launches = MAZ ile başlatma
+info.size = Boyut
+info.folder = Klasör
+info.args = Başlatma seçenekleri
+info.admin = Yönetici olarak
+detail.info = Bilgiler
+detail.note_install = Bu oyun senin, ama yüklü değil. "Yükle" Steam'i açar.
+detail.note_custom = Başlamadan önce önemli her şeyi kapatıp kapatmadığın sorulacak.
+
+act.fav = Favorilere ekle
+act.unfav = Favorilerden çıkar
+act.hide = Gizle
+act.unhide = Yeniden göster
+act.cover = Kendi kapağını seç
+act.cover_reset = Orijinal kapağı geri yükle
+act.store = Steam mağazasında gör
+act.remove = Listeden kaldır
+
+confirm.title = Önemli her şeyi kapattın mı?
+confirm.text = "{name}" başlamadan önce: lütfen bu noktaları kontrol et.
+confirm.yes = Evet, başlat
+notstarted.title = Tamam – oyun başlatılmadı
+notstarted.text = Sorun değil! "{name}" kapalı kalıyor. Şöyle devam et:
+notstarted.s1 = Aşağıdaki listedeki şeyleri kapat veya devre dışı bırak.
+notstarted.s2 = MAZ Launcher'a geri dön.
+notstarted.s3 = Tekrar "Oyna"ya, ardından "Evet, başlat"a tıkla.
+notstarted.ok = Tamam, anladım
+notstarted.ready = Artık hazırım
+checklist.default = Antivirüs / gerçek zamanlı koruma (oyun gerektiriyorsa)\nKatmanlar (Discord, Steam, GeForce Experience, Xbox Game Bar)\nKayıt ve yayın programları (OBS, Medal, ShadowPlay)\nVPN ve proxy\nArka planda gereksiz programlar (tarayıcı, indirmeler)
+
+edit.intro = Steam veya Epic üzerinden çalışmayan oyunlar için – örn. Minecraft, emülatörler, bağımsız oyunlar veya disk oyunları.
+edit.exe = Program (başlatma dosyası) *
+edit.exe_hint = İpucu: Başlatma dosyası oyunun klasöründedir ve genelde oyunla aynı adı taşır (.exe ile biter). "unins000.exe" veya "setup.exe" seçme!
+edit.exe_ph = C:\Oyunlar\OyunAdi\OyunAdi.exe
+edit.name = İsim *
+edit.name_ph = örn. Minecraft
+edit.args = Başlatma seçenekleri (isteğe bağlı)
+edit.args_hint = Sadece ne olduğunu biliyorsan – örn. -windowed
+edit.empty_ph = boş bırak
+edit.workdir = Çalışma klasörü (isteğe bağlı)
+edit.workdir_hint = Boş = başlatma dosyasının klasörü (neredeyse her zaman doğru)
+edit.auto_ph = otomatik
+edit.pick_folder = Klasör seç
+edit.cover = Kapak resmi (isteğe bağlı)
+edit.cover_hint = Boş = launcher otomatik olarak uygun bir resim bulur veya orijinal simgeyi kullanır.
+edit.pick_image = Resim seç
+edit.admin = Her zaman yönetici olarak başlat
+edit.admin_hint = Sadece oyun başka türlü başlamıyorsa aç. Windows her seferinde soracak.
+edit.checklist = Güvenlik sorusu için ek maddeler (isteğe bağlı)
+edit.checklist_hint = Her satıra bir madde. Her başlatmadan önce genel maddelere ek olarak sorulur.
+edit.checklist_ph = örn. Mod yöneticisi kapalı
+edit.err_name = Lütfen oyuna bir isim ver.
+edit.err_exe = Lütfen oyunun başlatma dosyasını seç. "Program" yanındaki "Gözat…"a tıkla.
+edit.err_exe_missing = Bu dosya yok. "Program" yanındaki "Gözat…"a tıkla ve dosyayı yeniden seç.
+edit.err_workdir = Çalışma klasörü yok. En iyisi alanı boş bırakmak.
+edit.add = Ekle
+edit.save = Kaydet
+
+delete.title = "{name}" listeden kaldırılsın mı?
+delete.text = Merak etme: oyunun kendisi SİLİNMEZ. Sadece MAZ Launcher'dan kaybolur ve istediğin zaman tekrar ekleyebilirsin.
+delete.button = Kaldır
+
+toast.save_failed = Ayarlar kaydedilemedi: {error}
+toast.installing = Steam "{name}" kurulumunu açıyor …
+toast.started_via = "{name}" {store} üzerinden başlatılıyor …
+toast.started = "{name}" başlatılıyor …
+toast.hidden = Oyun gizlendi (yeniden göstermek için: "Gizli" filtresi)
+toast.unhidden = Oyun yeniden görünür
+toast.cover_changed = Kapak değiştirildi
+toast.added = "{name}" eklendi
+toast.saved = "{name}" kaydedildi
+toast.removed = Oyun listeden kaldırıldı
+toast.shortcut = Masaüstü kısayolu oluşturuldu
+toast.cache_cleared = Resim önbelleği temizlendi – yenileniyor …
+
+pick.game_title = Oyun seç – başlatma dosyasını seç (genelde .exe)
+pick.game_filter = Oyunlar ve programlar
+pick.all_files = Tüm dosyalar
+pick.cover_title = Resim seç
+pick.images = Resimler
+
+welcome.title = Hoş geldin:
+welcome.sub = Tüm oyunların tek bir yerde – Steam, Epic Games ve kendi oyunların.
+welcome.s1t = Otomatik bağlandı
+welcome.s1 = Steam ve Epic oyunları kendiliğinden bulunur. Hiçbir şey ayarlaman gerekmez.
+welcome.s2t = Kendi oyunların
+welcome.s2 = "Oyun ekle" ile istediğin her oyunu eklersin.
+welcome.s3t = Senin görünümün
+welcome.s3 = Aşağıdan stilini seç. Kendi tasarımlarını ayarlarda oluşturabilirsin.
+welcome.layout = Dil
+welcome.look = Kütüphanen nasıl görünsün?
+welcome.go = Hadi başlayalım
+
+set.back = Kütüphaneye dön
+set.tab.design = Tasarım
+set.tab.language = Dil
+set.tab.connections = Bağlantılar
+set.tab.custom = Oyunlarım
+set.tab.general = Genel
+set.tab.about = Hakkında
+
+lang.auto = Otomatik (Windows)
+lang.sub = Tüm launcher – tüm hata açıklamaları dahil – senin dilinde.
+lang.choose = Dil seç
+lang.own = Kendi dilini ekle
+lang.own_text = Dilin eksik mi? Şablonu kaydet, metinleri çevir ve dosyayı örn. "nl.txt" olarak dil klasörüne kaydet. Yeniden başlattıktan sonra burada görünür.
+lang.template = Şablonu kaydet
+lang.template_saved = Şablon kaydedildi (template-en.txt)
+lang.folder = Dil klasörünü aç
+
+design.sub = Launcher'ı kendine göre ayarla. Değişiklikler anında uygulanır.
+design.layout = Kütüphane görünümü
+design.layout_text = Oyunların nasıl gösterilsin?
+design.authentic = Steam ve Epic stilinde orijinal renkler
+design.authentic_text = Açık = orijinal gibi görünür. Kapalı = senin tasarımını kullanır (aşağıda).
+design.my_themes = Tasarımlarım
+design.my_themes_text = En sevdiğin renklerle kendi tasarımını oluştur – ya da birinin sana gönderdiği bir tasarımı yapıştır.
+design.presets = Hazır tasarımlar
+design.presets_text = Bir tıklama yeterli.
+design.accent = Kendi vurgu rengin
+design.accent_text = Düğmeleri, işaretleri ve parlama efektlerini renklendirir (hazır tasarımlar için).
+design.wallpaper = Arka plan resmi
+design.wallpaper_text = Kütüphanenin arkasında kendi resmin.
+design.wallpaper_pick = Resim seç
+design.wallpaper_remove = Kaldır
+design.wallpaper_dim = Karart
+design.wallpaper_blur = Bulanıklaştır
+design.display = Görünüm
+design.card_size = Oyun kartlarının boyutu
+design.card_size_text = Küçük = çok, Büyük = az ama büyük
+design.small = Küçük
+design.medium = Orta
+design.large = Büyük
+design.names = Kapakların altında oyun adlarını göster
+design.animations = Animasyonlar
+design.animations_text = Bilgisayarın yavaşsa veya hareket seni rahatsız ediyorsa kapat.
+
+layout.maz = MAZ (kendi stili)
+layout.maz_desc = Büyük "oynamaya devam et" afişiyle modern
+layout.steam = Steam gibi
+layout.steam_desc = Solda oyun listesi, büyük resimli ayrıntılar
+layout.epic = Epic Games gibi
+layout.epic_desc = Büyük kartlar, üstte filtreler
+
+theme.maz = MAZ Mor
+theme.midnight = Gece Yarısı
+theme.neon = Neon
+theme.synthwave = Synthwave
+theme.ocean = Okyanus
+theme.forest = Orman
+theme.ember = Kor
+theme.crimson = Kızıl
+theme.gold = Altın
+theme.sakura = Sakura
+theme.dracula = Dracula
+theme.nord = Nord
+theme.coffee = Kahve
+theme.oled = OLED Siyah
+theme.light = Açık
+theme.mint = Nane
+theme.new = Yeni tasarım
+theme.new_name = Tasarımım {n}
+theme.unnamed = İsimsiz
+theme.edit = Düzenle
+theme.editor = Tasarım editörü
+theme.editor_text = Renkleri değiştir – sonucu tüm launcher'da anında görürsün.
+theme.name = İsim
+theme.c.bg = Arka plan
+theme.c.card = Kartlar ve pencereler
+theme.c.sidebar = Kenar çubuğu
+theme.c.text = Metin
+theme.c.muted = Metin (soluk)
+theme.c.accent = Vurgu
+theme.c.accent2 = Vurgu 2 (geçiş)
+theme.c.border = Kenarlıklar
+theme.radius = Köşeler
+theme.r0 = Köşeli
+theme.r1 = Hafif
+theme.r2 = Yuvarlak
+theme.r3 = Çok yuvarlak
+theme.done = Bitti
+theme.share = Kod olarak kopyala
+theme.copied = Tasarım kodu kopyalandı – arkadaşlarına gönder!
+theme.duplicate = Çoğalt
+theme.copy_of = {name} (kopya)
+theme.delete = Sil
+theme.import_ph = Tasarım kodunu yapıştır (MAZTHEME:…)
+theme.import = İçe aktar
+theme.import_ok = Tasarım içe aktarıldı
+theme.import_bad = Bu geçerli bir tasarım kodu değil.
+theme.imported = İçe aktarılan tasarım
+
+conn.sub = MAZ Launcher oyunlarını bilgisayarında otomatik bulur. Hiçbir yerde oturum açman gerekmez – şifrelerin Steam ve Epic'te kalır.
+conn.connected = {store} bağlı
+conn.not_found = {store} bulunamadı
+conn.account = {name} olarak oturum açıldı
+conn.installed = {n} yüklü oyun
+conn.owned = Hesabında {n} oyun
+conn.show_steam = Steam oyunlarını göster
+conn.show_epic = Epic oyunlarını göster
+conn.all_title = Sahip olduğun tüm Steam oyunlarını göster (isteğe bağlı)
+conn.all_text = Anahtar olmadan tüm yüklü oyunları görürsün. Ücretsiz bir Steam API anahtarıyla hesabındaki TÜM oyunları – yüklü olmayanlar dahil – ve oynama süreni görürsün.
+conn.key_steps = "API anahtarı al"a tıkla ve Steam'de oturum aç.\n"Alan adı" kısmına sadece localhost yaz, kutuyu işaretle, "Kaydet"e tıkla.\nAnahtarı (32 karakter) kopyala ve buraya yapıştır. Bitti!
+conn.key_ph = Steam API anahtarı
+conn.id_ph = Steam kimliği (boş = otomatik algılanır)
+conn.uninstalled = Yüklü olmayan oyunları göster
+conn.uninstalled_text = Gri gösterilir. Bir tıklama Steam'de kurulumu açar.
+conn.images = Resimler
+conn.online_art = Kapak resimlerini internetten yükle
+conn.online_art_text = Güzel orijinal kapakları getirir (Epic ve kendi oyunların için de Steam mağazasından). Kapalı = sadece bilgisayarında zaten olan resimler.
+conn.reload_now = Şimdi yenile
+store.steam_not_found = Bu bilgisayarda Steam bulunamadı.
+store.steam_off = Steam ayarlarda kapalı.
+store.epic_not_found = Bu bilgisayarda Epic Games Launcher bulunamadı.
+store.epic_no_games = Epic Games Launcher bulundu, ama henüz oyun yüklü değil.
+store.epic_note = Epic, oturum açmadan yüklü olmayan oyunları paylaşmıyor – tüm yüklü oyunlar gösteriliyor.
+store.epic_off = Epic Games ayarlarda kapalı.
+
+custom.sub = Kendi eklediğin oyunlar ve başlatmadan önceki güvenlik sorusu.
+custom.check_title = Her başlatmadan önce güvenlik sorusu
+custom.check_text = Kendi oyunlarından biri başlamadan önce launcher sorar: "Önemli her şeyi kapattın mı?" "Hayır" dersen oyun başlamaz. Burada hangi maddelerin gösterileceğine sen karar verirsin.
+custom.delete_item = Maddeyi sil
+custom.add_item = Madde ekle
+custom.reset = Varsayılanı geri yükle
+custom.games = Oyunların
+custom.games_text = Düzenle veya kaldır (oyunun kendisi asla silinmez).
+custom.none = Henüz kendi oyununu eklemedin.
+
+general.sub = Davranış, kurulum ve veriler.
+general.behavior = Davranış
+general.minimize = Oyun başlayınca launcher'ı küçült
+general.minimize_text = Oyuna yer açar. Kendi oyunlarından biri hemen çökerse launcher bir açıklamayla geri gelir.
+general.install = Kurulum
+general.installed_in = Yüklendiği yer
+general.portable = Kurulumsuz (taşınabilir) çalışıyor:
+general.shortcut = Masaüstü kısayolu oluştur
+general.uninstall = Kaldır
+general.data = Veriler
+general.settings_folder = Ayarlar klasörünü aç
+general.reload_images = Resimleri yenile
+
+about.version = Sürüm {v}
+about.text = Steam, Epic Games ve kendi oyunlarının hepsi tek bir yerde. Dioxus ve rust-ui tarzı bileşenlerle %100 Rust ile yapıldı.
+about.github = GitHub'da görüntüle
+about.legal = Steam, Valve Corporation'ın ticari markasıdır, Epic Games, Epic Games, Inc.'in ticari markasıdır. MAZ Launcher bağımsız bir projedir ve ikisiyle de bağlantılı değildir. Oyun indirilmez ve kopya koruması atlatılmaz – oyunlar her zaman kendi orijinal launcher'ı üzerinden başlar.
+
+inst.tagline = Tüm oyunların. Tek bir launcher.
+inst.perk1 = Steam ve Epic oyunları otomatik
+inst.perk2 = Tek tıkla kendi oyunların
+inst.perk3 = Birçok tasarım – ya da kendi tasarımın
+inst.perk4 = Hatalar basitçe açıklanır
+inst.perk5 = Birçok dilde
+inst.title = Kurulum
+inst.sub = Sadece bir tık. Yönetici haklarına ihtiyacın yok.
+inst.exists = MAZ Launcher zaten yüklü
+inst.exists_text = "Yükle" bu sürüme günceller. Ayarların korunur.
+inst.open_installed = Yüklü sürümü aç
+inst.folder = Kurulum klasörü
+inst.pick = MAZ Launcher nereye yüklensin?
+inst.change = Değiştir…
+inst.tip = İpucu: Olduğu gibi bırak – varsayılan klasör mükemmel.
+inst.desktop = Masaüstü kısayolu oluştur
+inst.desktop_text = Launcher'ı masaüstünden çift tıklayarak başlat.
+inst.startmenu = Başlat menüsünde göster
+inst.startmenu_text = Böylece Windows aramasıyla da bulursun.
+inst.install = Yükle
+inst.portable = Kurmadan başlat
+inst.size = Boyut: {size}
+inst.working = Yükleniyor …
+inst.working_text = Sadece bir dakika sürer.
+inst.done = Bitti! 🎉
+inst.done_text = MAZ Launcher yüklendi. Artık masaüstü kısayoluyla başlatabilirsin.
+inst.what_now = Ne yapmalı?
+inst.open_now = Şimdi aç
+inst.retry = Tekrar dene
+
+uninstall.title = MAZ Launcher'ı kaldır
+uninstall.confirm = MAZ Launcher'ı bu bilgisayardan gerçekten kaldırmak istiyor musun?\n\nOyunların elbette kalır – sadece launcher silinir.
+uninstall.wipe_title = Ayarlar silinsin mi?
+uninstall.wipe = Ayarların ve kendi oyun listen de silinsin mi?\n\nEvet = her şey gider\nHayır = sakla (launcher'ı sonra tekrar kurarsan işe yarar)
+uninstall.done_title = Bitti
+uninstall.done = MAZ Launcher kaldırıldı. Kullandığın için teşekkürler!
+
+problem.what = Ne oldu?
+problem.why = Bu neden oluyor?
+problem.steps = Nasıl düzeltilir – adım adım
+problem.tech_short = Teknik ayrıntılar:
+problem.tech = Teknik ayrıntılar (uzmanlar veya GitHub'da hata bildirimi için)
+problem.header = Bir şeyler ters gitti
+problem.copy = Hepsini kopyala
+problem.copied = Kopyalandı!
+
+fix.admin = Yönetici olarak başlat
+fix.edit = Oyunu düzenle
+fix.rescan = Kütüphaneyi yenile
+fix.settings = Ayarları aç
+fix.vc64 = Visual C++ (64 bit) indir
+fix.vc86 = Visual C++ (32 bit) indir
+fix.directx = DirectX indir
+fix.nvidia = NVIDIA sürücüleri
+fix.amd = AMD sürücüleri
+fix.intel = Intel sürücüleri
+fix.folder_game = Oyun klasörünü aç
+fix.folder_last = Son klasörü aç
+fix.folder_app = Uygulama klasörünü aç
+fix.defender = Windows Güvenliği'ni aç
+fix.steam_dl = Steam'i indir
+fix.epic_dl = Epic Games Launcher'ı indir
+fix.api_key = API anahtarı al
+fix.webview2 = WebView2'yi indir
+fix.report = Hata bildir
+
+p.drive_missing.title = {drive} sürücüsü bulunamadı
+p.drive_missing.what = "{game}" {drive} sürücüsünde. Bu sürücü şu anda yok.
+p.drive_missing.why = Genellikle harici bir disk veya USB bellek takılı değildir ya da sürücü başka bir harf almıştır.
+p.drive_missing.steps = Oyunun bulunduğu harici diski veya USB belleği tak.\nWindows sürücüyü tanıyana kadar birkaç saniye bekle (Dosya Gezgini'nde "Bu bilgisayar" altında görünür).\nLauncher'da tekrar "Oyna"ya tıkla.\nSürücü artık başka bir harf mi aldı (örn. D: yerine E:)? "Oyunu düzenle"ye tıkla ve EXE dosyasını yeniden seç.
+
+p.exe_missing.title = Oyun dosyası bulunamadı
+p.exe_missing.what = Launcher "{game}" oyununu başlatmak istedi, ama dosya artık bu konumda yok.
+p.exe_missing.why = Oyun muhtemelen taşındı, yeniden adlandırıldı, silindi veya yeniden yüklendi. Bazen bir antivirüs dosyayı kaldırır.
+p.exe_missing.steps = Aşağıdan "Oyunu düzenle"ye tıkla.\n"Program" yanındaki "Gözat…"a tıkla.\nOyunun şimdi bulunduğu klasörü bul ve başlatma dosyasını seç (genelde oyunla aynı adı taşır ve .exe ile biter).\n"Kaydet"e, sonra tekrar "Oyna"ya tıkla.\nDosyayı hiç bulamıyor musun? Oyunu yeniden yükle ve adımları tekrarla.\nAntivirüsün dosyayı mı sildi? Antivirüsün karantinasına bak ve geri yükle (sadece oyuna güveniyorsan).
+
+p.workdir_missing.title = Çalışma klasörü bulunamadı
+p.workdir_missing.what = "{game}" için var olmayan bir çalışma klasörü ayarlanmış.
+p.workdir_missing.why = Klasör taşındı veya silindi.
+p.workdir_missing.steps = "Oyunu düzenle"ye tıkla.\n"Çalışma klasörü" alanındaki metni sil (boş bırakmak tamamen olur – launcher EXE'nin klasörünü kullanır).\n"Kaydet"e tıkla ve oyunu yeniden başlat.
+
+p.admin_required.title = Oyun yönetici hakları istiyor
+p.admin_required.what = "{game}" yönetici haklarıyla başlatılmak istiyor.
+p.admin_required.why = Bazı oyunlar (veya hile önleyicileri) çalışmak için daha fazla hakka ihtiyaç duyar. Bu normal.
+p.admin_required.steps = Aşağıdan "Yönetici olarak başlat"a tıkla.\nWindows "İzin vermek istiyor musunuz…" diye sorar – "Evet"e tıkla.\nBunu her seferinde yapmamak için: "Oyunu düzenle"ye tıkla ve "Her zaman yönetici olarak başlat"ı aç.
+
+p.access_denied.title = Erişim reddedildi
+p.access_denied.what = Windows "{game}" oyununun başlamasına izin vermedi.
+p.access_denied.why = Ya klasör için haklar eksik, ya dosya Windows tarafından engellendi (indirilen dosya) ya da bir antivirüs engelliyor.
+p.access_denied.steps = Önce "Yönetici olarak başlat"ı dene (aşağıda). Windows sorar – "Evet"e tıkla.\nOlmazsa: oyun klasörünü aç (aşağıdaki düğme), EXE dosyasına sağ tıkla → "Özellikler".\n"Genel" sekmesinin en altında "Engellemeyi kaldır" olabilir. İşaretle ve "Tamam"a tıkla.\nHâlâ olmuyor mu? Antivirüsünü aç ve dosyayı engelleyip engellemediğine bak. Oyuna güveniyorsan orada istisna olarak ekle.\nOyun "C:\Program Files" içinde mi? Oyunu "C:\Oyunlar" gibi ayrı bir klasöre kurmak çoğu zaman işe yarar.
+
+p.not_an_app.title = Bu bir oyun dosyası değil
+p.not_an_app.what = "{game}" için seçilen dosya Windows tarafından program olarak başlatılamıyor.
+p.not_an_app.why = Muhtemelen yanlış dosya seçildi, dosya bozuk (örn. eksik indirme) ya da oyun başka bir sistem için yapılmış.
+p.not_an_app.steps = "Oyunu düzenle"ye tıkla.\n"Gözat…"a tıkla ve doğru başlatma dosyasını seç. ".exe" ile biter ve genelde oyunla aynı adı taşır – "unins000.exe", "setup.exe" veya "UnityCrashHandler.exe" değil.\nKaydet ve yeniden başlat.\nDosya bozuk mu? Oyunu yeniden indir veya yükle.
+
+p.virus.title = Antivirüs tarafından engellendi
+p.virus.what = Antivirüsün "{game}" oyununu tehlikeli bulduğu için engelledi.
+p.virus.why = Gerçek bir virüs olabilir – ya da modlarda ve küçük bağımsız oyunlarda sık görülen yanlış bir alarm.
+p.virus.steps = Önemli: Sadece dosyanın güvenilir bir kaynaktan geldiğinden eminsen devam et!\n"Windows Güvenliği"ni aç (aşağıdaki düğme).\n"Virüs ve tehdit koruması" → "Koruma geçmişi"ne tıkla.\nOyunun kaydını bul, üzerine tıkla ve "İzin ver" veya "Cihazda izin ver"i seç.\nBaşka bir antivirüs mü kullanıyorsun (örn. Avast, Norton, Kaspersky)? Onu aç ve oyunu "İstisnalar"a ekle.\nSonra oyunu burada yeniden başlat.
+
+p.blocked.title = Windows tarafından engellendi
+p.blocked.what = Windows "{game}" oyununu bir güvenlik kuralıyla engelledi (örn. "Akıllı Uygulama Denetimi" veya iş/okul bilgisayarının kuralları).
+p.blocked.why = Windows yalnızca güvendiği programların başlamasına izin verir. Bilinmeyen oyunlar engellenir.
+p.blocked.steps = Bu bir iş veya okul bilgisayarı mı? Lütfen BT yöneticine sor – genelde bunu kendin değiştiremezsin.\nKendi bilgisayarında: "Windows Güvenliği" → "Uygulama ve tarayıcı denetimi"ni aç.\n"Akıllı Uygulama Denetimi"nin açık olup olmadığına bak. Oyuna güveniyorsan orada kapatabilirsin (dikkat: sonra kolayca yeniden açılamaz).\nSonra oyunu burada yeniden başlat.
+
+p.in_use.title = Dosya şu anda kullanımda
+p.in_use.what = "{game}" başka bir program tarafından açık ve başlatılamıyor.
+p.in_use.why = Belki oyun zaten arka planda çalışıyor, güncelleniyor ya da bir antivirüs tarıyor.
+p.in_use.steps = Biraz bekle (yaklaşık 30 saniye) ve tekrar dene.\nGörev Yöneticisi'ni açmak için Ctrl + Shift + Esc'e bas. Oyunu bul, tıkla, sonra "Görevi sonlandır"a tıkla.\nİşe yaramazsa: bilgisayarı yeniden başlat.
+
+p.no_assoc.title = Bu dosya türü için program yok
+p.no_assoc.what = Windows "{game}" dosyasını hangi programla açacağını bilmiyor.
+p.no_assoc.why = Seçilen dosya bir EXE değil, örn. bir resim, bir arşiv (.zip/.rar) veya bilinmeyen bir dosya.
+p.no_assoc.steps = Bir .zip veya .rar dosyası mı? Önce onu çıkarman gerekir (sağ tık → "Tümünü ayıkla…").\nSonra burada "Oyunu düzenle"ye tıkla ve çıkarılan klasördeki .exe dosyasını seç.
+
+p.dll_missing.title = Önemli bir Windows dosyası (DLL) eksik
+p.dll_missing.what = "{game}" gerekli bir ek dosya eksik olduğu için hemen kapandı.
+p.dll_missing.why = Neredeyse tüm oyunlar ücretsiz Microsoft paketlerine ("Visual C++" ve "DirectX") ihtiyaç duyar. Bunlar bilgisayarında (tam olarak) yüklü değil.
+p.dll_missing.steps = Aşağıdan "Visual C++ (64 bit) indir"e tıkla. İndirilen dosyayı aç, "Kabul ediyorum"u işaretle ve "Yükle"ye tıkla.\nAynısını "Visual C++ (32 bit) indir" ile yap – evet, ikisini de! Birçok oyun her iki sürüme de ihtiyaç duyar.\n"DirectX indir"e tıkla, indir ve yükle.\nBilgisayarı yeniden başlat.\nOyunu burada yeniden başlat.\nHâlâ bozuk mu? Oyun klasöründe "_CommonRedist", "Redist" veya "DirectX" gibi bir alt klasör ara ve içindeki her şeyi yükle.
+
+p.bad_image.title = Hata 0xc000007b – sistem dosyaları uyuşmuyor
+p.bad_image.what = "{game}" düzgün başlayamadı (meşhur 0xc000007b hatası).
+p.bad_image.why = Oyunda uygun Microsoft paketleri eksik ya da 32 bit ve 64 bit dosyalar karışmış.
+p.bad_image.steps = Aşağıdaki düğmelerle "Visual C++ (64 bit)" VE "Visual C++ (32 bit)" yükle. Sorulursa "Onar"ı seç.\nAşağıdaki düğmeyle "DirectX" yükle.\nBilgisayarı yeniden başlat.\nOyunu yeniden başlat. Hâlâ olmuyorsa: oyunu yeniden yükle.
+
+p.dll_init.title = Oyun kendini hazırlayamadı
+p.dll_init.what = "{game}" açılırken takıldı ve kapandı (hata 0xc0000142).
+p.dll_init.why = Genellikle arka plandaki programlar (katmanlar, kayıt araçları, antivirüs) veya eski bir ekran kartı sürücüsü yüzündendir.
+p.dll_init.steps = Bilgisayarı yeniden başlat – bu, hatayı çok sık düzeltir.\nKatmanları ve kayıt programlarını kapat (örn. Discord katmanı, MSI Afterburner, OBS) ve tekrar dene.\nEkran kartı sürücünü güncelle (aşağıdaki düğmeler: NVIDIA, AMD veya Intel – ekran kartına göre).\nVisual C++ paketlerini (64 ve 32 bit) yükle.
+
+p.crash.title = Oyun hemen çöktü
+p.crash.what = "{game}" başlar başlamaz çöktü.
+p.crash.why = Sık nedenler: eski ekran kartı sürücüsü, bozuk oyun dosyaları, eksik haklar veya arka planda rahatsız eden bir program (örn. katman veya antivirüs).
+p.crash.steps = Bilgisayarı yeniden başlat ve tekrar dene.\nEkran kartı sürücünü güncelle (aşağıdaki düğmeler).\n"Yönetici olarak başlat"ı dene.\nArka plandaki katmanları ve araçları kapat (Discord katmanı, MSI Afterburner, RivaTuner, OBS).\nHiçbiri işe yaramazsa: oyunu yeniden yükle. Mod varsa: modları kaldır ve onlarsız dene.
+
+p.quit_early.title = Oyun hemen kapandı
+p.quit_early.what = "{game}" başlatıldı, ama birkaç saniye sonra bir hata koduyla tekrar kapandı.
+p.quit_early.why = Oyunun kendisi bir sorun bildirdi. Çoğu zaman dosyalar veya haklar eksiktir ya da önce çalışması gereken başka bir launcher gerekir (örn. Ubisoft Connect, EA app, Rockstar Launcher).
+p.quit_early.steps = Oyunun kendi launcher'ı mı var (Ubisoft, EA, Rockstar, Battle.net)? Önce onu başlat ve oturum aç.\n"Yönetici olarak başlat"ı dene.\nÇalışma klasörünü kontrol et: "Oyunu düzenle"ye tıkla ve "Çalışma klasörü" alanını boş bırak.\nBilgisayarı yeniden başlat ve tekrar dene.\nVisual C++ paketlerini yükle (aşağıdaki düğme) – çok sık işe yarar.
+
+p.uac_cancelled.title = Yönetici isteği iptal edildi
+p.uac_cancelled.what = "{game}" yönetici haklarıyla başlamalıydı, ama Windows isteğine "Hayır" denildi veya kapatıldı.
+p.uac_cancelled.why = Senin iznin olmadan Windows oyunu yönetici olarak başlatamaz.
+p.uac_cancelled.steps = Tekrar "Oyna"ya tıkla.\nWindows "Bu uygulamanın cihazınızda değişiklik yapmasına izin vermek istiyor musunuz?" diye sorunca "Evet"e tıkla.\nOyunu yönetici hakları olmadan mı başlatmak istersin? "Oyunu düzenle"ye tıkla ve "Her zaman yönetici olarak başlat"ı kapat.
+
+p.steam_missing.title = Steam yüklü değil
+p.steam_missing.what = Bu oyun Steam'e ait, ama bilgisayarında Steam bulunamadı.
+p.steam_missing.why = Steam oyunları yalnızca Steam üzerinden başlatılabilir (kopya koruması ve güncellemeler nedeniyle).
+p.steam_missing.steps = Aşağıdan "Steam'i indir"e tıkla.\nWeb sitesinde "Steam'i yükle"ye tıkla ve indirilen dosyayı aç.\nKurulumu takip et ve Steam hesabınla oturum aç.\nMAZ Launcher'a dön ve "Kütüphaneyi yenile"ye tıkla.
+
+p.epic_missing.title = Epic Games Launcher yüklü değil
+p.epic_missing.what = Bu oyun Epic Games'e ait, ama Epic Games Launcher bulunamadı.
+p.epic_missing.why = Epic oyunları Epic Games Launcher üzerinden başlatılır (oturum açma ve güncellemeler nedeniyle).
+p.epic_missing.steps = Aşağıdan "Epic Games Launcher'ı indir"e tıkla.\nİndirilen dosyayı aç ve launcher'ı yükle.\nEpic hesabınla oturum aç.\nGeri dön ve "Kütüphaneyi yenile"ye tıkla.
+
+p.uri_failed.title = {store} oyunu başlatamadı
+p.uri_failed.what = Launcher {store} uygulamasından "{game}" oyununu başlatmasını istedi – ama {store} yanıt vermedi.
+p.uri_failed.why = {store} çökmüş, oturum açmada takılmış ya da düzgün yüklenmemiş olabilir.
+p.uri_failed.steps = {store} uygulamasını bir kez elle aç ve gerekirse oturum aç.\n{store} içinde oyunun "yüklü" görünüp görünmediğini ve güncelleme olup olmadığını kontrol et.\nSonra burada tekrar "Oyna"ya tıkla.\nİşe yaramazsa: {store} uygulamasını tamamen kapat (Ctrl + Shift + Esc ile Görev Yöneticisi → {store} → "Görevi sonlandır") ve yeniden başlat.\nHâlâ olmuyor mu? {store} uygulamasını yeniden yükle – oyunların korunur.
+
+p.shortcut_failed.title = Kısayol oluşturulamadı
+p.shortcut_failed.what = Kurulum başarılı oldu, ama kısayol oluşturulamadı.
+p.shortcut_failed.why = Masaüstü klasörün OneDrive'a yönlendirilmiş veya bir antivirüs tarafından korunuyor olabilir.
+p.shortcut_failed.steps = Uygulama klasörünü aç (aşağıdaki düğme).\n"MAZ-Launcher.exe"ye sağ tıkla → "Diğer seçenekleri göster" → "Gönder" → "Masaüstü (kısayol oluştur)".
+
+p.install_failed.title = Kurulum başarısız oldu
+p.install_failed.what = MAZ Launcher seçilen klasöre kopyalanamadı.
+p.install_failed.why = Ya klasör için haklar eksik (örn. "C:\Program Files"), ya launcher orada zaten çalışıyor ya da disk dolu.
+p.install_failed.steps = Tüm açık MAZ Launcher pencerelerini kapat (Görev Yöneticisi'nde de) ve tekrar dene.\nBaşka bir klasör seç – en kolayı önerilen varsayılan klasör (yönetici hakları gerektirmez).\nDiskte hâlâ boş yer olup olmadığını kontrol et.
+
+p.steam_key.title = Steam API anahtarı yanlış
+p.steam_key.what = Steam oyun listene erişimi reddetti.
+p.steam_key.why = Girilen API anahtarı yanlış, süresi dolmuş veya bu hesaba ait değil.
+p.steam_key.steps = Aşağıdan "API anahtarı al"a tıkla ve Steam'de oturum aç.\n"Alan adı" kısmına sadece "localhost" yaz, kutuyu işaretle ve "Kaydet"e tıkla.\nUzun anahtarı (32 karakter) kopyala ve ayarlarda "Steam API anahtarı" alanına yapıştır.\n"Kütüphaneyi yenile"ye tıkla.
+
+p.steam_api.title = Yüklü olmayan Steam oyunları yüklenemedi
+p.steam_api.what = Yüklü oyunların normal şekilde gösteriliyor. Sadece yüklü olmayan oyunların listesi Steam'den alınamadı.
+p.steam_api.why = Muhtemelen şu anda internet bağlantısı yok, Steam'de sorun var, Steam kimliği yanlış ya da profilin "Gizli".
+p.steam_api.steps = İnternet bağlantını kontrol et.\nAyarlarda Steam kimliğinin doğru olup olmadığını kontrol et (7656 ile başlayan 17 haneli bir sayı).\nBirkaç dakika sonra "Kütüphaneyi yenile" ile tekrar dene.
+
+p.webview2.title = Microsoft WebView2 eksik
+p.webview2.what = MAZ Launcher'ın penceresini göstermek için "WebView2" adlı küçük, ücretsiz bir Microsoft programına ihtiyacı var. Bu bilgisayarda yüklü değil.
+p.webview2.why = Windows 10 ve 11'de WebView2 normalde zaten vardır. Eski veya çok "temizlenmiş" Windows kurulumlarında bazen eksiktir.
+p.webview2.steps = "Tamam"a tıkla – Microsoft indirme sayfası açılır.\n"MicrosoftEdgeWebview2Setup.exe" dosyası indirilir. Onu aç.\nKurulum bitene kadar bekle (yaklaşık 1 dakika).\nMAZ Launcher'ı yeniden başlat.
+
+p.app_crashed.title = MAZ Launcher çöktü
+p.app_crashed.what = Maalesef beklenmeyen bir hata oluştu ve launcher kapanmak zorunda.
+p.app_crashed.why = Bu, launcher'ın kendisindeki bir hata – senin suçun değil.
+p.app_crashed.steps = MAZ Launcher'ı tekrar başlat.\nSürekli mi oluyor? Bilgisayarı yeniden başlat.\nİşe yaramazsa: hatayı GitHub'da bildir ve "{log}" dosyasını ekle. "Tamam" GitHub sayfasını açar.
+
+p.unknown.title = Başlatırken bilinmeyen hata
+p.unknown.what = "{game}" bilinmeyen bir nedenle başlatılamadı.
+p.unknown.why = Windows, launcher'ın tam olarak tanımlayamadığı bir hata bildirdi.
+p.unknown.steps = Bilgisayarı yeniden başlat ve tekrar dene.\n"Yönetici olarak başlat"ı dene.\n"Oyunu düzenle"ye tıkla ve EXE dosyasının doğru olup olmadığını kontrol et.\nOyunu doğrudan klasöründe çift tıklayarak başlatmayı dene. Bir hata mesajı çıkarsa genelde yardımcı olur.\nTeknik ayrıntıları (aşağıda) kopyala ve internette ara ya da hatayı GitHub'da bildir.

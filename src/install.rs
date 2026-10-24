@@ -90,11 +90,11 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
     let dir = PathBuf::from(opts.dir.trim().trim_matches('"'));
     let dir_s = dir.to_string_lossy().to_string();
     if dir_s.is_empty() {
-        return Err(Problem::install_failed(&dir_s, "Kein Ordner gewählt."));
+        return Err(Problem::install_failed(&dir_s, "No folder selected."));
     }
     fs::create_dir_all(&dir).map_err(|e| Problem::install_failed(&dir_s, &e.to_string()))?;
     let target = dir.join(sys::EXE_NAME);
-    let src = current_exe().ok_or_else(|| Problem::install_failed(&dir_s, "Eigene EXE nicht gefunden."))?;
+    let src = current_exe().ok_or_else(|| Problem::install_failed(&dir_s, "Own EXE not found."))?;
     let same = src
         .canonicalize()
         .ok()
@@ -184,7 +184,7 @@ pub fn create_shortcut(lnk: &Path, target: &Path) -> Result<(), String> {
     );
     fs::write(&url_path, content).map_err(|e| {
         format!(
-            "PowerShell-Verknüpfung fehlgeschlagen ({}) und Ersatz-Verknüpfung auch: {e}",
+            "PowerShell shortcut failed ({}) and fallback shortcut too: {e}",
             match &ps {
                 Ok(s) => format!("Exit-Code {:?}", s.code()),
                 Err(err) => err.to_string(),
@@ -200,8 +200,8 @@ pub fn uninstall_interactive() {
         use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
         let ok = MessageDialog::new()
             .set_level(MessageLevel::Warning)
-            .set_title("MAZ Launcher deinstallieren")
-            .set_description("Möchtest du den MAZ Launcher wirklich von diesem PC entfernen?\n\nDeine Spiele bleiben dabei natürlich erhalten – es wird nur der Launcher gelöscht.")
+            .set_title(crate::i18n::t("uninstall.title"))
+            .set_description(crate::i18n::t("uninstall.confirm"))
             .set_buttons(MessageButtons::YesNo)
             .show();
         if ok != MessageDialogResult::Yes {
@@ -209,8 +209,8 @@ pub fn uninstall_interactive() {
         }
         let wipe = MessageDialog::new()
             .set_level(MessageLevel::Info)
-            .set_title("Einstellungen löschen?")
-            .set_description("Sollen auch deine Einstellungen und deine Liste mit eigenen Spielen gelöscht werden?\n\nJa = alles weg\nNein = behalten (praktisch, falls du den Launcher später wieder installierst)")
+            .set_title(crate::i18n::t("uninstall.wipe_title"))
+            .set_description(crate::i18n::t("uninstall.wipe"))
             .set_buttons(MessageButtons::YesNo)
             .show();
 
@@ -243,8 +243,8 @@ pub fn uninstall_interactive() {
         }
         MessageDialog::new()
             .set_level(MessageLevel::Info)
-            .set_title("Fertig")
-            .set_description("Der MAZ Launcher wurde entfernt. Danke fürs Benutzen!")
+            .set_title(crate::i18n::t("uninstall.done_title"))
+            .set_description(crate::i18n::t("uninstall.done"))
             .set_buttons(MessageButtons::Ok)
             .show();
     }

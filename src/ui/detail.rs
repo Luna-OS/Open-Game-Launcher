@@ -6,41 +6,42 @@ use super::icons::Icon;
 use super::library::SourceBadge;
 use super::state::*;
 use crate::model::{Game, LaunchTarget, Source};
+use crate::i18n::t;
 use crate::sys;
 use dioxus::prelude::*;
 
 struct InfoRow {
-    label: &'static str,
+    label: String,
     value: String,
 }
 
 fn info_rows(app: App, g: &Game) -> Vec<InfoRow> {
     let s = app.settings.read();
-    let mut rows = vec![InfoRow { label: "Plattform", value: g.source.label().to_string() }];
+    let mut rows = vec![InfoRow { label: t("info.platform"), value: g.source.label() }];
     rows.push(InfoRow {
-        label: "Status",
-        value: if g.installed { "Installiert".into() } else { "Nicht installiert".into() },
+        label: t("info.status"),
+        value: t(if g.installed { "filter.installed" } else { "game.not_installed" }),
     });
     if let Some(min) = g.playtime_min.filter(|m| *m > 0) {
-        rows.push(InfoRow { label: "Spielzeit", value: sys::format_playtime(min) });
+        rows.push(InfoRow { label: t("info.playtime"), value: sys::format_playtime(min) });
     }
-    rows.push(InfoRow { label: "Zuletzt gespielt", value: sys::format_ago(s.last_played(&g.id)) });
+    rows.push(InfoRow { label: t("filter.recent"), value: sys::format_ago(s.last_played(&g.id)) });
     if let Some(n) = s.launch_count.get(&g.id) {
-        rows.push(InfoRow { label: "Über MAZ gestartet", value: format!("{n}×") });
+        rows.push(InfoRow { label: t("info.launches"), value: format!("{n}×") });
     }
     if let Some(b) = g.size_bytes {
-        rows.push(InfoRow { label: "Größe", value: sys::format_bytes(b) });
+        rows.push(InfoRow { label: t("info.size"), value: sys::format_bytes(b) });
     }
     if let Some(d) = &g.install_dir {
-        rows.push(InfoRow { label: "Ordner", value: d.clone() });
+        rows.push(InfoRow { label: t("info.folder"), value: d.clone() });
     }
     if let Some(c) = s.custom(&g.id) {
         if !c.args.trim().is_empty() {
-            rows.push(InfoRow { label: "Startparameter", value: c.args.clone() });
+            rows.push(InfoRow { label: t("info.args"), value: c.args.clone() });
         }
         rows.push(InfoRow {
-            label: "Als Administrator",
-            value: if c.admin { "Ja".into() } else { "Nein".into() },
+            label: t("info.admin"),
+            value: t(if c.admin { "common.yes" } else { "common.no" }),
         });
     }
     rows
@@ -66,10 +67,10 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
     );
     let dir = game.install_dir.clone();
     let appid = game.steam_appid;
-    let fav_label = if fav { "Aus Favoriten entfernen" } else { "Zu Favoriten" };
+    let fav_label = t(if fav { "act.unfav" } else { "act.fav" });
     let star_cls = if fav { "size-4 text-yellow-400" } else { "size-4" };
     let hide_icon = if hidden { "eye" } else { "eye-off" };
-    let hide_label = if hidden { "Wieder einblenden" } else { "Ausblenden" };
+    let hide_label = t(if hidden { "act.unhide" } else { "act.hide" });
     rsx! {
         div { class: "flex flex-col gap-2",
             Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| toggle_favorite(app, &id1),
@@ -79,29 +80,29 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
             {dir.map(|d| rsx! {
                 Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| sys::open_folder(&d),
                     Icon { name: "folder", class: "size-4" }
-                    "Spielordner öffnen"
+                    {t("fix.folder_game")}
                 }
             })}
             Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| pick_cover(app, &id2),
                 Icon { name: "image", class: "size-4" }
-                "Eigenes Cover wählen"
+                {t("act.cover")}
             }
             if has_override {
                 Button { variant: ButtonVariant::Ghost, class: btn, onclick: move |_| reset_cover(app, &id3),
                     Icon { name: "refresh", class: "size-4" }
-                    "Original-Cover wiederherstellen"
+                    {t("act.cover_reset")}
                 }
             }
             {appid.map(|a| rsx! {
                 Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| { let _ = sys::open_url(&format!("steam://store/{a}")); },
                     Icon { name: "external", class: "size-4" }
-                    "Im Steam-Store ansehen"
+                    {t("act.store")}
                 }
             })}
             if is_custom {
                 Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| app.open(Modal::EditGame(Some(id4.clone()))),
                     Icon { name: "pencil", class: "size-4" }
-                    "Spiel bearbeiten"
+                    {t("fix.edit")}
                 }
             }
             Button { variant: ButtonVariant::Ghost, class: btn, onclick: move |_| toggle_hidden(app, &id5),
@@ -111,7 +112,7 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
             if is_custom {
                 Button { variant: ButtonVariant::Ghost, class: "{btn} text-destructive hover:text-destructive", onclick: move |_| app.open(Modal::DeleteGame(id6.clone())),
                     Icon { name: "trash", class: "size-4" }
-                    "Aus der Liste entfernen"
+                    {t("act.remove")}
                 }
             }
         }
@@ -135,15 +136,15 @@ pub fn DetailModal(id: String) -> Element {
     let name = game.name.clone();
     let grad = gradient_for(&game.name);
     let installed = game.installed;
-    let play_label = if installed { "Spielen" } else { "Installieren" };
+    let play_label = t(if installed { "game.play" } else { "game.install" });
     let play_icon = if installed { "play" } else { "download" };
     let id_play = game.id.clone();
     let g2 = game.clone();
     let g3 = game.clone();
     let source = game.source;
     let note = match (&game.launch, game.source) {
-        (LaunchTarget::SteamInstall(_), _) => Some("Dieses Spiel gehört dir, ist aber nicht installiert. „Installieren“ öffnet Steam."),
-        (_, Source::Custom) => Some("Vor dem Start wirst du gefragt, ob du alles Wichtige deaktiviert hast."),
+        (LaunchTarget::SteamInstall(_), _) => Some(t("detail.note_install")),
+        (_, Source::Custom) => Some(t("detail.note_custom")),
         _ => None,
     };
     rsx! {
@@ -167,7 +168,7 @@ pub fn DetailModal(id: String) -> Element {
                         div { class: "flex items-center gap-2 mb-3",
                             SourceBadge { source }
                             if !installed {
-                                Badge { variant: BadgeVariant::Warning, "NICHT INSTALLIERT" }
+                                Badge { variant: BadgeVariant::Warning, {t("badge.not_installed")} }
                             }
                         }
                         div { class: "h-20 flex items-end",
@@ -234,7 +235,7 @@ pub fn SteamDetail(game: Game) -> Element {
     } else {
         "steam-play-btn h-12 px-8 rounded-sm text-white font-semibold tracking-wide text-[15px] flex items-center gap-3 shadow-lg hover:brightness-110 cursor-pointer"
     };
-    let label = if installed { "SPIELEN" } else { "INSTALLIEREN" };
+    let label = t(if installed { "game.play" } else { "game.install" }).to_uppercase();
     let icon = if installed { "play" } else { "download" };
     let playtime = game.playtime_min.filter(|m| *m > 0).map(sys::format_playtime);
     let rows = info_rows(app, &game);
@@ -262,12 +263,12 @@ pub fn SteamDetail(game: Game) -> Element {
                     "{label}"
                 }
                 div { class: "flex flex-col",
-                    span { class: "text-[11px] uppercase tracking-wider text-muted-foreground", "Zuletzt gespielt" }
+                    span { class: "text-[11px] uppercase tracking-wider text-muted-foreground", {t("filter.recent")} }
                     span { class: "text-sm text-foreground", "{last}" }
                 }
                 {playtime.map(|pt| rsx! {
                     div { class: "flex flex-col",
-                        span { class: "text-[11px] uppercase tracking-wider text-muted-foreground", "Spielzeit" }
+                        span { class: "text-[11px] uppercase tracking-wider text-muted-foreground", {t("info.playtime")} }
                         span { class: "text-sm text-foreground", "{pt}" }
                     }
                 })}
@@ -276,7 +277,7 @@ pub fn SteamDetail(game: Game) -> Element {
             }
             div { class: "px-10 py-6 grid grid-cols-[1fr_260px] gap-8",
                 div { class: "rounded-sm bg-black/20 p-5",
-                    div { class: "text-[13px] uppercase tracking-wider text-muted-foreground mb-3", "Informationen" }
+                    div { class: "text-[13px] uppercase tracking-wider text-muted-foreground mb-3", {t("detail.info")} }
                     {rows.into_iter().map(|r| {
                         let label = r.label;
                         let value = r.value;

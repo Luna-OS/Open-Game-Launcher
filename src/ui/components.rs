@@ -306,7 +306,7 @@ pub fn Dialog(
                 button {
                     r#type: "button",
                     class: "absolute top-4 right-4 z-10 p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer",
-                    title: "Schließen",
+                    title: crate::i18n::t("common.close"),
                     onclick: move |_| on_close.call(()),
                     Icon { name: "x", class: "size-4" }
                 }

@@ -43,15 +43,15 @@ pub fn scan() -> EpicScan {
     let Some(dir) = manifests_dir() else {
         status.found = launcher_installed();
         status.note = Some(if status.found {
-            "Epic Games Launcher gefunden, aber noch keine Spiele installiert.".into()
+            crate::i18n::t("store.epic_no_games")
         } else {
-            "Epic Games Launcher wurde auf diesem PC nicht gefunden.".into()
+            crate::i18n::t("store.epic_not_found")
         });
         return EpicScan { games: Vec::new(), status };
     };
     status.found = true;
     status.path = Some(dir.to_string_lossy().to_string());
-    status.note = Some("Nicht installierte Epic-Spiele kann Epic leider nicht ohne Anmeldung herausgeben – es werden alle installierten Spiele angezeigt.".into());
+    status.note = Some(crate::i18n::t("store.epic_note"));
 
     let mut games: Vec<Game> = Vec::new();
     let Ok(rd) = fs::read_dir(&dir) else {

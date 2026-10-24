@@ -77,7 +77,7 @@ pub fn logged_in_user(root: &Path) -> Option<(String, String)> {
         let name = u
             .str("PersonaName")
             .or_else(|| u.str("AccountName"))
-            .unwrap_or("Steam-Nutzer")
+            .unwrap_or("Steam")
             .to_string();
         if u.str("MostRecent") == Some("1") || u.str("mostrecent") == Some("1") {
             return Some((id.clone(), name));
@@ -158,7 +158,7 @@ pub struct SteamScan {
 pub fn scan(api_key: &str, steam_id_setting: &str, show_uninstalled: bool) -> SteamScan {
     let mut status = StoreStatus::default();
     let Some(root) = find_steam_root() else {
-        status.note = Some("Steam wurde auf diesem PC nicht gefunden.".into());
+        status.note = Some(crate::i18n::t("store.steam_not_found"));
         return SteamScan { games: Vec::new(), status, warning: None };
     };
     status.found = true;
@@ -186,7 +186,7 @@ pub fn scan(api_key: &str, steam_id_setting: &str, show_uninstalled: bool) -> St
             if NOT_GAMES.contains(&appid) || games.iter().any(|g| g.steam_appid == Some(appid)) {
                 continue;
             }
-            let name = st.str("name").unwrap_or("Unbekanntes Spiel").to_string();
+            let name = st.str("name").unwrap_or("?").to_string();
             let lower = name.to_lowercase();
             if lower.contains("redistributable")
                 || lower.starts_with("proton")
@@ -304,7 +304,7 @@ fn owned_games(key: &str, steam_id: &str) -> Result<Vec<OwnedGame>, Problem> {
             .body_mut()
             .read_json()
             .map_err(|e| Problem::steam_api(None, &e.to_string()))?,
-        Err(ureq::Error::StatusCode(code)) => return Err(Problem::steam_api(Some(code), "Steam hat den Zugriff abgelehnt")),
+        Err(ureq::Error::StatusCode(code)) => return Err(Problem::steam_api(Some(code), "access denied")),
         Err(e) => return Err(Problem::steam_api(None, &e.to_string())),
     };
     let list = value
@@ -316,7 +316,7 @@ fn owned_games(key: &str, steam_id: &str) -> Result<Vec<OwnedGame>, Problem> {
     if list.is_empty() && value.get("response").and_then(|r| r.get("game_count")).is_none() {
         return Err(Problem::steam_api(
             None,
-            "Leere Antwort – Profil oder Spieldetails sind vermutlich auf „Privat“ gestellt.",
+            "Empty response - profile or game details are probably set to private.",
         ));
     }
     Ok(list

@@ -3,9 +3,11 @@
 
 use super::components::*;
 use super::icons::{Icon, MazLogo};
+use super::settings::LanguageSelect;
 use super::state::{pick_folder, use_app};
 use crate::install::{self, InstallOptions, InstallReport};
 use crate::problem::Problem;
+use crate::i18n::{t, tf};
 use crate::sys;
 use dioxus::prelude::*;
 
@@ -28,7 +30,7 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
     let exe_size = install::current_exe()
         .and_then(|p| std::fs::metadata(p).ok())
         .map(|m| sys::format_bytes(m.len()))
-        .unwrap_or_else(|| "wenige MB".into());
+        .unwrap_or_else(|| "~5 MB".into());
 
     let do_install = move |_: MouseEvent| {
         let opts = InstallOptions {
@@ -48,7 +50,7 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
     };
 
     let current = step();
-    let version = sys::VERSION;
+    let version = tf("about.version", &[("v", sys::VERSION)]);
     rsx! {
         div { class: "h-full flex",
             // Linke Seite: Logo + Vorteile
@@ -58,31 +60,35 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                 div { class: "relative",
                     MazLogo { class: "size-16 text-lg bg-white/15 ring-1 ring-white/30" }
                     h1 { class: "text-3xl font-black mt-6 leading-tight font-display", "MAZ Launcher" }
-                    p { class: "text-white/80 mt-2 text-sm leading-relaxed", "Alle deine Spiele. Ein Launcher." }
+                    p { class: "text-white/80 mt-2 text-sm leading-relaxed", {t("inst.tagline")} }
                 }
                 div { class: "relative mt-10 space-y-4 text-sm",
-                    Perk { icon: "gamepad", text: "Steam- und Epic-Spiele automatisch" }
-                    Perk { icon: "rocket", text: "Eigene Spiele mit einem Klick" }
-                    Perk { icon: "palette", text: "Viele Designs zum Umschalten" }
-                    Perk { icon: "wrench", text: "Fehler werden einfach erklärt" }
+                    Perk { icon: "gamepad", text: t("inst.perk1") }
+                    Perk { icon: "rocket", text: t("inst.perk2") }
+                    Perk { icon: "palette", text: t("inst.perk3") }
+                    Perk { icon: "wrench", text: t("inst.perk4") }
+                    Perk { icon: "globe", text: t("inst.perk5") }
                 }
                 div { class: "flex-1" }
-                div { class: "relative text-xs text-white/60", "Version {version} · 100 % Rust" }
+                div { class: "relative text-xs text-white/60", "{version} · 100 % Rust" }
             }
             // Rechte Seite
             div { class: "flex-1 min-w-0 p-10 flex flex-col overflow-y-auto",
                 {match current {
                     Step::Options => rsx! {
-                        h2 { class: "text-2xl font-bold font-display", "Installation" }
-                        p { class: "text-sm text-muted-foreground mt-1 mb-7", "Nur noch ein Klick. Du brauchst keine Administrator-Rechte." }
+                        div { class: "flex items-start justify-between gap-4",
+                            h2 { class: "text-2xl font-bold font-display", {t("inst.title")} }
+                            LanguageSelect {}
+                        }
+                        p { class: "text-sm text-muted-foreground mt-1 mb-7", {t("inst.sub")} }
                         {existing.clone().map(|ex| { let ex2 = ex.clone(); rsx! {
                             div { class: "mb-6 rounded-xl border border-primary/40 bg-primary/10 p-4 text-sm",
                                 div { class: "font-semibold flex items-center gap-2",
                                     Icon { name: "info", class: "size-4 text-primary" }
-                                    "Der MAZ Launcher ist schon installiert"
+                                    {t("inst.exists")}
                                 }
                                 p { class: "text-muted-foreground mt-1 text-xs font-mono truncate", "{ex}" }
-                                p { class: "text-muted-foreground mt-2 text-xs", "Mit „Installieren“ wird er auf diese Version aktualisiert. Deine Einstellungen bleiben erhalten." }
+                                p { class: "text-muted-foreground mt-2 text-xs", {t("inst.exists_text")} }
                                 div { class: "mt-3",
                                     Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm,
                                         onclick: move |_| {
@@ -91,51 +97,51 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                                                 std::process::exit(0);
                                             }
                                         },
-                                        "Installierte Version öffnen"
+                                        {t("inst.open_installed")}
                                     }
                                 }
                             }
                         }})}
                         div { class: "grid gap-2",
-                            Label { "Installationsordner" }
+                            Label { {t("inst.folder")} }
                             div { class: "flex gap-2",
                                 Input { class: "font-mono text-xs", value: dir(), oninput: move |v: String| dir.set(v) }
                                 Button { variant: ButtonVariant::Secondary, class: "h-10",
                                     onclick: move |_| {
-                                        if let Some(p) = pick_folder("Wo soll der MAZ Launcher installiert werden?") {
+                                        if let Some(p) = pick_folder(&t("inst.pick")) {
                                             let p = std::path::PathBuf::from(p);
                                             let p = if p.ends_with(sys::APP_NAME) { p } else { p.join(sys::APP_NAME) };
                                             dir.set(p.to_string_lossy().to_string());
                                         }
                                     },
                                     Icon { name: "folder", class: "size-4" }
-                                    "Ändern…"
+                                    {t("inst.change")}
                                 }
                             }
-                            p { class: "text-xs text-muted-foreground", "Tipp: Einfach so lassen – der Standardordner passt perfekt." }
+                            p { class: "text-xs text-muted-foreground", {t("inst.tip")} }
                         }
                         div { class: "mt-6 rounded-xl border border-border px-4 divide-y divide-border",
-                            SwitchRow { title: "Desktop-Verknüpfung erstellen", description: "Starte den Launcher mit Doppelklick vom Desktop.", checked: desktop(), onchange: move |v: bool| desktop.set(v) }
-                            SwitchRow { title: "Im Startmenü anzeigen", description: "Findest du dann auch über die Windows-Suche.", checked: start_menu(), onchange: move |v: bool| start_menu.set(v) }
+                            SwitchRow { title: t("inst.desktop"), description: t("inst.desktop_text"), checked: desktop(), onchange: move |v: bool| desktop.set(v) }
+                            SwitchRow { title: t("inst.startmenu"), description: t("inst.startmenu_text"), checked: start_menu(), onchange: move |v: bool| start_menu.set(v) }
                         }
                         div { class: "flex-1 min-h-6" }
                         div { class: "flex items-center gap-3 mt-6",
                             Button { variant: ButtonVariant::Glow, size: ButtonSize::Lg, class: "min-w-44", onclick: do_install,
                                 Icon { name: "download", class: "size-4" }
-                                "Installieren"
+                                {t("inst.install")}
                             }
                             Button { variant: ButtonVariant::Ghost, onclick: move |_| on_portable.call(()),
-                                "Ohne Installation starten"
+                                {t("inst.portable")}
                             }
                             div { class: "flex-1" }
-                            span { class: "text-xs text-muted-foreground", "Größe: {exe_size}" }
+                            span { class: "text-xs text-muted-foreground", {tf("inst.size", &[("size", &exe_size)])} }
                         }
                     },
                     Step::Working => rsx! {
                         div { class: "flex-1 flex flex-col items-center justify-center text-center",
                             Spinner { class: "size-10 text-primary" }
-                            h2 { class: "text-xl font-bold mt-5", "Wird installiert …" }
-                            p { class: "text-sm text-muted-foreground mt-1", "Das dauert nur einen Moment." }
+                            h2 { class: "text-xl font-bold mt-5", {t("inst.working")} }
+                            p { class: "text-sm text-muted-foreground mt-1", {t("inst.working_text")} }
                         }
                     },
                     Step::Done(report) => {
@@ -147,15 +153,15 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                                 div { class: "size-20 rounded-full bg-success/15 text-success grid place-items-center",
                                     Icon { name: "check", class: "size-10" }
                                 }
-                                h2 { class: "text-2xl font-bold mt-5 font-display", "Fertig! 🎉" }
-                                p { class: "text-sm text-muted-foreground mt-2 max-w-sm", "Der MAZ Launcher ist installiert. Ab jetzt kannst du ihn über die Desktop-Verknüpfung starten." }
+                                h2 { class: "text-2xl font-bold mt-5 font-display", {t("inst.done")} }
+                                p { class: "text-sm text-muted-foreground mt-2 max-w-sm", {t("inst.done_text")} }
                                 {warnings.into_iter().enumerate().map(|(i, w)| {
                                     let t = w.title.clone();
                                     rsx! {
                                         div { key: "{i}", class: "mt-5 w-full max-w-md rounded-xl border border-warning/40 bg-warning/10 p-3 text-left text-sm flex items-center gap-3",
                                             Icon { name: "alert", class: "size-4 text-warning shrink-0" }
                                             span { class: "flex-1", "{t}" }
-                                            Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm, onclick: move |_| app.show_problem(w.clone(), None), "Was tun?" }
+                                            Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm, onclick: move |_| app.show_problem(w.clone(), None), {t("inst.what_now")} }
                                         }
                                     }
                                 })}
@@ -167,14 +173,14 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                                             }
                                         },
                                         Icon { name: "play", class: "size-4", filled: true }
-                                        "Jetzt öffnen"
+                                        {t("inst.open_now")}
                                     }
                                     Button { variant: ButtonVariant::Outline, size: ButtonSize::Lg, onclick: move |_| sys::open_folder(&folder),
                                         Icon { name: "folder", class: "size-4" }
-                                        "App-Ordner öffnen"
+                                        {t("fix.folder_app")}
                                     }
                                 }
-                                Button { variant: ButtonVariant::Ghost, class: "mt-3", onclick: move |_| dioxus::desktop::window().close(), "Schließen" }
+                                Button { variant: ButtonVariant::Ghost, class: "mt-3", onclick: move |_| dioxus::desktop::window().close(), {t("common.close")} }
                             }
                         }
                     }
@@ -190,8 +196,8 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                                 h2 { class: "text-2xl font-bold mt-5", "{title}" }
                                 p { class: "text-sm text-muted-foreground mt-2 max-w-sm", "{what}" }
                                 div { class: "flex gap-3 mt-8",
-                                    Button { variant: ButtonVariant::Glow, onclick: move |_| app.show_problem(p2.clone(), None), "So behebst du es" }
-                                    Button { variant: ButtonVariant::Outline, onclick: move |_| step.set(Step::Options), "Nochmal versuchen" }
+                                    Button { variant: ButtonVariant::Glow, onclick: move |_| app.show_problem(p2.clone(), None), {t("lib.how_fix")} }
+                                    Button { variant: ButtonVariant::Outline, onclick: move |_| step.set(Step::Options), {t("inst.retry")} }
                                 }
                             }
                         }
