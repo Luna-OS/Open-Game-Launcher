@@ -1,0 +1,10 @@
+name: Idee / Wunsch
+description: Du hast eine Idee, wie der MAZ Launcher noch besser wird?
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idee
+    attributes:
+      label: Deine Idee
+    validations:
+      required: true

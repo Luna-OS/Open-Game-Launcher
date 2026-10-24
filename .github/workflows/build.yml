@@ -1,0 +1,64 @@
+name: Build
+
+# Baut bei jedem Push die Windows-EXE.
+# Bei einem Tag wie "v1.0.0" wird automatisch ein GitHub-Release mit der EXE erstellt.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Windows-EXE bauen
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust installieren
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Tailwind-CSS neu erzeugen
+        shell: pwsh
+        run: ./scripts/build-css.ps1
+
+      - name: Tests
+        run: cargo test --release
+
+      - name: Release-Build
+        run: cargo build --release
+
+      - name: EXE einsammeln (+ Mini-Version mit UPX)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item target/release/MAZ-Launcher.exe dist/MAZ-Launcher.exe
+          choco install upx -y --no-progress
+          upx --best --lzma -o dist/MAZ-Launcher-mini.exe target/release/MAZ-Launcher.exe
+          Get-ChildItem dist | ForEach-Object { "{0,-28} {1,8:N2} MB" -f $_.Name, ($_.Length / 1MB) }
+          Copy-Item Cargo.lock dist/Cargo.lock
+
+      - name: Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: MAZ-Launcher
+          path: dist/
+
+      - name: GitHub-Release erstellen
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/MAZ-Launcher.exe
+            dist/MAZ-Launcher-mini.exe
+          generate_release_notes: true

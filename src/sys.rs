@@ -1,0 +1,406 @@
+//! Systemfunktionen: Ordner, Registry, URLs öffnen, Zwischenablage …
+//! Auf Nicht-Windows-Systemen gibt es einfache Platzhalter, damit das Projekt
+//! dort zumindest kompiliert (der Launcher selbst ist für Windows gemacht).
+
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+pub const APP_NAME: &str = "MAZ Launcher";
+pub const EXE_NAME: &str = "MAZ-Launcher.exe";
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const GITHUB_URL: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner";
+
+pub fn env_path(var: &str) -> Option<PathBuf> {
+    std::env::var_os(var)
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from)
+}
+
+/// %APPDATA%\MAZ Launcher – Einstellungen & eigene Spiele
+pub fn roaming_dir() -> PathBuf {
+    env_path("APPDATA")
+        .or_else(|| env_path("HOME").map(|h| h.join(".config")))
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(APP_NAME)
+}
+
+/// %LOCALAPPDATA%\MAZ Launcher – Cache (Icons, WebView-Daten)
+pub fn local_dir() -> PathBuf {
+    env_path("LOCALAPPDATA")
+        .or_else(|| env_path("HOME").map(|h| h.join(".cache")))
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(APP_NAME)
+}
+
+pub fn icon_cache_dir() -> PathBuf {
+    local_dir().join("icons")
+}
+
+/// Standard-Installationsordner (ohne Admin-Rechte beschreibbar)
+pub fn default_install_dir() -> PathBuf {
+    env_path("LOCALAPPDATA")
+        .map(|p| p.join("Programs").join(APP_NAME))
+        .unwrap_or_else(|| PathBuf::from("C:\\").join(APP_NAME))
+}
+
+pub fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+/// Prüft, ob ein Laufwerk wie "D:" existiert.
+pub fn drive_exists(path: &str) -> bool {
+    match crate::problem::drive_of(path) {
+        Some(d) => Path::new(&format!("{d}\\")).exists(),
+        None => true,
+    }
+}
+
+/// Kommando ohne aufblitzendes Konsolenfenster.
+pub fn quiet_command(program: &str) -> Command {
+    #[allow(unused_mut)]
+    let mut c = Command::new(program);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
+    }
+    c
+}
+
+/// Ordner im Explorer öffnen.
+pub fn open_folder(path: &str) {
+    #[cfg(windows)]
+    {
+        let _ = crate::winffi::shell_execute(Some("open"), path, None, None)
+            .or_else(|_| Command::new("explorer.exe").arg(path).spawn().map(|_| ()).map_err(|_| 0));
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = Command::new("xdg-open").arg(path).spawn();
+    }
+}
+
+/// Datei im Explorer markieren.
+pub fn reveal_file(path: &str) {
+    #[cfg(windows)]
+    {
+        let _ = Command::new("explorer.exe")
+            .arg(format!("/select,{path}"))
+            .spawn();
+    }
+    #[cfg(not(windows))]
+    {
+        if let Some(p) = Path::new(path).parent() {
+            open_folder(&p.to_string_lossy());
+        }
+    }
+}
+
+/// URL oder Protokoll-Link öffnen (https://, steam://, …).
+pub fn open_url(url: &str) -> Result<(), i32> {
+    #[cfg(windows)]
+    {
+        crate::winffi::shell_execute(Some("open"), url, None, None)
+    }
+    #[cfg(not(windows))]
+    {
+        Command::new("xdg-open").arg(url).spawn().map(|_| ()).map_err(|_| 0)
+    }
+}
+
+pub fn copy_to_clipboard(text: &str) -> bool {
+    #[cfg(windows)]
+    {
+        crate::winffi::set_clipboard(text)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = text;
+        false
+    }
+}
+
+// ----------------------------------------------------------------------
+// Registry
+// ----------------------------------------------------------------------
+
+#[derive(Clone, Copy)]
+pub enum Hive {
+    CurrentUser,
+    LocalMachine,
+    ClassesRoot,
+}
+
+#[cfg(windows)]
+fn hive_key(h: Hive) -> winreg::RegKey {
+    use winreg::enums::*;
+    match h {
+        Hive::CurrentUser => winreg::RegKey::predef(HKEY_CURRENT_USER),
+        Hive::LocalMachine => winreg::RegKey::predef(HKEY_LOCAL_MACHINE),
+        Hive::ClassesRoot => winreg::RegKey::predef(HKEY_CLASSES_ROOT),
+    }
+}
+
+pub fn reg_str(hive: Hive, path: &str, name: &str) -> Option<String> {
+    #[cfg(windows)]
+    {
+        let key = hive_key(hive).open_subkey(path).ok()?;
+        let v: String = key.get_value(name).ok()?;
+        let v = v.trim().to_string();
+        if v.is_empty() {
+            None
+        } else {
+            Some(v)
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (hive, path, name);
+        None
+    }
+}
+
+pub fn reg_key_exists(hive: Hive, path: &str) -> bool {
+    #[cfg(windows)]
+    {
+        hive_key(hive).open_subkey(path).is_ok()
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (hive, path);
+        false
+    }
+}
+
+/// Ist ein Link-Protokoll wie "steam" oder "com.epicgames.launcher" registriert?
+pub fn protocol_registered(name: &str) -> bool {
+    reg_key_exists(Hive::ClassesRoot, &format!("{name}\\shell\\open\\command"))
+        || reg_key_exists(Hive::CurrentUser, &format!("Software\\Classes\\{name}\\shell\\open\\command"))
+}
+
+/// Ist die Microsoft-WebView2-Laufzeit installiert? (Wird für das Fenster gebraucht.)
+pub fn webview2_installed() -> bool {
+    #[cfg(windows)]
+    {
+        const GUID: &str = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}";
+        let paths = [
+            (Hive::LocalMachine, format!("SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{GUID}")),
+            (Hive::LocalMachine, format!("SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{GUID}")),
+            (Hive::CurrentUser, format!("Software\\Microsoft\\EdgeUpdate\\Clients\\{GUID}")),
+        ];
+        for (hive, p) in paths.iter() {
+            if let Some(v) = reg_str(*hive, p, "pv") {
+                if v != "0.0.0.0" {
+                    return true;
+                }
+            }
+        }
+        // Fallback: fest installierte Runtime-Ordner
+        for base in ["ProgramFiles(x86)", "ProgramFiles"] {
+            if let Some(b) = env_path(base) {
+                if b.join("Microsoft").join("EdgeWebView").join("Application").exists() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+    #[cfg(not(windows))]
+    {
+        true
+    }
+}
+
+/// %VAR% in Registry-Pfaden auflösen.
+pub fn expand_env(s: &str) -> String {
+    let mut out = String::new();
+    let mut rest = s;
+    while let Some(start) = rest.find('%') {
+        out.push_str(&rest[..start]);
+        let after = &rest[start + 1..];
+        if let Some(end) = after.find('%') {
+            let var = &after[..end];
+            match std::env::var(var) {
+                Ok(v) => out.push_str(&v),
+                Err(_) => {
+                    out.push('%');
+                    out.push_str(var);
+                    out.push('%');
+                }
+            }
+            rest = &after[end + 1..];
+        } else {
+            out.push_str(&rest[start..]);
+            rest = "";
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// Der echte Desktop-Ordner (funktioniert auch, wenn er auf OneDrive umgeleitet ist).
+pub fn desktop_dir() -> PathBuf {
+    let key = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders";
+    if let Some(p) = reg_str(Hive::CurrentUser, key, "Desktop") {
+        let p = PathBuf::from(expand_env(&p));
+        if p.exists() {
+            return p;
+        }
+    }
+    let key = "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
+    if let Some(p) = reg_str(Hive::CurrentUser, key, "Desktop") {
+        let p = PathBuf::from(p);
+        if p.exists() {
+            return p;
+        }
+    }
+    env_path("USERPROFILE")
+        .or_else(|| env_path("HOME"))
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("Desktop")
+}
+
+pub fn start_menu_dir() -> PathBuf {
+    env_path("APPDATA")
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("Microsoft")
+        .join("Windows")
+        .join("Start Menu")
+        .join("Programs")
+}
+
+// ----------------------------------------------------------------------
+// Dateien für die Oberfläche bereitstellen (/maz/f/<hex>)
+// ----------------------------------------------------------------------
+
+/// Macht aus einem lokalen Dateipfad eine URL, die das Fenster laden darf.
+pub fn file_url(path: &Path) -> String {
+    let s = path.to_string_lossy();
+    let mut hex = String::with_capacity(s.len() * 2);
+    for b in s.as_bytes() {
+        hex.push_str(&format!("{b:02x}"));
+    }
+    format!("/maz/f/{hex}")
+}
+
+pub fn decode_file_url(url_path: &str) -> Option<PathBuf> {
+    let hex = url_path.trim_start_matches('/').strip_prefix("maz/f/")?;
+    let hex = hex.split(['?', '#']).next()?;
+    if hex.len() % 2 != 0 {
+        return None;
+    }
+    let mut bytes = Vec::with_capacity(hex.len() / 2);
+    for i in (0..hex.len()).step_by(2) {
+        bytes.push(u8::from_str_radix(hex.get(i..i + 2)?, 16).ok()?);
+    }
+    String::from_utf8(bytes).ok().map(PathBuf::from)
+}
+
+pub fn mime_for(path: &Path) -> &'static str {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .as_deref()
+    {
+        Some("png") => "image/png",
+        Some("jpg") | Some("jpeg") => "image/jpeg",
+        Some("webp") => "image/webp",
+        Some("gif") => "image/gif",
+        Some("bmp") => "image/bmp",
+        Some("ico") => "image/x-icon",
+        Some("svg") => "image/svg+xml",
+        _ => "application/octet-stream",
+    }
+}
+
+/// Einfacher, stabiler Hash (FNV-1a) für Cache-Dateinamen.
+pub fn fnv1a(s: &str) -> u64 {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in s.as_bytes() {
+        h ^= *b as u64;
+        h = h.wrapping_mul(0x0100_0000_01b3);
+    }
+    h
+}
+
+/// Prozentkodierung für URL-Parameter.
+pub fn url_encode(s: &str) -> String {
+    let mut out = String::new();
+    for b in s.as_bytes() {
+        match *b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(*b as char),
+            b' ' => out.push_str("%20"),
+            other => out.push_str(&format!("%{other:02X}")),
+        }
+    }
+    out
+}
+
+pub fn format_bytes(b: u64) -> String {
+    let gb = b as f64 / 1_073_741_824.0;
+    if gb >= 1.0 {
+        format!("{} GB", format!("{gb:.1}").replace('.', ","))
+    } else {
+        format!("{:.0} MB", b as f64 / 1_048_576.0)
+    }
+}
+
+pub fn format_playtime(min: u64) -> String {
+    if min < 60 {
+        format!("{min} Min.")
+    } else {
+        let h = min as f64 / 60.0;
+        if h < 10.0 {
+            format!("{} Std.", format!("{h:.1}").replace('.', ","))
+        } else {
+            format!("{:.0} Std.", h)
+        }
+    }
+}
+
+pub fn format_ago(ts: u64) -> String {
+    if ts == 0 {
+        return "Nie".into();
+    }
+    let diff = now_secs().saturating_sub(ts);
+    match diff {
+        0..=119 => "Gerade eben".into(),
+        120..=3599 => format!("vor {} Min.", diff / 60),
+        3600..=86_399 => format!("vor {} Std.", diff / 3600),
+        86_400..=172_799 => "Gestern".into(),
+        _ => format!("vor {} Tagen", diff / 86_400),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn file_url_roundtrip() {
+        let p = PathBuf::from("C:\\Spiele\\Über Spiel\\cover.jpg");
+        let u = file_url(&p);
+        assert_eq!(decode_file_url(&u), Some(p));
+        assert_eq!(decode_file_url("/maz/f/zz"), None);
+    }
+
+    #[test]
+    fn env_expansion() {
+        std::env::set_var("MAZ_TEST_VAR", "X");
+        assert_eq!(expand_env("%MAZ_TEST_VAR%\\Desktop"), "X\\Desktop");
+        assert_eq!(expand_env("%NOPE_NOT_SET%"), "%NOPE_NOT_SET%");
+        assert_eq!(expand_env("50%"), "50%");
+    }
+
+    #[test]
+    fn formatting() {
+        assert_eq!(url_encode("Halo: MCC"), "Halo%3A%20MCC");
+        assert_eq!(format_playtime(30), "30 Min.");
+        assert_eq!(format_playtime(90), "1,5 Std.");
+        assert_eq!(format_bytes(5 * 1_073_741_824), "5,0 GB");
+    }
+}

@@ -1,0 +1,28 @@
+name: Fehler melden
+description: Etwas funktioniert nicht? Erzähl uns davon.
+labels: [bug]
+body:
+  - type: textarea
+    id: was
+    attributes:
+      label: Was ist passiert?
+      description: Beschreibe kurz, was du gemacht hast und was dann passiert ist.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Technische Details
+      description: Im Fehlerfenster auf „Alles kopieren“ klicken und hier einfügen. Bei einem Absturz bitte die Datei %LOCALAPPDATA%\MAZ Launcher\absturz.log anhängen.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Steht unter Einstellungen → Über.
+      placeholder: "1.0.0"
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Windows-Version
+      options: ["Windows 11", "Windows 10", "Andere"]

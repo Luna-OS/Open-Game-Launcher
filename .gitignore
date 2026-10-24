@@ -1,0 +1,10 @@
+/target
+/dist
+/tools
+*.pdb
+*.exe
+!assets/*.exe
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

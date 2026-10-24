@@ -1,0 +1,278 @@
+/*
+ * MAZ Launcher – Design-System (Tailwind CSS v4, rust-ui/shadcn-Tokens)
+ *
+ * Diese Datei ist die QUELLE. Die fertige CSS-Datei liegt in assets/maz.css
+ * und wird beim Kompilieren direkt in die EXE eingebettet.
+ * Neu erzeugen (nur nötig, wenn du Klassen änderst):  scripts/build-css.ps1
+ */
+@import "tailwindcss";
+
+@source "./src/**/*.rs";
+
+@custom-variant dark (&:is([data-dark="true"] *));
+
+@theme inline {
+  --font-sans: "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidenav: var(--sidenav);
+  --color-sidenav-foreground: var(--sidenav-foreground);
+  --color-sidenav-accent: var(--sidenav-accent);
+  --color-glow: var(--glow);
+  --color-glow-2: var(--glow-2);
+  --color-success: #22c55e;
+  --color-success-foreground: #04130a;
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #1a1002;
+  --color-info: #38bdf8;
+  --color-steam: #66c0f4;
+  --color-steamplay: #5ba32b;
+  --color-epic: #0078f2;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --animate-fade-in: fade-in 0.18s ease-out both;
+  --animate-pop-in: pop-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-slide-up: slide-up 0.25s ease-out both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+}
+
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(8px) scale(0.97) } to { opacity: 1; transform: none } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: none } }
+@keyframes shimmer { from { background-position: -200% 0 } to { background-position: 200% 0 } }
+
+/* ------------------------------------------------------------------ */
+/* Themes (Farbschemata) – umschaltbar in Einstellungen → Design       */
+/* ------------------------------------------------------------------ */
+
+[data-theme] {
+  --radius: 0.75rem;
+  --primary-foreground: #ffffff;
+  --destructive: #ef4444;
+}
+
+/* MAZ (Standard): tiefes Violett mit Cyan-Glow */
+[data-theme="maz"] {
+  --background: #0a0a12; --foreground: #ecebf5;
+  --card: #13131f; --card-foreground: #ecebf5;
+  --popover: #171726; --popover-foreground: #ecebf5;
+  --primary: #8b5cf6; --secondary: #1e1e30; --secondary-foreground: #e4e2f2;
+  --muted: #1a1a2a; --muted-foreground: #9895b0;
+  --accent: #23233a; --accent-foreground: #ffffff;
+  --border: #26263b; --input: #2c2c45; --ring: #8b5cf6;
+  --sidenav: #0e0e18; --sidenav-foreground: #c9c6de; --sidenav-accent: #1d1d30;
+  --glow: #8b5cf6; --glow-2: #22d3ee;
+}
+
+/* Mitternacht: kühles Blau */
+[data-theme="midnight"] {
+  --background: #070d1a; --foreground: #e6edf7;
+  --card: #0f1828; --card-foreground: #e6edf7;
+  --popover: #121d31; --popover-foreground: #e6edf7;
+  --primary: #3b82f6; --secondary: #17233a; --secondary-foreground: #dbe6f7;
+  --muted: #121d30; --muted-foreground: #8b9bb6;
+  --accent: #1a2944; --accent-foreground: #ffffff;
+  --border: #1d2b45; --input: #22334f; --ring: #3b82f6;
+  --sidenav: #0a1222; --sidenav-foreground: #bccbe3; --sidenav-accent: #16243d;
+  --glow: #3b82f6; --glow-2: #06b6d4;
+}
+
+/* Neon: Cyberpunk Pink + Cyan */
+[data-theme="neon"] {
+  --background: #0b0613; --foreground: #fbe9ff;
+  --card: #150b22; --card-foreground: #fbe9ff;
+  --popover: #1a0e2a; --popover-foreground: #fbe9ff;
+  --primary: #ff2bd6; --secondary: #241238; --secondary-foreground: #f6dcff;
+  --muted: #1c0f2c; --muted-foreground: #b18fc4;
+  --accent: #2a1542; --accent-foreground: #ffffff;
+  --border: #33184f; --input: #3a1c5a; --ring: #ff2bd6;
+  --sidenav: #0f0819; --sidenav-foreground: #e5c9f2; --sidenav-accent: #241238;
+  --glow: #ff2bd6; --glow-2: #00f0ff;
+}
+
+/* Glut: warmes Orange */
+[data-theme="ember"] {
+  --background: #120a07; --foreground: #fbeee6;
+  --card: #1d120c; --card-foreground: #fbeee6;
+  --popover: #22150e; --popover-foreground: #fbeee6;
+  --primary: #f97316; --secondary: #2a1a11; --secondary-foreground: #f6e1d3;
+  --muted: #24170f; --muted-foreground: #bb9a85;
+  --accent: #301e13; --accent-foreground: #ffffff;
+  --border: #3a2416; --input: #42291a; --ring: #f97316;
+  --sidenav: #160d08; --sidenav-foreground: #ead2c2; --sidenav-accent: #2a1a11;
+  --glow: #f97316; --glow-2: #facc15;
+}
+
+/* Wald: sattes Grün */
+[data-theme="forest"] {
+  --background: #07110c; --foreground: #e7f5ec;
+  --card: #0e1c15; --card-foreground: #e7f5ec;
+  --popover: #112219; --popover-foreground: #e7f5ec;
+  --primary: #22c55e; --primary-foreground: #03140a; --secondary: #15291e; --secondary-foreground: #d5efdf;
+  --muted: #11231a; --muted-foreground: #8bb09a;
+  --accent: #183226; --accent-foreground: #ffffff;
+  --border: #1b3527; --input: #213d2e; --ring: #22c55e;
+  --sidenav: #0a160f; --sidenav-foreground: #c3e2cf; --sidenav-accent: #15291e;
+  --glow: #22c55e; --glow-2: #a3e635;
+}
+
+/* OLED: echtes Schwarz */
+[data-theme="oled"] {
+  --background: #000000; --foreground: #f5f5f5;
+  --card: #0b0b0b; --card-foreground: #f5f5f5;
+  --popover: #111111; --popover-foreground: #f5f5f5;
+  --primary: #f5f5f5; --primary-foreground: #000000; --secondary: #161616; --secondary-foreground: #ededed;
+  --muted: #121212; --muted-foreground: #8f8f8f;
+  --accent: #1c1c1c; --accent-foreground: #ffffff;
+  --border: #1f1f1f; --input: #262626; --ring: #f5f5f5;
+  --sidenav: #000000; --sidenav-foreground: #cfcfcf; --sidenav-accent: #161616;
+  --glow: #ffffff; --glow-2: #8f8f8f;
+}
+
+/* Sakura: dunkles Rosé */
+[data-theme="sakura"] {
+  --background: #140a10; --foreground: #fdeef5;
+  --card: #1f1019; --card-foreground: #fdeef5;
+  --popover: #24131d; --popover-foreground: #fdeef5;
+  --primary: #f472b6; --primary-foreground: #2a0718; --secondary: #2b1622; --secondary-foreground: #f8dcea;
+  --muted: #26141e; --muted-foreground: #c497ad;
+  --accent: #331a28; --accent-foreground: #ffffff;
+  --border: #3b1f2f; --input: #432336; --ring: #f472b6;
+  --sidenav: #180c13; --sidenav-foreground: #efd0df; --sidenav-accent: #2b1622;
+  --glow: #f472b6; --glow-2: #c084fc;
+}
+
+/* Hell: freundlich und klar */
+[data-theme="light"] {
+  --background: #f4f5fa; --foreground: #14142b;
+  --card: #ffffff; --card-foreground: #14142b;
+  --popover: #ffffff; --popover-foreground: #14142b;
+  --primary: #6d28d9; --secondary: #eceef7; --secondary-foreground: #1f1f3a;
+  --muted: #eef0f7; --muted-foreground: #62647d;
+  --accent: #e7e8f4; --accent-foreground: #14142b;
+  --border: #dfe1ee; --input: #d6d8e8; --ring: #6d28d9;
+  --sidenav: #ffffff; --sidenav-foreground: #3a3b55; --sidenav-accent: #eef0f7;
+  --glow: #8b5cf6; --glow-2: #0ea5e9;
+}
+
+/* ------------------------------------------------------------------ */
+/* Original-Farben für die Steam- und Epic-Ansicht (abschaltbar)       */
+/* ------------------------------------------------------------------ */
+
+.authentic-steam {
+  --background: #1b2838; --foreground: #c7d5e0;
+  --card: #16202d; --card-foreground: #dcdedf;
+  --popover: #3d4450; --popover-foreground: #dcdedf;
+  --primary: #1a9fff; --primary-foreground: #ffffff;
+  --secondary: #2a3f5a; --secondary-foreground: #c7d5e0;
+  --muted: #202d39; --muted-foreground: #8f98a0;
+  --accent: #3d4c5f; --accent-foreground: #ffffff;
+  --border: #2a3a4c; --input: #316282; --ring: #66c0f4;
+  --sidenav: #171d25; --sidenav-foreground: #b8b6b4; --sidenav-accent: #3d4450;
+  --glow: #66c0f4; --glow-2: #1a9fff;
+  --radius: 0.2rem;
+}
+
+.authentic-epic {
+  --background: #101014; --foreground: #f5f5f5;
+  --card: #202024; --card-foreground: #ffffff;
+  --popover: #202024; --popover-foreground: #ffffff;
+  --primary: #0078f2; --primary-foreground: #ffffff;
+  --secondary: #28282c; --secondary-foreground: #ffffff;
+  --muted: #18181c; --muted-foreground: #a3a3a8;
+  --accent: #2a2a2f; --accent-foreground: #ffffff;
+  --border: #2c2c30; --input: #343438; --ring: #26bbff;
+  --sidenav: #18181c; --sidenav-foreground: #c9c9cc; --sidenav-accent: #2a2a2f;
+  --glow: #26bbff; --glow-2: #0078f2;
+  --radius: 0.6rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Grundlayout                                                         */
+/* ------------------------------------------------------------------ */
+
+html, body, #main {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a12;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input, textarea { user-select: text; -webkit-user-select: text; }
+
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent) transparent; }
+
+.no-anim *, .no-anim *::before, .no-anim *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+.maz-gradient-text {
+  background: linear-gradient(90deg, var(--glow), var(--glow-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.maz-gradient-bg { background: linear-gradient(135deg, var(--glow), var(--glow-2)); }
+
+.maz-ambient {
+  background:
+    radial-gradient(900px 500px at 10% -10%, color-mix(in srgb, var(--glow) 18%, transparent), transparent 60%),
+    radial-gradient(700px 400px at 110% 10%, color-mix(in srgb, var(--glow-2) 12%, transparent), transparent 60%);
+}
+
+.steam-play-btn {
+  background: linear-gradient(90deg, #47bfff 0%, #1a44c2 100%);
+}
+.steam-play-btn.is-green {
+  background: linear-gradient(90deg, #75b022 0%, #588a1b 100%);
+}
+.steam-hero-fade {
+  background: linear-gradient(180deg, transparent 0%, rgba(27, 40, 56, 0.35) 55%, #1b2838 100%);
+}
+.hero-fade {
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--background) 40%, transparent) 55%, var(--background) 100%);
+}
+.card-shine::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.12) 45%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.group:hover .card-shine::after { transform: translateX(120%); }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--muted) 0%, var(--accent) 50%, var(--muted) 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+.titlebar-btn:hover.is-close { background: #e81123; color: #fff; }
