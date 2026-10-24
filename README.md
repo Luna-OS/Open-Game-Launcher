@@ -1,146 +1,215 @@
 <div align="center">
 
-<img src="assets/icon-256.png" width="120" alt="MAZ Launcher Logo">
+<img src="assets/icon-256.png" width="128" alt="MAZ Launcher logo">
 
 # MAZ Launcher
 
-**Alle deine Spiele. Ein Launcher.**
-Steam, Epic Games und deine eigenen Spiele – in einer schönen, schnellen und kleinen App.
+**All your games. One launcher.**
 
-![Rust](https://img.shields.io/badge/100%25-Rust-orange?logo=rust)
-![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-blue?logo=windows)
-![Lizenz](https://img.shields.io/badge/Lizenz-MIT-green)
+Steam, Epic Games and your own games in one fast, lightweight and good-looking Windows app, written in 100% Rust.
+
+[![Latest release](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
 [![Build](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml)
+![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
+![Rust](https://img.shields.io/badge/100%25-Rust-DEA584?logo=rust&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](LICENSE)
+
+**English** · [Deutsch](docs/i18n/README.de.md) · [Français](docs/i18n/README.fr.md) · [Español](docs/i18n/README.es.md) · [Italiano](docs/i18n/README.it.md) · [Português](docs/i18n/README.pt-BR.md) · [Polski](docs/i18n/README.pl.md) · [Türkçe](docs/i18n/README.tr.md) · [Русский](docs/i18n/README.ru.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [简体中文](docs/i18n/README.zh-CN.md)
+
+[**⬇️ Download for Windows**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+
+<br>
+
+<img src="docs/screenshots/library-epic-style.webp" alt="MAZ Launcher library in the Epic Games style" width="900">
 
 </div>
 
 ---
 
-## ✨ Was kann der MAZ Launcher?
+## Table of contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Building from source](#building-from-source)
+- [Tech stack](#tech-stack)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [License](#license)
+
+> [!NOTE]
+> The app interface is currently available in **German**. The labels quoted below (for example **„Spiel hinzufügen“**) are shown exactly as they appear in the app, with an English translation alongside.
+
+## Features
 
 | | |
 |---|---|
-| 🎮 **Steam** | Findet automatisch alle installierten Steam-Spiele – auf allen Festplatten. Optional mit Steam-API-Schlüssel: **alle** gekauften Spiele inkl. Spielzeit. |
-| 🟦 **Epic Games** | Findet automatisch alle installierten Epic-Spiele. |
-| 🚀 **Eigene Spiele** | Füge jedes Spiel hinzu (EXE, Verknüpfung, Batch-Datei). Vor **jedem** Start kommt die Frage: *„Hast du alles Wichtige deaktiviert?“* – bei **Nein** startet das Spiel nicht. |
-| 🖼️ **Original-Icons & Cover** | Echte Spiel-Icons (direkt aus der EXE bzw. aus Steam) und Original-Cover. Eigene Cover kannst du für jedes Spiel setzen. |
-| 🎨 **3 Ansichten** | Sieht aus **wie die Steam-Bibliothek**, **wie Epic Games** – oder im **eigenen MAZ-Stil**. |
-| 🌈 **8 Farbschemata** | MAZ Violett, Mitternacht, Neon, Glut, Wald, Sakura, OLED Schwarz, Hell – plus eigene Akzentfarbe. |
-| 🛟 **Fehler einfach erklärt** | Startet etwas nicht, erklärt der Launcher **Schritt für Schritt** in einfachen Worten, was los ist und wie man es behebt – mit Knöpfen, die direkt helfen (z. B. „Als Administrator starten“, „Visual C++ herunterladen“). |
-| 📦 **Eingebauter Installer** | Eine einzige EXE: Doppelklick → Installationsmenü mit Desktop-Verknüpfung, Startmenü, „Jetzt öffnen“ und „App-Ordner öffnen“. Kein Admin nötig. |
-| 🪶 **Winzig** | Eine einzige, auf Größe optimierte EXE – keine Zusatzdateien. |
+| 🎮 **Steam** | Detects every installed Steam game automatically, across all drives. With an optional Steam Web API key it can also show **all** owned games, including playtime. |
+| 🟦 **Epic Games** | Detects every installed Epic Games title automatically. |
+| 🚀 **Your own games** | Add any game: an `.exe`, a shortcut or a batch file. Before **every** launch a safety checklist asks *"Have you turned off everything important?"*. If you answer **No**, the game does not start. |
+| 🖼️ **Original icons & covers** | Real game icons (taken straight from the EXE or from Steam) and original cover art. You can set a custom cover for any game. |
+| 🎨 **3 library layouts** | Looks like **the Steam library**, like **Epic Games**, or uses the launcher's own **MAZ style**. |
+| 🌈 **8 color themes** | MAZ Violet, Midnight, Neon, Ember, Forest, Sakura, OLED Black and Light, plus a custom accent color. |
+| 🛟 **Errors explained in plain words** | If something won't start, the launcher explains **step by step** what happened and how to fix it, with buttons that fix it directly (for example *Run as administrator* or *Download Visual C++*). |
+| 📦 **Built-in installer** | One single EXE: double-click it to get an install menu with a desktop shortcut, a Start menu entry, *Open now* and *Open app folder*. No admin rights required. |
+| 🪶 **Tiny footprint** | One size-optimized EXE with no extra files. |
 
----
+## Screenshots
 
-## 📥 Installation (für alle)
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/library-steam-style.webp" alt="Library in the Steam style"><br>
+      <sub><b>Steam style</b>: game list on the left, "Recently played" and all games in a grid</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/library-epic-style.webp" alt="Library in the Epic Games style"><br>
+      <sub><b>Epic Games style</b>: large cards with filters along the top</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/game-details.webp" alt="Game details dialog"><br>
+      <sub><b>Game details</b>: play, favorite, open the game folder, set a custom cover</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/settings-design.webp" alt="Design settings"><br>
+      <sub><b>Design settings</b>: 3 layouts, 8 color themes and a custom accent color</sub>
+    </td>
+  </tr>
+</table>
 
-1. Lade die neueste **`MAZ-Launcher.exe`** unter [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases) herunter.
-2. **Doppelklick** auf die Datei.
-3. Im Installationsmenü auf **„Installieren“** klicken.
-4. Fertig! Klick auf **„Jetzt öffnen“** – ab jetzt startest du den Launcher über die Desktop-Verknüpfung.
+## Installation
 
-> **Windows zeigt „Der Computer wurde durch Windows geschützt“?**
-> Das kommt bei neuen Programmen ohne teures Zertifikat. Klick auf **„Weitere Informationen“** → **„Trotzdem ausführen“**.
+**Requirements:** Windows 10 or 11 (64-bit) with [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/), which comes preinstalled on current Windows versions.
 
-> **Lieber ohne Installation?** Im Installationsmenü auf **„Ohne Installation starten“** klicken – oder neben die EXE eine leere Datei namens `portable.txt` legen.
+1. Download the latest **`MAZ-Launcher.exe`** from [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest).
+2. **Double-click** the file.
+3. Click **„Installieren“** (*Install*) in the install menu.
+4. Done. Click **„Jetzt öffnen“** (*Open now*). From then on, start the launcher from the desktop shortcut.
 
-**Deinstallieren:** Windows-Einstellungen → Apps → „MAZ Launcher“ → Deinstallieren (oder im Launcher unter Einstellungen → Allgemein). Deine Spiele bleiben dabei natürlich erhalten.
+> [!TIP]
+> **Windows shows "Windows protected your PC"?**
+> This happens with new programs that aren't signed with a paid code-signing certificate. Click **More info**, then **Run anyway**.
 
----
+> [!TIP]
+> **Prefer a portable version?** Click **„Ohne Installation starten“** (*Start without installing*) in the install menu, or place an empty file named `portable.txt` next to the EXE.
 
-## 🕹️ So benutzt du ihn
+**`MAZ-Launcher-mini.exe`** is the same app compressed with UPX. Some antivirus programs wrongly flag packed EXEs; if that happens, use the regular version.
 
-- **Spielen:** Mit der Maus über ein Spiel fahren und auf ▶ klicken. Ein Klick auf das Cover öffnet die Details.
-- **Eigenes Spiel hinzufügen:** Links auf **„Spiel hinzufügen“** → bei „Programm“ auf **„Durchsuchen…“** → die Start-Datei des Spiels wählen → **„Hinzufügen“**.
-- **Aussehen ändern:** Einstellungen → **Design** → Ansicht (MAZ / Steam / Epic) und Farbschema wählen.
-- **Alle Steam-Spiele sehen (auch nicht installierte):** Einstellungen → **Verbindungen** → kostenlosen Steam-API-Schlüssel eintragen (die Anleitung steht direkt daneben).
-- **Sicherheitsfrage anpassen:** Einstellungen → **Eigene Spiele** → Punkte hinzufügen, ändern oder löschen. Pro Spiel kannst du zusätzliche Punkte festlegen.
+**Uninstall:** Windows Settings → Apps → "MAZ Launcher" → Uninstall, or in the launcher under **Einstellungen → Allgemein** (*Settings → General*). Your games are not touched.
 
-### Diese Fehler erklärt der Launcher automatisch
+## Usage
 
-Spieldatei fehlt · Laufwerk/USB-Platte nicht eingesteckt · Admin-Rechte nötig · Zugriff verweigert · falsche Datei gewählt · vom Virenschutz blockiert · von Windows/Smart App Control blockiert · Datei wird benutzt · fehlende DLLs (Visual C++ / DirectX) · Fehler **0xc000007b** · **0xc0000142** · Absturz direkt nach dem Start · Steam bzw. Epic nicht installiert · Steam/Epic reagiert nicht · falscher Steam-API-Schlüssel · WebView2 fehlt · Installation fehlgeschlagen.
+- **Play:** hover over a game and click ▶. Clicking the cover opens the game details.
+- **Add your own game:** click **„Spiel hinzufügen“** (*Add game*) on the left → **„Durchsuchen…“** (*Browse…*) next to "Programm" → pick the game's executable → **„Hinzufügen“** (*Add*).
+- **Change the look:** **Einstellungen → Design** (*Settings → Design*) → choose a layout (MAZ / Steam / Epic) and a color theme.
+- **See all Steam games, including uninstalled ones:** **Einstellungen → Verbindungen** (*Settings → Connections*) → enter a free Steam Web API key. Instructions are shown right next to the field.
+- **Customize the safety checklist:** **Einstellungen → Eigene Spiele** (*Settings → Own games*) → add, edit or delete items. You can also add extra items per game.
 
----
+### Errors the launcher explains for you
 
-## 🛠️ Selbst bauen (für Entwickler)
+Missing game file · drive or USB disk not connected · administrator rights required · access denied · wrong file selected · blocked by antivirus · blocked by Windows / Smart App Control · file in use · missing DLLs (Visual C++ / DirectX) · error **0xc000007b** · **0xc0000142** · crash right after launch · Steam or Epic not installed · Steam or Epic not responding · invalid Steam API key · WebView2 missing · installation failed.
 
-**Voraussetzungen:** [Rust](https://rustup.rs) (stable) unter Windows. Sonst nichts – kein Node.js, kein Dioxus-CLI.
+## Building from source
+
+**Requirements:** [Rust](https://rustup.rs) (stable, 1.85 or newer) on Windows. Nothing else: no Node.js and no Dioxus CLI.
 
 ```powershell
 git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
 cd MAZ-Lauchner
-cargo run                 # Entwickeln
-cargo build --release     # Fertige EXE: target\release\MAZ-Launcher.exe
-.\scripts\build.ps1 -Mini # EXE nach dist\ + zusätzlich mit UPX gepackte Mini-Version
+cargo run                 # development build
+cargo build --release     # release EXE: target\release\MAZ-Launcher.exe
+.\scripts\build.ps1 -Mini # copies the EXE to dist\ and also builds a UPX-packed mini version
 ```
 
-Das fertige CSS (`assets/maz.css`) liegt schon im Repo und wird in die EXE eingebettet. Nur wenn du Tailwind-Klassen änderst:
+The compiled stylesheet (`assets/maz.css`) is checked into the repository and embedded into the EXE. You only need to rebuild it after changing Tailwind classes:
 
 ```powershell
-.\scripts\build-css.ps1   # lädt einmalig die eigenständige Tailwind-EXE (kein Node.js)
+.\scripts\build-css.ps1   # downloads the standalone Tailwind CLI once (no Node.js needed)
 ```
 
-**Release erstellen:** Tag pushen (`git tag v1.0.0 && git push --tags`) – GitHub Actions baut die EXE und hängt sie automatisch an das Release.
+**Publishing a release:** push a tag (`git tag v1.0.0 && git push --tags`). GitHub Actions builds the EXE and attaches it to the release automatically.
 
-### Technik
+## Tech stack
 
-| Teil | Womit |
+| Part | Technology |
 |---|---|
-| Oberfläche | [Dioxus 0.7](https://dioxuslabs.com) (Desktop, WebView2) |
-| Komponenten | im Stil von [rust-ui](https://github.com/rust-ui/ui) (Button, Card, Badge, Input, Switch, Dialog … – gleiche Varianten/Klassen) |
-| Styling | Tailwind CSS v4, Themes über CSS-Variablen |
-| Steam | Registry → `libraryfolders.vdf` → `appmanifest_*.acf` (eigener VDF-Parser), Bilder aus dem Steam-Cache, optional Steam-Web-API |
-| Epic | Registry → Launcher-Manifeste (`*.item`) |
-| Icons | Original-Icons per Windows-API direkt aus der EXE (256 px) |
-| HTTP | `ureq` mit Windows-eigenem TLS (SChannel) → keine große TLS-Bibliothek |
+| UI | [Dioxus 0.7](https://dioxuslabs.com) (desktop, WebView2) |
+| Components | Modeled on [rust-ui](https://github.com/rust-ui/ui) (Button, Card, Badge, Input, Switch, Dialog… with the same variants and classes) |
+| Styling | Tailwind CSS v4, themes via CSS custom properties |
+| Steam | Registry → `libraryfolders.vdf` → `appmanifest_*.acf` (custom VDF parser), artwork from the Steam cache, optional Steam Web API |
+| Epic Games | Registry → launcher manifests (`*.item`) |
+| Icons | Original icons extracted from the EXE through the Windows API (256 px) |
+| HTTP | `ureq` with native Windows TLS (SChannel), so no large TLS library is bundled |
 
-### Warum ist die EXE so klein?
+<details>
+<summary><b>Why is the EXE so small?</b></summary>
 
 - `opt-level = "z"`, `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`, `strip = true`
-- Dioxus nur mit minimalen Features, keine Router-/Fullstack-Teile
-- Windows-Funktionen über direkte API-Aufrufe statt großer Binding-Crates
-- TLS über das in Windows eingebaute SChannel
-- Bilder nur PNG/JPEG, CSS minifiziert und eingebettet
-- Optional: `MAZ-Launcher-mini.exe` mit UPX gepackt (manche Virenscanner melden gepackte EXEs fälschlich – dann die normale Version nehmen)
+- Dioxus with only the minimal feature set, no router or fullstack parts
+- Windows functionality through direct API calls instead of large binding crates
+- TLS through the SChannel stack built into Windows
+- Only PNG/JPEG image decoding; CSS minified and embedded
+- Optional UPX-packed `MAZ-Launcher-mini.exe`
 
-### Projektstruktur
+</details>
+
+<details>
+<summary><b>Project structure</b></summary>
 
 ```
 src/
-├── main.rs        Start, Fenster, Absturz-Meldungen
-├── install.rs     eingebauter Installer & Deinstallation
-├── steam.rs       Steam-Erkennung (+ Web-API, Cover-Suche)
-├── epic.rs        Epic-Games-Erkennung
-├── library.rs     führt alles zur Bibliothek zusammen
-├── launch.rs      Spiele starten + Absturz-Erkennung
-├── problem.rs     alle Fehlererklärungen (einfache Sprache)
-├── icons.rs       Original-Icons aus EXEs
-├── vdf.rs         Parser für Valves VDF-Format
-├── winffi.rs      direkte Windows-API-Aufrufe
+├── main.rs        entry point, window, crash reporting
+├── install.rs     built-in installer and uninstaller
+├── steam.rs       Steam detection (+ Web API, cover lookup)
+├── epic.rs        Epic Games detection
+├── library.rs     merges everything into one library
+├── launch.rs      game launching + crash detection
+├── problem.rs     all error explanations (plain language)
+├── icons.rs       original icons from EXEs
+├── vdf.rs         parser for Valve's VDF format
+├── winffi.rs      direct Windows API calls
 ├── config.rs / model.rs / sys.rs
-└── ui/            Oberfläche (Bibliothek in 3 Stilen, Dialoge, Einstellungen, Installer)
+└── ui/            interface (library in 3 styles, dialogs, settings, installer)
 ```
 
-Einstellungen liegen in `%APPDATA%\MAZ Launcher\config.json`, der Bilder-Cache in `%LOCALAPPDATA%\MAZ Launcher`.
+Settings are stored in `%APPDATA%\MAZ Launcher\config.json`, the image cache in `%LOCALAPPDATA%\MAZ Launcher`.
 
----
+</details>
 
-## ❓ FAQ
+## FAQ
 
-**Lädt der Launcher Spiele herunter oder umgeht er Kopierschutz?**
-Nein. Steam- und Epic-Spiele werden immer über den Original-Launcher gestartet. Es werden keine Passwörter abgefragt.
+**Does the launcher download games or bypass copy protection?**
+No. Steam and Epic games are always started through their official launchers. The launcher never asks for passwords.
 
-**Warum sehe ich nicht alle meine Epic-Spiele?**
-Epic gibt die Liste der gekauften Spiele nur nach einer Anmeldung heraus. Der MAZ Launcher zeigt alle **installierten** Epic-Spiele.
+**Why don't I see all of my Epic games?**
+Epic only provides the list of owned games after signing in. MAZ Launcher shows all **installed** Epic games.
 
-**Das Fenster bleibt weiß / startet nicht.**
-Der Launcher braucht Microsoft WebView2 (bei Windows 10/11 normalerweise dabei). Fehlt es, erklärt der Launcher beim Start, wie man es installiert.
+**The window stays white or doesn't open.**
+The launcher needs Microsoft WebView2, which is normally included with Windows 10 and 11. If it is missing, the launcher explains on startup how to install it.
 
----
+**Is my data sent anywhere?**
+No accounts and no telemetry. Network access is only used for cover art and, if you add a key, the Steam Web API.
 
-## 📄 Lizenz
+## Contributing
 
-[MIT](LICENSE) © MikeAdamRGB
+Bug reports, ideas and pull requests are welcome.
 
-Komponenten-Design angelehnt an [rust-ui](https://github.com/rust-ui/ui) (MIT).
-Steam ist eine Marke der Valve Corporation, Epic Games ist eine Marke von Epic Games, Inc. Dieses Projekt ist unabhängig und mit keinem der beiden verbunden.
+- 🐞 [Report a bug](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose)
+- 💡 [Suggest an idea](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose)
+- 🛠️ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request
+
+## License
+
+Released under the [MIT License](LICENSE) © MikeAdamRGB.
+
+Component design inspired by [rust-ui](https://github.com/rust-ui/ui) (MIT).
+Steam is a trademark of Valve Corporation. Epic Games is a trademark of Epic Games, Inc. This project is independent and not affiliated with either company.
+
+<div align="center">
+<br>
+<sub>Made with 💜 and 🦀 Rust</sub>
+</div>
