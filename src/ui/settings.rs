@@ -600,7 +600,8 @@ fn DesignTab() -> Element {
                 Input { class: "font-mono text-xs", placeholder: t("theme.import_ph"), value: import_code(), oninput: move |v: String| import_code.set(v) }
                 Button { variant: ButtonVariant::Secondary, class: "h-10",
                     onclick: move |_| {
-                        match CustomTheme::from_code(&import_code.peek()) {
+                        let code = import_code.peek().clone();
+                        match CustomTheme::from_code(&code) {
                             Some(mut c) => {
                                 c.id = new_custom_id();
                                 if c.name.is_empty() {

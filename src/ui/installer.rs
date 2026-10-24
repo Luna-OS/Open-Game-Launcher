@@ -156,11 +156,11 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                                 h2 { class: "text-2xl font-bold mt-5 font-display", {t("inst.done")} }
                                 p { class: "text-sm text-muted-foreground mt-2 max-w-sm", {t("inst.done_text")} }
                                 {warnings.into_iter().enumerate().map(|(i, w)| {
-                                    let t = w.title.clone();
+                                    let wtitle = w.title.clone();
                                     rsx! {
                                         div { key: "{i}", class: "mt-5 w-full max-w-md rounded-xl border border-warning/40 bg-warning/10 p-3 text-left text-sm flex items-center gap-3",
                                             Icon { name: "alert", class: "size-4 text-warning shrink-0" }
-                                            span { class: "flex-1", "{t}" }
+                                            span { class: "flex-1", "{wtitle}" }
                                             Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm, onclick: move |_| app.show_problem(w.clone(), None), {t("inst.what_now")} }
                                         }
                                     }
