@@ -20,7 +20,7 @@ jobs:
     name: Windows-EXE bauen
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Rust installieren
         uses: dtolnay/rust-toolchain@stable
@@ -32,11 +32,34 @@ jobs:
         shell: pwsh
         run: ./scripts/build-css.ps1
 
-      - name: Tests
-        run: cargo test --release
-
       - name: Release-Build
-        run: cargo build --release
+        shell: pwsh
+        run: |
+          cargo build --release --message-format=short 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Tests
+        shell: pwsh
+        run: |
+          cargo test --release 2>&1 | Tee-Object -FilePath test.log
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Fehlerprotokoll in Branch "ci-log" speichern
+        if: failure()
+        shell: pwsh
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          New-Item -ItemType Directory -Force ../ci | Out-Null
+          if (Test-Path build.log) { Copy-Item build.log ../ci/ }
+          if (Test-Path test.log) { Copy-Item test.log ../ci/ }
+          git checkout --orphan ci-log
+          git rm -rf --cached . | Out-Null
+          Get-ChildItem -Force | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
+          Copy-Item ../ci/* .
+          git add -A
+          git commit -m "CI-Log ${{ github.sha }}"
+          git push -f origin ci-log
 
       - name: EXE einsammeln (+ Mini-Version mit UPX)
         shell: pwsh
