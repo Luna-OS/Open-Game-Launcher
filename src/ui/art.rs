@@ -15,6 +15,7 @@ pub fn ArtImage(
     #[props(into, default)] alt: String,
     fallback: Element,
 ) -> Element {
+    let k = art_key(&srcs);
     rsx! {
         {std::iter::once(rsx! {
             ArtImageInner { key: "{k}", srcs, class, alt, fallback }
