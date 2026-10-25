@@ -141,6 +141,10 @@ pub struct Settings {
     pub steam_id: String,
     pub steam_show_uninstalled: bool,
     pub epic_show_uninstalled: bool,
+    /// Verbundenes Epic-Konto (für die komplette Epic-Bibliothek)
+    pub epic_auth: Option<crate::epicacct::EpicAuth>,
+    /// Wann die Epic-Bibliothek zuletzt online geladen wurde
+    pub epic_synced: u64,
     pub online_art: bool,
 
     // Konto & Freunde (Supabase). Leer = beim Bauen eingetragener Server.
@@ -190,6 +194,8 @@ impl Default for Settings {
             steam_id: String::new(),
             steam_show_uninstalled: true,
             epic_show_uninstalled: true,
+            epic_auth: None,
+            epic_synced: 0,
             online_art: true,
             server_url: String::new(),
             server_key: String::new(),

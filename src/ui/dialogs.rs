@@ -147,12 +147,14 @@ fn NotStartedDialog(id: String) -> Element {
 
 fn fix_label(f: &Fix) -> (String, &'static str) {
     match f {
-        Fix::RunAsAdmin => ("Als Administrator starten".into(), "shield"),
-        Fix::EditGame => ("Spiel bearbeiten".into(), "pencil"),
+        Fix::RunAsAdmin => (t("fix.admin"), "shield"),
+        Fix::EditGame => (t("fix.edit"), "pencil"),
+        Fix::OpenUrl { label, url } if url.starts_with("steam://validate") || url.contains("action=verify") => (label.clone(), "wrench"),
         Fix::OpenUrl { label, .. } => (label.clone(), "external"),
         Fix::OpenFolder { label, .. } => (label.clone(), "folder"),
-        Fix::Rescan => ("Bibliothek neu laden".into(), "refresh"),
-        Fix::OpenSettings => ("Einstellungen öffnen".into(), "settings"),
+        Fix::Rescan => (t("fix.rescan"), "refresh"),
+        Fix::OpenSettings => (t("fix.settings"), "settings"),
+        Fix::RemoveGame => (t("fix.remove"), "trash"),
     }
 }
 
@@ -213,7 +215,7 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
                 }
                 if !fixes.is_empty() {
                     div { class: "mt-7 flex flex-wrap gap-2",
-                        {fixes.into_iter().enumerate().filter(|(_, f)| !matches!(f, Fix::EditGame) || can_edit).map(|(i, f)| {
+                        {fixes.into_iter().enumerate().filter(|(_, f)| !matches!(f, Fix::EditGame | Fix::RemoveGame | Fix::RunAsAdmin) || can_edit).map(|(i, f)| {
                             let (label, icon) = fix_label(&f);
                             let variant = if i == 0 { ButtonVariant::Glow } else { ButtonVariant::Outline };
                             let gid = game_id.clone();

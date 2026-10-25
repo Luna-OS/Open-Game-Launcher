@@ -111,6 +111,18 @@ pub fn open_url(url: &str) -> Result<(), i32> {
     }
 }
 
+/// Text aus der Zwischenablage lesen
+pub fn read_clipboard() -> Option<String> {
+    #[cfg(windows)]
+    {
+        crate::winffi::get_clipboard()
+    }
+    #[cfg(not(windows))]
+    {
+        None
+    }
+}
+
 pub fn copy_to_clipboard(text: &str) -> bool {
     #[cfg(windows)]
     {

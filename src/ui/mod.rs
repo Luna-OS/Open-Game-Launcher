@@ -52,6 +52,8 @@ pub fn Root() -> Element {
         social_busy: Signal::new(false),
         social_error: Signal::new(None),
         playing_now: Signal::new(None),
+        epic_busy: Signal::new(false),
+        epic_error: Signal::new(None),
     });
 
     // Lokale Bilder (Steam-Cache, Icons, eigene Cover) für das Fenster bereitstellen
@@ -161,6 +163,7 @@ fn LauncherShell() -> Element {
         }
         // Gratis-Spiele im Hintergrund laden (für die Zahl im Tab)
         net::load_free(app, false);
+        net::sync_epic(app, false);
         // Angemeldet? Dann Freunde & Online-Status starten
         if app.settings.peek().session.is_some() {
             net::refresh_all(app);

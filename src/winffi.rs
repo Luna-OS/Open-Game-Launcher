@@ -89,6 +89,7 @@ extern "system" {
     fn OpenClipboard(hwnd: HANDLE) -> BOOL;
     fn EmptyClipboard() -> BOOL;
     fn SetClipboardData(format: u32, mem: HANDLE) -> HANDLE;
+    fn GetClipboardData(format: u32) -> HANDLE;
     fn CloseClipboard() -> BOOL;
 }
 
@@ -359,4 +360,109 @@ pub fn utc_offset_secs() -> i64 {
         }
         -(bias as i64) * 60
     }
+}
+
+// ----------------------------------------------------------------------
+// Zwischenablage lesen (für "Epic-Konto verbinden")
+// ----------------------------------------------------------------------
+
+/// Text aus der Windows-Zwischenablage (höchstens 64 KB)
+pub fn get_clipboard() -> Option<String> {
+    unsafe {
+        if OpenClipboard(null_mut()) == 0 {
+            return None;
+        }
+        let mut out = None;
+        let mem = GetClipboardData(13); // CF_UNICODETEXT
+        if !mem.is_null() {
+            let p = GlobalLock(mem) as *const u16;
+            if !p.is_null() {
+                let mut len = 0usize;
+                while len < 65_536 && *p.add(len) != 0 {
+                    len += 1;
+                }
+                out = Some(String::from_utf16_lossy(std::slice::from_raw_parts(p, len)));
+                GlobalUnlock(mem);
+            }
+        }
+        CloseClipboard();
+        out
+    }
+}
+
+// ----------------------------------------------------------------------
+// Prozesse beobachten (Absturz-Erkennung bei Steam- und Epic-Spielen)
+// ----------------------------------------------------------------------
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn OpenProcess(access: u32, inherit: BOOL, pid: u32) -> HANDLE;
+    fn QueryFullProcessImageNameW(h: HANDLE, flags: u32, name: *mut u16, size: *mut u32) -> BOOL;
+    fn GetExitCodeProcess(h: HANDLE, code: *mut u32) -> BOOL;
+}
+
+const PROCESS_QUERY_LIMITED_INFORMATION: u32 = 0x1000;
+const SYNCHRONIZE: u32 = 0x0010_0000;
+
+/// Geöffneter Prozess – wird beim Verwerfen automatisch geschlossen.
+pub struct Proc(HANDLE);
+
+unsafe impl Send for Proc {}
+
+impl Drop for Proc {
+    fn drop(&mut self) {
+        unsafe {
+            CloseHandle(self.0);
+        }
+    }
+}
+
+impl Proc {
+    pub fn open(pid: u32) -> Option<Proc> {
+        let h = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, 0, pid) };
+        (!h.is_null()).then(|| Proc(h))
+    }
+
+    /// Vollständiger Pfad der EXE
+    pub fn path(&self) -> Option<String> {
+        let mut buf = [0u16; 1024];
+        let mut size = buf.len() as u32;
+        let ok = unsafe { QueryFullProcessImageNameW(self.0, 0, buf.as_mut_ptr(), &mut size) };
+        (ok != 0).then(|| String::from_utf16_lossy(&buf[..size as usize]))
+    }
+
+    /// None = läuft noch, Some(code) = beendet
+    pub fn exit_code(&self) -> Option<u32> {
+        let mut code = 0u32;
+        let ok = unsafe { GetExitCodeProcess(self.0, &mut code) };
+        if ok == 0 || code == 259 {
+            None
+        } else {
+            Some(code)
+        }
+    }
+}
+
+/// Alle laufenden Prozesse als (Prozess-ID, Dateiname klein)
+pub fn process_ids() -> Vec<(u32, String)> {
+    let mut out = Vec::new();
+    unsafe {
+        let snap = CreateToolhelp32Snapshot(0x0000_0002, 0);
+        if snap.is_null() || snap as isize == -1 {
+            return out;
+        }
+        let mut e: ProcessEntry32W = zeroed();
+        e.size = size_of::<ProcessEntry32W>() as u32;
+        if Process32FirstW(snap, &mut e) != 0 {
+            loop {
+                let len = e.exe_file.iter().position(|c| *c == 0).unwrap_or(e.exe_file.len());
+                out.push((e.process_id, String::from_utf16_lossy(&e.exe_file[..len]).to_lowercase()));
+                if Process32NextW(snap, &mut e) == 0 {
+                    break;
+                }
+            }
+        }
+        CloseHandle(snap);
+    }
+    out
 }

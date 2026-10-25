@@ -131,3 +131,190 @@ pub fn watch(mut child: Child, name: String, exe: String) -> Option<Problem> {
         }
     }
 }
+
+/// "Spieldateien überprüfen" für Steam- und Epic-Spiele
+pub fn verify_fix(game: &Game) -> Option<crate::problem::Fix> {
+    use crate::problem::Fix;
+    match &game.launch {
+        LaunchTarget::SteamRun(id) => Some(Fix::OpenUrl {
+            label: crate::i18n::t("fix.verify"),
+            url: format!("steam://validate/{id}"),
+        }),
+        LaunchTarget::Epic(uri) => Some(Fix::OpenUrl {
+            label: crate::i18n::t("fix.verify"),
+            url: uri.replace("action=launch", "action=verify"),
+        }),
+        _ => None,
+    }
+}
+
+/// Programme im Spielordner, die nicht das Spiel selbst sind
+fn is_helper(path: &str) -> bool {
+    const HELPERS: [&str; 14] = [
+        "crashreport", "crashhandler", "crashpad", "unitycrashhandler", "easyanticheat", "battleye", "redist",
+        "vc_redist", "vcredist", "dxsetup", "dotnet", "uninst", "setup", "launcherpatcher",
+    ];
+    let file = path.rsplit(['\\', '/']).next().unwrap_or(path).to_lowercase();
+    HELPERS.iter().any(|h| file.contains(h))
+}
+
+/// Beobachtet ein Steam-/Epic-Spiel nach dem Start: Startet ein Programm aus dem
+/// Spielordner und beendet sich innerhalb von 20 Sekunden mit einem Fehlercode,
+/// wird erklärt, was los ist. Läuft das Spiel länger, ist alles gut.
+#[cfg(windows)]
+pub fn watch_store(game: &Game) -> Option<Problem> {
+    use crate::winffi::{process_ids, Proc};
+    use std::collections::HashSet;
+
+    let dir = game.install_dir.as_ref()?.trim_end_matches(['\\', '/']).to_lowercase().replace('/', "\\");
+    if dir.len() < 4 {
+        return None;
+    }
+    let prefix = format!("{dir}\\");
+    let store = game.source.label();
+    let verify = verify_fix(game)?;
+
+    // Bereits laufende Prozesse ignorieren
+    let mut seen: HashSet<u32> = process_ids().into_iter().map(|(pid, _)| pid).collect();
+    let started = Instant::now();
+    let mut tracked: Vec<(Proc, String, Instant)> = Vec::new();
+    let mut crash: Option<(String, u32)> = None;
+    let mut last_activity = Instant::now();
+    let mut found_any = false;
+
+    loop {
+        std::thread::sleep(Duration::from_millis(500));
+        for (pid, _) in process_ids() {
+            if !seen.insert(pid) {
+                continue;
+            }
+            let Some(p) = Proc::open(pid) else { continue };
+            let Some(path) = p.path() else { continue };
+            if !path.to_lowercase().starts_with(&prefix) || is_helper(&path) {
+                continue;
+            }
+            found_any = true;
+            last_activity = Instant::now();
+            tracked.push((p, path, Instant::now()));
+        }
+
+        let mut i = 0;
+        while i < tracked.len() {
+            let (p, path, since) = &tracked[i];
+            match p.exit_code() {
+                None => {
+                    // Läuft seit 20 Sekunden → Spiel ist erfolgreich gestartet
+                    if since.elapsed() >= Duration::from_secs(20) {
+                        return None;
+                    }
+                    i += 1;
+                }
+                Some(code) => {
+                    if code != 0 && since.elapsed() < Duration::from_secs(20) {
+                        crash = Some((path.clone(), code));
+                    }
+                    last_activity = Instant::now();
+                    tracked.remove(i);
+                }
+            }
+        }
+
+        if !found_any {
+            // Nach 2 Minuten ohne Spielprozess aufgeben (z. B. Update läuft noch)
+            if started.elapsed() > Duration::from_secs(120) {
+                return None;
+            }
+        } else if tracked.is_empty() && last_activity.elapsed() > Duration::from_secs(6) {
+            // Alles beendet und nichts Neues gestartet
+            return crash.map(|(path, code)| Problem::store_crash(&game.name, &store, &path, code, verify));
+        }
+        if started.elapsed() > Duration::from_secs(300) {
+            return None;
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub fn watch_store(_game: &Game) -> Option<Problem> {
+    None
+}
+
+/// Deinstallationsprogramm eines eigenen Spiels aus der Windows-Registry suchen.
+/// Gibt (Programm, Argumente) zurück.
+pub fn find_uninstaller(c: &CustomGame) -> Option<(String, String)> {
+    #[cfg(windows)]
+    {
+        use winreg::enums::*;
+        use winreg::RegKey;
+        let exe = c.exe.trim().trim_matches('"').to_lowercase().replace('/', "\\");
+        let exe_dir = Path::new(&exe).parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+        let name = crate::model::normalize_name(&c.name);
+        let roots = [
+            (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
+            (HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
+            (HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
+        ];
+        let mut by_name: Option<String> = None;
+        for (hive, path) in roots {
+            let Ok(root) = RegKey::predef(hive).open_subkey(path) else { continue };
+            for sub in root.enum_keys().flatten() {
+                let Ok(k) = root.open_subkey(&sub) else { continue };
+                let get = |n: &str| k.get_value::<String, _>(n).unwrap_or_default();
+                let uninstall = get("UninstallString");
+                if uninstall.trim().is_empty() {
+                    continue;
+                }
+                let loc = get("InstallLocation").trim().trim_matches('"').trim_end_matches('\\').to_lowercase();
+                let icon = get("DisplayIcon").to_lowercase();
+                let matches_dir = !loc.is_empty() && loc.len() > 3 && (exe.starts_with(&format!("{loc}\\")) || exe_dir == loc);
+                let matches_icon = !icon.is_empty() && icon.trim_matches('"').split(',').next().map(|i| i.trim_matches('"') == exe).unwrap_or(false);
+                if matches_dir || matches_icon {
+                    return Some(split_command(&uninstall));
+                }
+                let dn = crate::model::normalize_name(&get("DisplayName"));
+                if !name.is_empty() && dn == name && by_name.is_none() {
+                    by_name = Some(uninstall);
+                }
+            }
+        }
+        by_name.map(|u| split_command(&u))
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = c;
+        None
+    }
+}
+
+/// "\"C:\\x\\unins000.exe\" /SILENT" → ("C:\\x\\unins000.exe", "/SILENT")
+pub fn split_command(cmd: &str) -> (String, String) {
+    let cmd = cmd.trim();
+    if let Some(rest) = cmd.strip_prefix('"') {
+        if let Some(end) = rest.find('"') {
+            return (rest[..end].to_string(), rest[end + 1..].trim().to_string());
+        }
+    }
+    let lower = cmd.to_lowercase();
+    if let Some(i) = lower.find(".exe") {
+        let end = i + 4;
+        return (cmd[..end].to_string(), cmd[end..].trim().to_string());
+    }
+    match cmd.split_once(' ') {
+        Some((a, b)) => (a.to_string(), b.trim().to_string()),
+        None => (cmd.to_string(), String::new()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uninstall_command_split() {
+        assert_eq!(split_command("\"C:\\G\\unins000.exe\" /x"), ("C:\\G\\unins000.exe".into(), "/x".into()));
+        assert_eq!(split_command("MsiExec.exe /X{ABC}"), ("MsiExec.exe".into(), "/X{ABC}".into()));
+        assert_eq!(split_command("C:\\Program Files\\G\\uninstall.exe"), ("C:\\Program Files\\G\\uninstall.exe".into(), "".into()));
+        assert!(is_helper("C:\\G\\UnityCrashHandler64.exe"));
+        assert!(!is_helper("C:\\G\\Game.exe"));
+    }
+}

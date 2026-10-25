@@ -21,7 +21,7 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 
 <br>
 
-<img src="../screenshots/library-epic-style.webp" alt="MAZ Launcher Bibliothek im Epic-Games-Stil" width="900">
+<img src="../screenshots/library-maz.webp" alt="MAZ Launcher Bibliothek im MAZ-Stil" width="900">
 
 </div>
 
@@ -43,13 +43,16 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 
 | | |
 |---|---|
-| 🎮 **Steam** | Findet automatisch alle installierten Steam-Spiele, auf allen Festplatten. Optional mit Steam-Web-API-Schlüssel: **alle** gekauften Spiele inklusive Spielzeit. |
-| 🟦 **Epic Games** | Findet automatisch alle installierten Epic-Spiele. |
+| 🎮 **Steam** | Zeigt **alle** deine Steam-Spiele – installiert oder nicht – auf allen Festplatten, inklusive Spielzeit. Installieren und deinstallieren direkt im Launcher. |
+| 🟦 **Epic Games** | Findet alle installierten Epic-Spiele automatisch. Einmal das Epic-Konto verbinden und die **komplette** Epic-Bibliothek erscheint – installieren oder deinstallieren mit einem Klick. |
+| 🎁 **Gratis-Spiele** | Ein Tab mit allen Spielen, die es gerade bei Epic Games und Steam kostenlos gibt, mit Countdown, wie lange noch. „Zur Bibliothek hinzufügen“ öffnet den Store – ein Klick auf „Holen“ und das Spiel ist im MAZ Launcher. |
+| 👥 **Freunde & Chat** | Anmelden mit Google, GitHub oder E-Mail, Freunde per Benutzername hinzufügen, chatten und sehen, wer online ist und was er gerade spielt. |
 | 🚀 **Eigene Spiele** | Füge jedes Spiel hinzu: EXE, Verknüpfung oder Batch-Datei. Vor **jedem** Start fragt eine Checkliste: *„Hast du alles Wichtige deaktiviert?“* Bei **Nein** startet das Spiel nicht. |
 | 🖼️ **Original-Icons & Cover** | Echte Spiel-Icons (direkt aus der EXE bzw. aus Steam) und Original-Cover. Für jedes Spiel kannst du ein eigenes Cover setzen. |
 | 🎨 **3 Ansichten** | Sieht aus **wie die Steam-Bibliothek**, **wie Epic Games** oder im **eigenen MAZ-Stil**. |
-| 🌈 **8 Farbschemata** | MAZ Violett, Mitternacht, Neon, Glut, Wald, Sakura, OLED Schwarz und Hell, plus eigene Akzentfarbe. |
-| 🛟 **Fehler einfach erklärt** | Startet etwas nicht, erklärt der Launcher **Schritt für Schritt** in einfachen Worten, was los ist und wie man es behebt, mit Knöpfen, die direkt helfen (z. B. „Als Administrator starten“ oder „Visual C++ herunterladen“). |
+| 🌈 **16 Designs + eigene** | 16 fertige Farbschemata, ein Design-Editor für eigene Designs (als Code teilbar), eigene Akzentfarbe und eigenes Hintergrundbild. |
+| 🌍 **9 Sprachen** | Deutsch, English, Español, Français, Italiano, Português, Polski, Türkçe und Русский – inklusive aller Fehlererklärungen. |
+| 🛟 **Fehler einfach erklärt** | Startet ein Spiel nicht oder stürzt es direkt nach dem Start ab (Steam, Epic oder eigenes), erklärt der Launcher **Schritt für Schritt** in einfachen Worten, was los ist und wie man es behebt, mit Knöpfen, die direkt helfen (z. B. „Spieldateien überprüfen“, „Als Administrator starten“ oder „Visual C++ herunterladen“). Jedes Spiel hat außerdem einen Knopf „Startet nicht? Hilfe“. |
 | 📦 **Eingebauter Installer** | Eine einzige EXE: Doppelklick öffnet ein Installationsmenü mit Desktop-Verknüpfung, Startmenü-Eintrag, „Jetzt öffnen“ und „App-Ordner öffnen“. Keine Admin-Rechte nötig. |
 | 🪶 **Winzig** | Eine einzige, auf Größe optimierte EXE ohne Zusatzdateien. |
 
@@ -58,22 +61,52 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="../screenshots/library-steam-style.webp" alt="Bibliothek im Steam-Stil"><br>
-      <sub><b>Steam-Stil</b>: Spieleliste links, „Zuletzt gespielt“ und alle Spiele als Raster</sub>
+      <img src="../screenshots/library-maz.webp" alt="MAZ-Stil"><br>
+      <sub><b>MAZ-Stil</b>: eigener Look mit „Weiterspielen“-Banner und allen Spielen als Raster</sub>
     </td>
     <td width="50%" align="center">
-      <img src="../screenshots/library-epic-style.webp" alt="Bibliothek im Epic-Games-Stil"><br>
-      <sub><b>Epic-Games-Stil</b>: große Karten, Filter oben</sub>
+      <img src="../screenshots/installed.webp" alt="Installiert"><br>
+      <sub><b>Installiert</b>: nur die Spiele, die auf deinem PC sind</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
-      <img src="../screenshots/game-details.webp" alt="Spieldetails"><br>
-      <sub><b>Spieldetails</b>: spielen, favorisieren, Spielordner öffnen, eigenes Cover wählen</sub>
+      <img src="../screenshots/library-steam-style.webp" alt="Steam-Stil"><br>
+      <sub><b>Steam-Stil</b>: Spieleliste links und alle Spiele als Raster</sub>
     </td>
     <td width="50%" align="center">
-      <img src="../screenshots/settings-design.webp" alt="Design-Einstellungen"><br>
-      <sub><b>Design-Einstellungen</b>: 3 Ansichten, 8 Farbschemata und eigene Akzentfarbe</sub>
+      <img src="../screenshots/details-steam-style.webp" alt="Details im Steam-Stil"><br>
+      <sub><b>Details im Steam-Stil</b>: installieren, Spielzeit, Store-Seite und mehr</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="../screenshots/library-epic-style.webp" alt="Epic-Games-Stil"><br>
+      <sub><b>Epic-Games-Stil</b>: große Karten, Filter oben</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="../screenshots/game-details.webp" alt="Spieldetails"><br>
+      <sub><b>Spieldetails</b>: spielen oder installieren, Favorit, eigenes Cover, Hilfe und Deinstallieren</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="../screenshots/free-games.webp" alt="Gratis-Spiele"><br>
+      <sub><b>Gratis-Spiele</b>: was es gerade bei Epic und Steam gratis gibt, mit Countdown</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="../screenshots/friends.webp" alt="Freunde"><br>
+      <sub><b>Freunde</b>: Freunde hinzufügen, chatten und sehen, was sie spielen</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="../screenshots/settings-design.webp" alt="Design"><br>
+      <sub><b>Design</b>: 16 fertige Designs, eigene Designs und eigene Akzentfarbe</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="../screenshots/settings-language.webp" alt="Sprachen"><br>
+      <sub><b>Sprachen</b>: der ganze Launcher in 9 Sprachen</sub>
     </td>
   </tr>
 </table>
@@ -103,12 +136,16 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 - **Spielen:** Mit der Maus über ein Spiel fahren und auf ▶ klicken. Ein Klick auf das Cover öffnet die Details.
 - **Eigenes Spiel hinzufügen:** Links auf **„Spiel hinzufügen“** → bei „Programm“ auf **„Durchsuchen…“** → die Start-Datei des Spiels wählen → **„Hinzufügen“**.
 - **Aussehen ändern:** **Einstellungen → Design** → Ansicht (MAZ / Steam / Epic) und Farbschema wählen.
-- **Alle Steam-Spiele sehen (auch nicht installierte):** **Einstellungen → Verbindungen** → kostenlosen Steam-Web-API-Schlüssel eintragen. Die Anleitung steht direkt daneben.
+- **Alle Epic-Spiele sehen:** **Einstellungen → Verbindungen → Epic-Konto verbinden** und die 3 Schritte dort befolgen.
+- **Genauere Steam-Liste (optional):** **Einstellungen → Verbindungen** → kostenlosen Steam-Web-API-Schlüssel eintragen. Die Anleitung steht direkt daneben.
+- **Spiel deinstallieren:** Spiel öffnen → **Deinstallieren**.
+- **Spiel startet nicht?** Spiel öffnen → **Startet nicht? Hilfe**. Stürzt ein Spiel direkt nach dem Start ab, erscheint die Erklärung automatisch.
+- **Freunde & Chat:** Oben auf **Freunde** klicken und mit Google, GitHub oder E-Mail anmelden.
 - **Sicherheitsfrage anpassen:** **Einstellungen → Eigene Spiele** → Punkte hinzufügen, ändern oder löschen. Pro Spiel kannst du zusätzliche Punkte festlegen.
 
 ### Diese Fehler erklärt der Launcher automatisch
 
-Spieldatei fehlt · Laufwerk oder USB-Platte nicht eingesteckt · Admin-Rechte nötig · Zugriff verweigert · falsche Datei gewählt · vom Virenschutz blockiert · von Windows / Smart App Control blockiert · Datei wird benutzt · fehlende DLLs (Visual C++ / DirectX) · Fehler **0xc000007b** · **0xc0000142** · Absturz direkt nach dem Start · Steam bzw. Epic nicht installiert · Steam/Epic reagiert nicht · falscher Steam-API-Schlüssel · WebView2 fehlt · Installation fehlgeschlagen.
+Spiel stürzt direkt nach dem Start ab (Steam, Epic oder eigenes) · Spieldatei fehlt · Laufwerk oder USB-Platte nicht eingesteckt · Admin-Rechte nötig · Zugriff verweigert · falsche Datei gewählt · vom Virenschutz blockiert · von Windows / Smart App Control blockiert · Datei wird benutzt · fehlende DLLs (Visual C++ / DirectX) · Fehler **0xc000007b** · **0xc0000142** · Absturz direkt nach dem Start · Steam bzw. Epic nicht installiert · Steam/Epic reagiert nicht · falscher Steam-API-Schlüssel · WebView2 fehlt · Installation fehlgeschlagen.
 
 ## Selbst bauen
 
@@ -183,13 +220,13 @@ Einstellungen liegen in `%APPDATA%\MAZ Launcher\config.json`, der Bilder-Cache i
 Nein. Steam- und Epic-Spiele werden immer über den Original-Launcher gestartet. Es werden nie Passwörter abgefragt.
 
 **Warum sehe ich nicht alle meine Epic-Spiele?**
-Epic gibt die Liste der gekauften Spiele nur nach einer Anmeldung heraus. Der MAZ Launcher zeigt alle **installierten** Epic-Spiele.
+Epic gibt die Liste der gekauften Spiele nur nach einer Anmeldung heraus. Geh auf **Einstellungen → Verbindungen → Epic-Konto verbinden**, melde dich im Browser an und drück auf der Seite, die Epic dann zeigt, Strg + A und Strg + C – fertig. Deine ganze Epic-Bibliothek erscheint.
 
 **Das Fenster bleibt weiß oder startet nicht.**
 Der Launcher braucht Microsoft WebView2 (bei Windows 10/11 normalerweise dabei). Fehlt es, erklärt der Launcher beim Start, wie man es installiert.
 
 **Werden meine Daten irgendwohin gesendet?**
-Keine Konten, keine Telemetrie. Internet wird nur für Cover-Bilder und, falls du einen Schlüssel einträgst, für die Steam-Web-API genutzt.
+Keine Telemetrie. Ein Konto brauchst du nur für Freunde & Chat, und das ist komplett freiwillig – siehe [Datenschutzerklärung](../DATENSCHUTZ.md). Sonst wird Internet nur für Cover-Bilder, die Gratis-Spiele-Liste und – falls verbunden – Steam und Epic genutzt.
 
 ## Mitmachen
 

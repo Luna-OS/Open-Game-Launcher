@@ -146,7 +146,19 @@ pub fn epic_uri(ns: &str, item: &str, app: &str, action: &str) -> String {
 
 pub fn scan(show_uninstalled: bool) -> EpicScan {
     let mut status = StoreStatus::default();
-    let catalog = read_catalog();
+    let mut catalog = read_catalog();
+    // Mit verbundenem Epic-Konto: komplette Online-Bibliothek (zwischengespeichert)
+    for o in crate::epicacct::load_cache() {
+        if !catalog.iter().any(|c| c.app_name == o.app_name) {
+            catalog.push(CatalogGame {
+                app_name: o.app_name.clone(),
+                namespace: o.namespace.clone(),
+                item_id: o.item_id.clone(),
+                title: o.title.clone(),
+                art: o.art(),
+            });
+        }
+    }
     let Some(dir) = manifests_dir() else {
         status.found = launcher_installed();
         status.note = Some(if status.found {

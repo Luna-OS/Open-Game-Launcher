@@ -21,6 +21,8 @@ pub enum Fix {
     Rescan,
     /// Einstellungen öffnen
     OpenSettings,
+    /// Eigenes Spiel aus dem Launcher entfernen
+    RemoveGame,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -194,6 +196,92 @@ impl Problem {
             _ => build("quit_early", Severity::Warning, &g, vec![Fix::RunAsAdmin, Fix::EditGame, url("fix.vc64", VCREDIST_X64)], tech),
         };
         Some(p)
+    }
+
+    // ------------------------------------------------------------------
+    // Steam- und Epic-Spiele: Absturz direkt nach dem Start, Hilfe, Deinstallieren
+    // ------------------------------------------------------------------
+
+    /// Ein Steam-/Epic-Spiel hat sich direkt nach dem Start mit Fehlercode beendet.
+    /// `verify` = Knopf "Spieldateien überprüfen" für den jeweiligen Store.
+    pub fn store_crash(game: &str, store: &str, path: &str, code: u32, verify: Fix) -> Problem {
+        let tech = format!("Store: {store}\nPath: {path}\nExit code: {code} (0x{code:08X})");
+        match code {
+            0xC000_0135 | 0xC06D_007E | 0xC000_007B | 0xC000_0142 => {
+                let mut p = Problem::from_exit_code(game, path, code).unwrap_or_else(|| Problem::unknown(game, &tech));
+                p.fixes.retain(|f| matches!(f, Fix::OpenUrl { .. } | Fix::OpenFolder { .. }));
+                p.fixes.insert(0, verify);
+                p.technical = tech;
+                p
+            }
+            _ => build(
+                "store_crash",
+                Severity::Error,
+                &[("game", game), ("store", store)],
+                vec![
+                    verify,
+                    url("fix.vc64", VCREDIST_X64),
+                    url("fix.vc86", VCREDIST_X86),
+                    url("fix.directx", DIRECTX),
+                    url("fix.nvidia", NVIDIA),
+                    url("fix.amd", AMD),
+                    url("fix.intel", INTEL),
+                    folder("fix.folder_game", parent_of(path)),
+                ],
+                tech,
+            ),
+        }
+    }
+
+    /// "Spiel startet nicht?" – alle typischen Lösungen auf einen Blick.
+    pub fn start_help(game: &str, store: &str, verify: Option<Fix>, dir: Option<String>, custom: bool) -> Problem {
+        let mut fixes = Vec::new();
+        if custom {
+            fixes.push(Fix::RunAsAdmin);
+            fixes.push(Fix::EditGame);
+        }
+        if let Some(v) = verify {
+            fixes.push(v);
+        }
+        fixes.extend([
+            url("fix.vc64", VCREDIST_X64),
+            url("fix.vc86", VCREDIST_X86),
+            url("fix.directx", DIRECTX),
+            url("fix.nvidia", NVIDIA),
+            url("fix.amd", AMD),
+            url("fix.intel", INTEL),
+        ]);
+        if let Some(d) = dir {
+            fixes.push(folder("fix.folder_game", d));
+        }
+        build(
+            if custom { "start_help_custom" } else { "start_help" },
+            Severity::Info,
+            &[("game", game), ("store", store)],
+            fixes,
+            format!("Store: {store}"),
+        )
+    }
+
+    /// Epic hat keinen direkten "Deinstallieren"-Link → Anleitung + Launcher öffnen
+    pub fn epic_uninstall(game: &str) -> Problem {
+        build(
+            "epic_uninstall",
+            Severity::Info,
+            &[("game", game)],
+            vec![url("fix.epic_open", "com.epicgames.launcher://")],
+            "Epic Games Launcher has no uninstall URI.".into(),
+        )
+    }
+
+    /// Für ein eigenes Spiel wurde kein Deinstallationsprogramm gefunden
+    pub fn no_uninstaller(game: &str, dir: Option<String>) -> Problem {
+        let mut fixes = vec![url("fix.apps", "ms-settings:appsfeatures")];
+        if let Some(d) = dir {
+            fixes.push(folder("fix.folder_game", d));
+        }
+        fixes.push(Fix::RemoveGame);
+        build("no_uninstaller", Severity::Info, &[("game", game)], fixes, "No matching entry in ...\\CurrentVersion\\Uninstall".into())
     }
 
     pub fn uac_cancelled(game: &str) -> Problem {
@@ -370,6 +458,12 @@ mod tests {
             Problem::uac_cancelled("x"),
             Problem::workdir_missing("x", "C:\\"),
             Problem::app_crashed("log", "msg", "url"),
+            Problem::store_crash("x", "Steam", "C:\\a.exe", 1, Fix::Rescan),
+            Problem::store_crash("x", "Steam", "C:\\a.exe", 0xC000_0135, Fix::Rescan),
+            Problem::start_help("x", "Steam", None, None, false),
+            Problem::start_help("x", "x", None, None, true),
+            Problem::epic_uninstall("x"),
+            Problem::no_uninstaller("x", None),
         ] {
             assert!(!p.title.starts_with("p."), "Schlüssel fehlt: {}", p.title);
             assert!(!p.steps.is_empty(), "{}", p.title);

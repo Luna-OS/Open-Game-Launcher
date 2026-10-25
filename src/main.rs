@@ -7,6 +7,7 @@
 mod appinfo;
 mod config;
 mod epic;
+mod epicacct;
 mod freegames;
 mod i18n;
 mod icons;

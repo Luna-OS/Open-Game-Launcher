@@ -114,6 +114,9 @@ pub struct App {
     pub social_busy: Signal<bool>,
     pub social_error: Signal<Option<String>>,
     pub playing_now: Signal<Option<String>>,
+    // Epic-Konto
+    pub epic_busy: Signal<bool>,
+    pub epic_error: Signal<Option<String>>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
@@ -332,6 +335,16 @@ pub fn play(app: App, id: String) {
                     if app.settings.peek().minimize_on_launch {
                         minimize_window();
                     }
+                    // Stürzt das Spiel direkt ab? Dann erklären, was los ist.
+                    let g = game.clone();
+                    let gid = id.clone();
+                    dioxus::core::spawn_forever(async move {
+                        let res = tokio::task::spawn_blocking(move || launch::watch_store(&g)).await;
+                        if let Ok(Some(p)) = res {
+                            restore_window();
+                            app.show_problem(p, Some(gid));
+                        }
+                    });
                 }
             }
             Err(p) => app.show_problem(p, Some(id)),
@@ -407,6 +420,68 @@ pub fn run_fix(app: App, fix: Fix, game_id: Option<String>) {
             app.close_modal();
             app.go(Page::Settings(SettingsTab::Connections));
         }
+        Fix::RemoveGame => {
+            if let Some(id) = game_id {
+                if app.settings.peek().custom(&id).is_some() {
+                    app.open(Modal::DeleteGame(id));
+                }
+            }
+        }
+    }
+}
+
+/// "Spiel startet nicht?" – Hilfe mit allen typischen Lösungen
+pub fn start_help(app: App, id: String) {
+    let Some(game) = app.game(&id) else { return };
+    let custom = game.source == Source::Custom;
+    let dir = game
+        .install_dir
+        .clone()
+        .or_else(|| app.settings.peek().custom(&id).and_then(|c| std::path::Path::new(c.exe.trim().trim_matches('"')).parent().map(|p| p.to_string_lossy().to_string())));
+    let p = Problem::start_help(&game.name, &game.source.label(), launch::verify_fix(&game), dir, custom);
+    app.show_problem(p, Some(id));
+}
+
+/// Spiel deinstallieren
+pub fn uninstall(app: App, id: String) {
+    let Some(game) = app.game(&id) else { return };
+    match &game.launch {
+        LaunchTarget::SteamRun(appid) => {
+            // Steam fragt selbst noch einmal nach
+            if sys::open_url(&format!("steam://uninstall/{appid}")).is_ok() {
+                app.close_modal();
+                app.toast(&tf("toast.uninstall_store", &[("name", &game.name), ("store", "Steam")]), "trash");
+                rescan_later(app, &[20, 60, 180]);
+            } else {
+                app.show_problem(Problem::steam_missing(), Some(id));
+            }
+        }
+        LaunchTarget::Epic(_) => {
+            let _ = sys::open_url("com.epicgames.launcher://");
+            app.show_problem(Problem::epic_uninstall(&game.name), Some(id));
+            rescan_later(app, &[60, 180, 600]);
+        }
+        LaunchTarget::Custom => {
+            let Some(c) = app.settings.peek().custom(&id).cloned() else { return };
+            let dir = std::path::Path::new(c.exe.trim().trim_matches('"')).parent().map(|p| p.to_string_lossy().to_string());
+            match launch::find_uninstaller(&c) {
+                Some((prog, args)) => {
+                    #[cfg(windows)]
+                    let res = crate::winffi::shell_execute(Some("open"), &prog, Some(&args), None);
+                    #[cfg(not(windows))]
+                    let res: Result<(), i32> = { let _ = (&prog, &args); Err(0) };
+                    match res {
+                        Ok(()) => {
+                            app.close_modal();
+                            app.toast(&tf("toast.uninstall_custom", &[("name", &c.name)]), "trash");
+                        }
+                        Err(_) => app.show_problem(Problem::no_uninstaller(&c.name, dir), Some(id)),
+                    }
+                }
+                None => app.show_problem(Problem::no_uninstaller(&c.name, dir), Some(id)),
+            }
+        }
+        _ => {}
     }
 }
 

@@ -21,7 +21,7 @@ Steam, Epic Games and your own games in one fast, lightweight and good-looking W
 
 <br>
 
-<img src="docs/screenshots/library-epic-style.webp" alt="MAZ Launcher library in the Epic Games style" width="900">
+<img src="docs/screenshots/library-maz.webp" alt="MAZ Launcher library in its own MAZ style" width="900">
 
 </div>
 
@@ -39,20 +39,20 @@ Steam, Epic Games and your own games in one fast, lightweight and good-looking W
 - [Contributing](#contributing)
 - [License](#license)
 
-> [!NOTE]
-> The app interface is currently available in **German**. The labels quoted below (for example **„Spiel hinzufügen“**) are shown exactly as they appear in the app, with an English translation alongside.
-
 ## Features
 
 | | |
 |---|---|
-| 🎮 **Steam** | Detects every installed Steam game automatically, across all drives. With an optional Steam Web API key it can also show **all** owned games, including playtime. |
-| 🟦 **Epic Games** | Detects every installed Epic Games title automatically. |
+| 🎮 **Steam** | Shows **all** your Steam games – installed or not – across all drives, including playtime. Install and uninstall them right from the launcher. |
+| 🟦 **Epic Games** | Detects every installed Epic Games title automatically. Connect your Epic account once to see your **complete** Epic library, then install or uninstall with one click. |
+| 🎁 **Free games** | A tab with every game that is currently free on Epic Games and Steam, with a countdown of how long the offer lasts. *Add to library* opens the store page – one click on *Get* and it shows up in MAZ Launcher. |
+| 👥 **Friends & chat** | Sign in with Google, GitHub or email, add friends by username, chat with them and see who is online and what they are playing right now. |
 | 🚀 **Your own games** | Add any game: an `.exe`, a shortcut or a batch file. Before **every** launch a safety checklist asks *"Have you turned off everything important?"*. If you answer **No**, the game does not start. |
 | 🖼️ **Original icons & covers** | Real game icons (taken straight from the EXE or from Steam) and original cover art. You can set a custom cover for any game. |
 | 🎨 **3 library layouts** | Looks like **the Steam library**, like **Epic Games**, or uses the launcher's own **MAZ style**. |
-| 🌈 **8 color themes** | MAZ Violet, Midnight, Neon, Ember, Forest, Sakura, OLED Black and Light, plus a custom accent color. |
-| 🛟 **Errors explained in plain words** | If something won't start, the launcher explains **step by step** what happened and how to fix it, with buttons that fix it directly (for example *Run as administrator* or *Download Visual C++*). |
+| 🌈 **16 designs + your own** | 16 ready-made color themes, a design editor for your own themes (shareable as a code), a custom accent color and your own background image. |
+| 🌍 **9 languages** | English, Deutsch, Español, Français, Italiano, Português, Polski, Türkçe and Русский – including every error explanation. |
+| 🛟 **Errors explained in plain words** | If a game won't start or crashes right after launch (Steam, Epic or your own), the launcher explains **step by step** what happened and how to fix it, with buttons that fix it directly (for example *Verify game files*, *Run as administrator* or *Download Visual C++*). Every game also has a *Won't start? Help* button. |
 | 📦 **Built-in installer** | One single EXE: double-click it to get an install menu with a desktop shortcut, a Start menu entry, *Open now* and *Open app folder*. No admin rights required. |
 | 🪶 **Tiny footprint** | One size-optimized EXE with no extra files. |
 
@@ -61,22 +61,52 @@ Steam, Epic Games and your own games in one fast, lightweight and good-looking W
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/library-steam-style.webp" alt="Library in the Steam style"><br>
-      <sub><b>Steam style</b>: game list on the left, "Recently played" and all games in a grid</sub>
+      <img src="docs/screenshots/library-maz.webp" alt="MAZ style"><br>
+      <sub><b>MAZ style</b>: its own look with a "Continue playing" banner and all games in a grid</sub>
     </td>
     <td width="50%" align="center">
-      <img src="docs/screenshots/library-epic-style.webp" alt="Library in the Epic Games style"><br>
-      <sub><b>Epic Games style</b>: large cards with filters along the top</sub>
+      <img src="docs/screenshots/installed.webp" alt="Installed"><br>
+      <sub><b>Installed</b>: only the games that are on your PC</sub>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
-      <img src="docs/screenshots/game-details.webp" alt="Game details dialog"><br>
-      <sub><b>Game details</b>: play, favorite, open the game folder, set a custom cover</sub>
+      <img src="docs/screenshots/library-steam-style.webp" alt="Steam style"><br>
+      <sub><b>Steam style</b>: game list on the left and all games in a grid</sub>
     </td>
     <td width="50%" align="center">
+      <img src="docs/screenshots/details-steam-style.webp" alt="Steam-style details"><br>
+      <sub><b>Steam-style details</b>: install, playtime, store page and more</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/library-epic-style.webp" alt="Epic Games style"><br>
+      <sub><b>Epic Games style</b>: large cards with filters along the top</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/game-details.webp" alt="Game details"><br>
+      <sub><b>Game details</b>: play or install, favorite, custom cover, help and uninstall</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/free-games.webp" alt="Free games"><br>
+      <sub><b>Free games</b>: what is free on Epic and Steam right now, with a countdown</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/friends.webp" alt="Friends"><br>
+      <sub><b>Friends</b>: add friends, chat and see what they are playing</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
       <img src="docs/screenshots/settings-design.webp" alt="Design settings"><br>
-      <sub><b>Design settings</b>: 3 layouts, 8 color themes and a custom accent color</sub>
+      <sub><b>Design settings</b>: 16 ready-made designs, your own designs and a custom accent color</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/settings-language.webp" alt="Languages"><br>
+      <sub><b>Languages</b>: the whole launcher in 9 languages</sub>
     </td>
   </tr>
 </table>
@@ -87,31 +117,35 @@ Steam, Epic Games and your own games in one fast, lightweight and good-looking W
 
 1. Download the latest **`MAZ-Launcher.exe`** from [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest).
 2. **Double-click** the file.
-3. Click **„Installieren“** (*Install*) in the install menu.
-4. Done. Click **„Jetzt öffnen“** (*Open now*). From then on, start the launcher from the desktop shortcut.
+3. Click **Install** in the install menu.
+4. Done. Click **Open now**. From then on, start the launcher from the desktop shortcut.
 
 > [!TIP]
 > **Windows shows "Windows protected your PC"?**
 > This happens with new programs that aren't signed with a paid code-signing certificate. Click **More info**, then **Run anyway**.
 
 > [!TIP]
-> **Prefer a portable version?** Click **„Ohne Installation starten“** (*Start without installing*) in the install menu, or place an empty file named `portable.txt` next to the EXE.
+> **Prefer a portable version?** Click **Start without installing** in the install menu, or place an empty file named `portable.txt` next to the EXE.
 
 **`MAZ-Launcher-mini.exe`** is the same app compressed with UPX. Some antivirus programs wrongly flag packed EXEs; if that happens, use the regular version.
 
-**Uninstall:** Windows Settings → Apps → "MAZ Launcher" → Uninstall, or in the launcher under **Einstellungen → Allgemein** (*Settings → General*). Your games are not touched.
+**Uninstall:** Windows Settings → Apps → "MAZ Launcher" → Uninstall, or in the launcher under **Settings → General**. Your games are not touched.
 
 ## Usage
 
 - **Play:** hover over a game and click ▶. Clicking the cover opens the game details.
-- **Add your own game:** click **„Spiel hinzufügen“** (*Add game*) on the left → **„Durchsuchen…“** (*Browse…*) next to "Programm" → pick the game's executable → **„Hinzufügen“** (*Add*).
-- **Change the look:** **Einstellungen → Design** (*Settings → Design*) → choose a layout (MAZ / Steam / Epic) and a color theme.
-- **See all Steam games, including uninstalled ones:** **Einstellungen → Verbindungen** (*Settings → Connections*) → enter a free Steam Web API key. Instructions are shown right next to the field.
-- **Customize the safety checklist:** **Einstellungen → Eigene Spiele** (*Settings → Own games*) → add, edit or delete items. You can also add extra items per game.
+- **Add your own game:** click **Add game** on the left → **Browse…** next to "Program" → pick the game's executable → **Add**.
+- **Change the look:** **Settings → Design** → choose a layout (MAZ / Steam / Epic) and a color theme.
+- **See all Epic games:** **Settings → Connections → Connect Epic account** and follow the 3 steps shown there.
+- **More accurate Steam list (optional):** **Settings → Connections** → enter a free Steam Web API key. Instructions are shown right next to the field.
+- **Uninstall a game:** open the game → **Uninstall**.
+- **A game won't start?** open the game → **Won't start? Help**. If a game crashes right after launch, the explanation appears automatically.
+- **Friends & chat:** click **Friends** at the top and sign in with Google, GitHub or email.
+- **Customize the safety checklist:** **Settings → My games** → add, edit or delete items. You can also add extra items per game.
 
 ### Errors the launcher explains for you
 
-Missing game file · drive or USB disk not connected · administrator rights required · access denied · wrong file selected · blocked by antivirus · blocked by Windows / Smart App Control · file in use · missing DLLs (Visual C++ / DirectX) · error **0xc000007b** · **0xc0000142** · crash right after launch · Steam or Epic not installed · Steam or Epic not responding · invalid Steam API key · WebView2 missing · installation failed.
+Game crashed right after launch (Steam, Epic or own games) · missing game file · drive or USB disk not connected · administrator rights required · access denied · wrong file selected · blocked by antivirus · blocked by Windows / Smart App Control · file in use · missing DLLs (Visual C++ / DirectX) · error **0xc000007b** · **0xc0000142** · crash right after launch · Steam or Epic not installed · Steam or Epic not responding · invalid Steam API key · WebView2 missing · installation failed.
 
 ## Building from source
 
@@ -141,7 +175,8 @@ The compiled stylesheet (`assets/maz.css`) is checked into the repository and em
 | Components | Modeled on [rust-ui](https://github.com/rust-ui/ui) (Button, Card, Badge, Input, Switch, Dialog… with the same variants and classes) |
 | Styling | Tailwind CSS v4, themes via CSS custom properties |
 | Steam | Registry → `libraryfolders.vdf` → `appmanifest_*.acf` (custom VDF parser), artwork from the Steam cache, optional Steam Web API |
-| Epic Games | Registry → launcher manifests (`*.item`) |
+| Epic Games | Registry → launcher manifests (`*.item`), launcher catalog cache, optional Epic account for the full library |
+| Friends & chat | [Supabase](https://supabase.com) (Postgres with row-level security, Google/GitHub/email sign-in) |
 | Icons | Original icons extracted from the EXE through the Windows API (256 px) |
 | HTTP | `ureq` with native Windows TLS (SChannel), so no large TLS library is bundled |
 
@@ -186,13 +221,13 @@ Settings are stored in `%APPDATA%\MAZ Launcher\config.json`, the image cache in 
 No. Steam and Epic games are always started through their official launchers. The launcher never asks for passwords.
 
 **Why don't I see all of my Epic games?**
-Epic only provides the list of owned games after signing in. MAZ Launcher shows all **installed** Epic games.
+Epic only provides the list of owned games after signing in. Go to **Settings → Connections → Connect Epic account**, sign in in your browser, press Ctrl + A and Ctrl + C on the page Epic shows – done. Your whole Epic library appears.
 
 **The window stays white or doesn't open.**
 The launcher needs Microsoft WebView2, which is normally included with Windows 10 and 11. If it is missing, the launcher explains on startup how to install it.
 
 **Is my data sent anywhere?**
-No accounts and no telemetry. Network access is only used for cover art and, if you add a key, the Steam Web API.
+No telemetry. An account is only needed for friends & chat and is completely optional – see the [privacy policy](docs/DATENSCHUTZ.md). Otherwise network access is only used for cover art, the free-games list and, if you connect them, Steam and Epic.
 
 ## Contributing
 

@@ -65,6 +65,7 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
         game.id.clone(),
         game.id.clone(),
     );
+    let (id7, id8) = (game.id.clone(), game.id.clone());
     let dir = game.install_dir.clone();
     let appid = game.steam_appid;
     let fav_label = t(if fav { "act.unfav" } else { "act.fav" });
@@ -103,6 +104,16 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
                 Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| app.open(Modal::EditGame(Some(id4.clone()))),
                     Icon { name: "pencil", class: "size-4" }
                     {t("fix.edit")}
+                }
+            }
+            if game.installed {
+                Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| start_help(app, id7.clone()),
+                    Icon { name: "wrench", class: "size-4" }
+                    {t("act.help")}
+                }
+                Button { variant: ButtonVariant::Outline, class: "{btn} hover:text-destructive", onclick: move |_| uninstall(app, id8.clone()),
+                    Icon { name: "package", class: "size-4" }
+                    {t("act.uninstall")}
                 }
             }
             Button { variant: ButtonVariant::Ghost, class: btn, onclick: move |_| toggle_hidden(app, &id5),

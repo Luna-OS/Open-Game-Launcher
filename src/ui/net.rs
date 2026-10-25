@@ -15,6 +15,88 @@ static LOOP_STARTED: AtomicBool = AtomicBool::new(false);
 static FRIENDS_LOADED: AtomicBool = AtomicBool::new(false);
 
 // ----------------------------------------------------------------------
+// Epic-Konto: komplette Epic-Bibliothek
+// ----------------------------------------------------------------------
+
+/// Bibliothek mit dem gespeicherten Epic-Konto neu laden.
+/// `force` = false → höchstens alle 6 Stunden.
+pub fn sync_epic(app: App, force: bool) {
+    let Some(auth) = app.settings.peek().epic_auth.clone() else { return };
+    let last = app.settings.peek().epic_synced;
+    if *app.epic_busy.peek() || (!force && sys::now_secs().saturating_sub(last) < 6 * 3600) {
+        return;
+    }
+    run_epic(app, move || {
+        let fresh = crate::epicacct::ensure_fresh(&auth)?;
+        let list = crate::epicacct::fetch_library(&fresh, &crate::epicacct::load_cache(), &crate::i18n::current_code())?;
+        Ok((fresh, list))
+    });
+}
+
+/// Code aus dem Browser (oder die ganze kopierte Seite) → Konto verbinden
+pub fn epic_connect(app: App, pasted: String) {
+    if *app.epic_busy.peek() {
+        return;
+    }
+    let Some(code) = crate::epicacct::extract_code(&pasted) else {
+        let mut err = app.epic_error;
+        err.set(Some(t("epic.err_code")));
+        return;
+    };
+    run_epic(app, move || {
+        let auth = crate::epicacct::exchange(&code)?;
+        let list = crate::epicacct::fetch_library(&auth, &crate::epicacct::load_cache(), &crate::i18n::current_code())?;
+        Ok((auth, list))
+    });
+}
+
+fn run_epic<F>(app: App, job: F)
+where
+    F: FnOnce() -> Result<(crate::epicacct::EpicAuth, Vec<crate::epicacct::OwnedEpic>), String> + Send + 'static,
+{
+    let (mut busy, mut err) = (app.epic_busy, app.epic_error);
+    busy.set(true);
+    err.set(None);
+    spawn_forever(async move {
+        let res = tokio::task::spawn_blocking(job).await;
+        let (mut busy, mut err) = (app.epic_busy, app.epic_error);
+        busy.set(false);
+        match res {
+            Ok(Ok((auth, list))) => {
+                let n = list.len();
+                crate::epicacct::save_cache(&list);
+                app.update(|s| {
+                    s.epic_auth = Some(auth);
+                    s.epic_synced = sys::now_secs();
+                    s.epic_show_uninstalled = true;
+                });
+                app.toast(&tf("epic.synced_toast", &[("n", &n.to_string())]), "check");
+                rescan(app);
+            }
+            Ok(Err(e)) => {
+                if e == t("epic.err_expired") {
+                    // Anmeldung abgelaufen: Liste bleibt (Cache), nur neu verbinden nötig
+                    app.update(|s| s.epic_auth = None);
+                }
+                err.set(Some(e));
+            }
+            Err(_) => err.set(Some(t("acc.err_unknown"))),
+        }
+    });
+}
+
+pub fn epic_disconnect(app: App) {
+    crate::epicacct::clear_cache();
+    app.update(|s| {
+        s.epic_auth = None;
+        s.epic_synced = 0;
+    });
+    let mut err = app.epic_error;
+    err.set(None);
+    rescan(app);
+}
+
+// ----------------------------------------------------------------------
 // Gratis-Spiele
 // ----------------------------------------------------------------------
 
