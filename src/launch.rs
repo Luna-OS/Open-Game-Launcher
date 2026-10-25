@@ -135,14 +135,36 @@ fn shell_start(c: &CustomGame, exe: &str, workdir: &str, as_admin: bool) -> Resu
         let p = Path::new(exe);
         let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
         let executable = p.is_file() && p.metadata().map(|m| m.permissions().mode() & 0o111 != 0).unwrap_or(false);
-        let mut cmd = if ext == "exe" && !cfg!(target_os = "macos") {
-            // Windows-Programm unter Linux: über Wine starten (falls installiert)
-            let mut cmd = sys::host_command("wine");
+        let mut cmd = if matches!(ext.as_str(), "exe" | "msi" | "bat") && !cfg!(target_os = "macos") {
+            // Windows-Programm unter Linux: gewählte Wine-/Proton-Version (sonst System-Wine)
+            let wd = (!workdir.is_empty() && Path::new(workdir).is_dir()).then(|| Path::new(workdir));
+            let mut cmd = match crate::runners::find(c.runner.trim()) {
+                Some(r) if r.kind == crate::runners::Kind::Proton => {
+                    let prefix = crate::runners::prefix_for(&c.id);
+                    let _ = std::fs::create_dir_all(&prefix);
+                    let mut env = vec![("STEAM_COMPAT_DATA_PATH".to_string(), prefix.to_string_lossy().to_string())];
+                    if let Some(root) = crate::runners::steam_root() {
+                        env.push(("STEAM_COMPAT_CLIENT_INSTALL_PATH".into(), root.to_string_lossy().to_string()));
+                    }
+                    let mut cmd = sys::host_command_env(&r.path, &env, wd);
+                    cmd.arg("run");
+                    cmd
+                }
+                Some(r) => sys::host_command_env(&r.path, &[], wd),
+                None if !c.runner.trim().is_empty() => {
+                    // Gewählte Version gibt es nicht mehr
+                    return Err(Problem::runner_missing(&c.name, c.runner.trim()));
+                }
+                None => sys::host_command_env("wine", &[], wd),
+            };
             cmd.arg(p);
             if !c.args.trim().is_empty() {
                 cmd.args(c.args.split_whitespace());
             }
-            cmd
+            return cmd
+                .spawn()
+                .map(|_| ())
+                .map_err(|e| Problem::from_os_error(&c.name, exe, e.raw_os_error(), &e.to_string()));
         } else if executable && ext != "desktop" {
             let mut cmd = sys::host_command(p);
             let args = c.args.trim();

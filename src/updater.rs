@@ -79,7 +79,7 @@ impl InstallKind {
         {
             return InstallKind::Pacman;
         }
-        if std::process::Command::new("rpm").args(["-q", "maz-launcher"]).output().map(|o| o.status.success()).unwrap_or(false) {
+        if std::process::Command::new(sys::unix_tool("rpm")).args(["-q", "maz-launcher"]).output().map(|o| o.status.success()).unwrap_or(false) {
             return InstallKind::Rpm;
         }
         InstallKind::Manual
@@ -205,7 +205,7 @@ pub fn latest() -> Result<Release, String> {
         page: v
             .get("html_url")
             .and_then(|b| b.as_str())
-            .filter(|u| u.starts_with("https://github.com/"))
+            .filter(|u| u.starts_with(&format!("{}/releases/", sys::GITHUB_URL)))
             .unwrap_or(sys::GITHUB_URL)
             .to_string(),
         assets,
@@ -345,11 +345,16 @@ fn replace_mac_app(app: &Path, data: &[u8]) -> Result<(), String> {
 
 /// Linux-Pakete: Datei in "Downloads" speichern und mit dem Paketmanager installieren
 fn install_package(kind: &InstallKind, name: &str, data: &[u8]) -> Result<Outcome, String> {
-    let dir = sys::env_path("XDG_DOWNLOAD_DIR")
-        .unwrap_or_else(|| sys::home_dir().join("Downloads"));
-    let _ = std::fs::create_dir_all(&dir);
-    let file = dir.join(name);
-    std::fs::write(&file, data).map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
+    // SICHERHEIT: in einen privaten Ordner (nur der eigene Benutzer, 0700) statt "Downloads",
+    // damit niemand die geprüfte Datei austauschen kann, bevor sie installiert wird.
+    let dir = sys::local_dir().join("update");
+    // Nur einfache Dateinamen aus dem Release übernehmen
+    let safe_name: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')).collect();
+    if safe_name.is_empty() || safe_name.starts_with('.') {
+        return Err(crate::i18n::t("update.err_no_file"));
+    }
+    let file = dir.join(safe_name);
+    sys::write_private(&file, data).map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
     let f = file.to_string_lossy().to_string();
     let (prog, args): (&str, Vec<String>) = match kind {
         InstallKind::Deb => ("pkexec", vec!["apt-get".into(), "install".into(), "-y".into(), f.clone()]),

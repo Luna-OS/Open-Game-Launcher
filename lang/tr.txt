@@ -766,3 +766,40 @@ theme.import_file = Dosya aç
 coll.rename = Yeniden adlandır
 coll.delete = Koleksiyonu sil
 coll.delete_hint = Oyunların kendisi silinmez.
+
+# 1.6.0
+conn.more_uninstalled_text = GOG, Amazon Games ve itch.io: satın alınmış ama yüklenmemiş oyunları da göster (uygulamalarından yerel olarak okunur). Bir tık kurulumu açar.
+detail.note_install_store = Bu oyun senin ama yüklü değil. "Yükle" onu {store} içinde açar.
+epic.s1 = Epic'e giriş yap
+epic.s1_text = Tarayıcın resmi Epic sayfasını açar. Orada Epic Games Launcher'daki gibi giriş yap. MAZ Launcher şifreni asla görmez.
+epic.s2 = Sayfayı kopyala
+epic.s2_text = Girişten sonra Epic metin içeren bir sayfa gösterir (teknik görünür – doğrusu bu). Bir kez içine tıkla ve bas:
+epic.then = ve sonra
+epic.watching = MAZ Launcher bekliyor ve kopyalamayı otomatik algılar …
+epic.paste_ph2 = Ya da buraya yapıştır ({key})
+epic.reopen = Giriş sayfasını yeniden aç
+epic.s3 = Oyunları yükle
+epic.progress = {total} oyundan {done} yüklendi
+epic.signing_in = Giriş kontrol ediliyor …
+epic.privacy = Giriş yalnızca bu bilgisayarda saklanır (Windows'ta şifreli) ve sadece oyun listen için kullanılır.
+epic.hint_title = Epic oyunları eksik mi?
+epic.hint_text = Bağlanmadan launcher yalnızca yüklü Epic oyunlarını görür. Epic hesabını bağla (yaklaşık 1 dakika), tüm kütüphanen görünür.
+epic.hint_button = Şimdi bağlan
+meta.source_wiki = Kaynak: Vikipedi (CC BY-SA) – makaleyi aç
+deck.verified = Doğrulandı
+deck.playable = Oynanabilir
+deck.unsupported = Desteklenmiyor
+deck.title = Valve'in Steam Deck değerlendirmesi (Proton'lu Linux için de kabaca geçerli)
+specs.title = Sistem gereksinimleri ({os})
+specs.min = Minimum
+specs.rec = Önerilen
+p.runner_missing.title = "{game}" için Wine/Proton sürümü bulunamadı
+p.runner_missing.what = Bu oyun "{runner}" kullanacak şekilde ayarlı – bu sürüm artık bilgisayarda yok.
+p.runner_missing.why = Proton ve Wine sürümleri sık sık yenileriyle değiştirilir (Steam, Lutris veya Heroic güncellemeleri).
+p.runner_missing.steps = Aşağıdaki "Oyunu düzenle"ye tıkla.
+"Wine / Proton" altında başka bir sürüm seç (ya da "Sistem Wine").
+Kaydet ve yeniden başlat.
+edit.runner = Wine / Proton
+edit.runner_hint = Bu Windows oyununun Linux'ta neyle çalışacağı. Proton yalnızca bu oyun için ayrı bir klasör (prefix) alır.
+edit.runner_default = Sistem Wine (varsayılan)
+edit.runner_none = Wine veya Proton bulunamadı. Wine'ı paket yöneticisiyle ya da Proton'u Steam üzerinden yükle.

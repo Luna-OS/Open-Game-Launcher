@@ -366,6 +366,11 @@ impl Problem {
         )
     }
 
+    /// Linux: Die gewählte Wine-/Proton-Version gibt es nicht mehr
+    pub fn runner_missing(game: &str, runner: &str) -> Problem {
+        build("runner_missing", Severity::Error, &[("game", game), ("runner", runner)], vec![Fix::EditGame], format!("Runner not found: {runner}"))
+    }
+
     /// Spiel aus einem anderen Store deinstallieren: Das macht der Store selbst
     pub fn store_uninstall(game: &str, store: &str) -> Problem {
         let mut fixes = Vec::new();
@@ -516,6 +521,7 @@ mod tests {
             Problem::client_missing("GOG", "https://www.gog.com/galaxy"),
             Problem::no_uninstaller("x", None),
             Problem::store_uninstall("x", "GOG"),
+            Problem::runner_missing("x", "/opt/proton"),
         ] {
             assert!(!p.title.starts_with("p."), "Schlüssel fehlt: {}", p.title);
             assert!(!p.steps.is_empty(), "{}", p.title);

@@ -6,7 +6,7 @@ use super::icons::Icon;
 use super::library::SourceBadge;
 use super::state::*;
 use crate::model::{Game, LaunchTarget, Source};
-use crate::i18n::t;
+use crate::i18n::{t, tf};
 use crate::sys;
 use dioxus::prelude::*;
 
@@ -173,13 +173,27 @@ fn AboutGame(id: String) -> Element {
     let auto = app.meta_cache.read().get(&id).cloned().unwrap_or_default();
     let desc = if own.description.trim().is_empty() { auto.description.clone() } else { own.description.clone() };
     let genres = app.genres_of(&id);
-    if desc.is_empty() && genres.is_empty() {
+    let own_desc = !own.description.trim().is_empty();
+    let wiki_page = (!own_desc && auto.source == "wikipedia" && auto.page.starts_with("https://")).then(|| auto.page.clone());
+    let deck = auto.deck;
+    let (req_min, req_rec) = (auto.req_min.clone(), auto.req_rec.clone());
+    if desc.is_empty() && genres.is_empty() && deck == 0 && req_min.is_empty() {
         return rsx! {};
     }
     rsx! {
         div { class: "mt-5",
             if !desc.is_empty() {
                 p { class: "text-sm leading-relaxed text-foreground/85 select-text", "{desc}" }
+            }
+            {wiki_page.map(|page| rsx! {
+                button {
+                    class: "mt-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 cursor-pointer",
+                    onclick: move |_| { let _ = sys::open_url(&page); },
+                    {t("meta.source_wiki")}
+                }
+            })}
+            if deck > 0 {
+                DeckBadge { deck }
             }
             if !genres.is_empty() {
                 div { class: "flex flex-wrap gap-1.5 mt-3",
@@ -200,6 +214,62 @@ fn AboutGame(id: String) -> Element {
                         }
                     })}
                 }
+            }
+            if !req_min.is_empty() || !req_rec.is_empty() {
+                SpecsBox { req_min, req_rec }
+            }
+        }
+    }
+}
+
+/// Steam-Deck-Bewertung
+#[component]
+fn DeckBadge(deck: u8) -> Element {
+    let (cls, key) = match deck {
+        3 => ("bg-success/15 text-success", "deck.verified"),
+        2 => ("bg-warning/15 text-warning", "deck.playable"),
+        _ => ("bg-destructive/15 text-destructive", "deck.unsupported"),
+    };
+    rsx! {
+        div { class: "mt-3 inline-flex items-center gap-2 h-7 px-3 rounded-full text-xs font-semibold {cls}", title: t("deck.title"),
+            Icon { name: "gamepad", class: "size-3.5" }
+            {format!("Steam Deck: {}", t(key))}
+        }
+    }
+}
+
+/// Mindest- und empfohlene Anforderungen
+#[component]
+fn SpecsBox(req_min: Vec<(String, String)>, req_rec: Vec<(String, String)>) -> Element {
+    let os = if cfg!(target_os = "macos") { "macOS" } else if cfg!(target_os = "linux") { "Linux" } else { "Windows" };
+    let col = |title: String, rows: Vec<(String, String)>| {
+        let empty = rows.is_empty();
+        rsx! {
+            div { class: "min-w-0",
+                div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2", "{title}" }
+                if empty {
+                    div { class: "text-sm text-muted-foreground", "–" }
+                }
+                {rows.into_iter().enumerate().map(|(i, (label, value))| rsx! {
+                    div { key: "{i}", class: "text-[13px] py-1 border-b border-border/60 last:border-0",
+                        if !label.is_empty() {
+                            span { class: "text-muted-foreground", "{label}: " }
+                        }
+                        span { class: "select-text", "{value}" }
+                    }
+                })}
+            }
+        }
+    };
+    rsx! {
+        div { class: "mt-5 rounded-xl border border-border p-4",
+            div { class: "flex items-center gap-2 text-sm font-medium mb-3",
+                Icon { name: "monitor", class: "size-4 text-primary" }
+                {tf("specs.title", &[("os", os)])}
+            }
+            div { class: "grid grid-cols-2 gap-5",
+                {col(t("specs.min"), req_min)}
+                {col(t("specs.rec"), req_rec)}
             }
         }
     }
@@ -345,6 +415,7 @@ pub fn DetailModal(id: String) -> Element {
     let source = game.source;
     let note = match (&game.launch, game.source) {
         (LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_), _) => Some(t("detail.note_install")),
+        _ if !game.installed && game.source != Source::Roblox => Some(tf("detail.note_install_store", &[("store", &game.source.label())])),
         (_, Source::Custom) => Some(t("detail.note_custom")),
         _ => None,
     };

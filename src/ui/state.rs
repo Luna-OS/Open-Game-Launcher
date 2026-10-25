@@ -116,6 +116,8 @@ pub enum Modal {
     EditMeta(String),
     /// Ordner nach Spielen durchsuchen
     FolderScan,
+    /// Epic-Konto verbinden (Schritt für Schritt)
+    EpicConnect,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -161,6 +163,8 @@ pub struct App {
     // Epic-Konto
     pub epic_busy: Signal<bool>,
     pub epic_error: Signal<Option<String>>,
+    /// Laden der Epic-Bibliothek: (fertig, gesamt)
+    pub epic_progress: Signal<(usize, usize)>,
 }
 
 #[derive(Clone, PartialEq, Debug, Default)]
@@ -299,6 +303,7 @@ pub fn rescan(app: App) {
             stores.set(r.stores);
             dupes.set(r.duplicates);
             warnings.set(r.warnings);
+            apply_meta_covers(app);
             // Neu aufgetauchte Spiele merken (für "Zuletzt hinzugefügt")
             let now = sys::now_secs();
             let new_ids: Vec<String> = games
@@ -343,50 +348,100 @@ pub fn rescan(app: App) {
     });
 }
 
-/// Steam-AppID für Spiel-Infos (eigene oder über den Namen gefunden)
+/// Steam-AppID für Spiel-Infos (eigene oder über den Namen gefunden). ROMs nie über Steam.
 fn meta_appid(app: App, g: &Game) -> Option<u32> {
+    if g.source == Source::Emulator {
+        return None;
+    }
     g.steam_appid.or_else(|| app.settings.peek().art_lookup.get(&normalize_name(&g.name)).copied().filter(|a| *a != 0))
+}
+
+/// Woher die Infos kommen: Steam-Store oder Wikipedia
+#[derive(Clone)]
+enum MetaJob {
+    Steam(u32),
+    Wiki(String),
+}
+
+fn meta_job(app: App, g: &Game) -> MetaJob {
+    match meta_appid(app, g) {
+        Some(a) => MetaJob::Steam(a),
+        None => MetaJob::Wiki(g.name.clone()),
+    }
+}
+
+/// Erst Steam, wenn dort nichts steht: Wikipedia
+fn run_meta_job(job: MetaJob, name: String, lang: String) -> Option<crate::metadata::Info> {
+    match job {
+        MetaJob::Steam(appid) => {
+            let info = crate::metadata::fetch(appid, &lang)?;
+            if info.fetched > 0 {
+                Some(info)
+            } else {
+                crate::metadata::fetch_wiki(&name, &lang)
+            }
+        }
+        MetaJob::Wiki(n) => crate::metadata::fetch_wiki(&n, &lang),
+    }
+}
+
+/// Bild aus den Spiel-Infos übernehmen, wenn das Spiel sonst kein Cover hat (z. B. ROMs)
+pub fn apply_meta_covers(app: App) {
+    let cache = app.meta_cache.peek().clone();
+    let mut games = app.games;
+    for g in games.write().iter_mut() {
+        if g.art.cover.is_empty() {
+            if let Some(i) = cache.get(&g.id).filter(|i| i.cover.starts_with("https://upload.wikimedia.org/")) {
+                g.art.cover.push(i.cover.clone());
+            }
+        }
+    }
+}
+
+fn store_info(app: App, id: String, info: crate::metadata::Info) {
+    let has_cover = !info.cover.is_empty();
+    let mut cache = app.meta_cache;
+    cache.write().insert(id, info);
+    crate::metadata::save_cache(&cache.peek());
+    if has_cover {
+        apply_meta_covers(app);
+    }
 }
 
 /// Fehlende Spiel-Infos langsam im Hintergrund laden (höchstens 30 pro Durchgang)
 async fn fill_metadata(app: App) {
     let lang = crate::i18n::current_code();
-    let todo: Vec<(String, u32)> = {
+    let todo: Vec<(String, String, MetaJob)> = {
         let cache = app.meta_cache.peek();
         app.games
             .peek()
             .iter()
-            .filter(|g| !cache.contains_key(&g.id))
-            .filter_map(|g| meta_appid(app, g).map(|a| (g.id.clone(), a)))
+            .filter(|g| cache.get(&g.id).map(|i| !i.is_current()).unwrap_or(true))
+            .map(|g| (g.id.clone(), g.name.clone(), meta_job(app, g)))
             .take(30)
             .collect()
     };
-    for (id, appid) in todo {
+    for (id, name, job) in todo {
         let l = lang.clone();
         // Keine Verbindung → aufhören, beim nächsten Mal weiter
-        let Ok(Some(info)) = tokio::task::spawn_blocking(move || crate::metadata::fetch(appid, &l)).await else { break };
-        let mut cache = app.meta_cache;
-        cache.write().insert(id, info);
-        crate::metadata::save_cache(&cache.peek());
-        tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+        let Ok(Some(info)) = tokio::task::spawn_blocking(move || run_meta_job(job, name, l)).await else { break };
+        store_info(app, id, info);
+        tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
     }
 }
 
 /// Infos für ein Spiel sofort laden (beim Öffnen der Details)
 pub fn load_metadata(app: App, id: String) {
-    if !app.settings.peek().online_art || app.meta_cache.peek().get(&id).map(|i| i.fetched > 0).unwrap_or(false) {
+    if !app.settings.peek().online_art || app.meta_cache.peek().get(&id).map(|i| i.is_current()).unwrap_or(false) {
         return;
     }
     let Some(g) = app.game(&id) else { return };
-    let Some(appid) = meta_appid(app, &g) else { return };
+    let job = meta_job(app, &g);
+    let name = g.name.clone();
     let lang = crate::i18n::current_code();
     dioxus::core::spawn_forever(async move {
-        if let Ok(Some(info)) = tokio::task::spawn_blocking(move || crate::metadata::fetch(appid, &lang)).await {
-            if info.fetched > 0 {
-                let mut cache = app.meta_cache;
-                cache.write().insert(id, info);
-                crate::metadata::save_cache(&cache.peek());
-            }
+        if let Ok(Some(info)) = tokio::task::spawn_blocking(move || run_meta_job(job, name, lang)).await {
+            store_info(app, id, info);
         }
     });
 }
@@ -515,7 +570,7 @@ pub fn play(app: App, id: String) {
     }
     match launch::launch_store(&game) {
         Ok(()) => {
-            let installing = matches!(game.launch, LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_));
+            let installing = !game.installed || matches!(game.launch, LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_));
             let store = game.source.label();
             if installing {
                 app.toast(&tf("toast.installing", &[("name", &game.name), ("store", &store)]), "download");

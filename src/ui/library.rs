@@ -255,11 +255,48 @@ fn GenreSelect() -> Element {
     }
 }
 
+/// Hinweis: Epic-Konto verbinden, damit alle Epic-Spiele erscheinen
+#[component]
+fn EpicHint() -> Element {
+    let app = use_app();
+    let s = app.settings.read();
+    let show = !cfg!(target_os = "linux")
+        && s.epic_enabled
+        && s.epic_auth.is_none()
+        && !s.epic_hint_dismissed
+        && (app.epic.read().found || app.games.read().iter().any(|g| g.source == Source::Epic));
+    drop(s);
+    if !show {
+        return rsx! {};
+    }
+    rsx! {
+        div { class: "mb-5 flex items-center gap-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm animate-slide-up",
+            div { class: "size-9 shrink-0 rounded-lg bg-[#2a2a2a] text-white grid place-items-center",
+                Icon { name: "layers", class: "size-5" }
+            }
+            div { class: "flex-1 min-w-0",
+                div { class: "font-semibold", {t("epic.hint_title")} }
+                div { class: "text-muted-foreground text-xs mt-0.5", {t("epic.hint_text")} }
+            }
+            Button { variant: ButtonVariant::Glow, size: ButtonSize::Sm, onclick: move |_| app.open(Modal::EpicConnect),
+                {t("epic.hint_button")}
+            }
+            button {
+                class: "p-1 text-muted-foreground hover:text-foreground cursor-pointer",
+                title: t("lib.dismiss"),
+                onclick: move |_| app.update(|s| s.epic_hint_dismissed = true),
+                Icon { name: "x", class: "size-4" }
+            }
+        }
+    }
+}
+
 #[component]
 fn WarningBanner() -> Element {
     let app = use_app();
     let warnings = app.warnings.read().clone();
     rsx! {
+        EpicHint {}
         {warnings.into_iter().enumerate().map(|(i, w)| {
             let title = w.title.clone();
             let what = w.what_happened.clone();
@@ -494,7 +531,8 @@ pub fn MazSidebar() -> Element {
                     div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", {t("nav.platforms")} }
                     NavItem { filter: Filter::Steam, count: count_for(app, Filter::Steam) }
                     NavItem { filter: Filter::Epic, count: count_for(app, Filter::Epic) }
-                    if count_for(app, Filter::Roblox) > 0 {
+                    // Unter Windows kein eigener Roblox-Eintrag (Roblox-Spiele stehen in „Alle Spiele“)
+                    if !cfg!(windows) && count_for(app, Filter::Roblox) > 0 {
                         NavItem { filter: Filter::Roblox, count: count_for(app, Filter::Roblox) }
                     }
                     {stores_with_games(app).into_iter().map(|src| {
@@ -800,7 +838,9 @@ fn SteamLayout() -> Element {
                             option { value: "installed", selected: filter == Filter::Installed, {t("filter.installed").to_uppercase()} }
                             option { value: "steam", selected: filter == Filter::Steam, "STEAM" }
                             option { value: "epic", selected: filter == Filter::Epic, "EPIC GAMES" }
-                            option { value: "roblox", selected: filter == Filter::Roblox, "ROBLOX" }
+                            if !cfg!(windows) {
+                                option { value: "roblox", selected: filter == Filter::Roblox, "ROBLOX" }
+                            }
                             {stores_with_games(app).into_iter().map(|src| {
                                 let k = src.key();
                                 let label = src.label().to_uppercase();
@@ -1009,7 +1049,7 @@ fn EpicLayout() -> Element {
     let search = app.search.read().clone();
     let sort = app.settings.read().sort.clone();
     let mut chips = vec![Filter::All, Filter::Installed, Filter::Favorites, Filter::Steam, Filter::Epic];
-    if count_for(app, Filter::Roblox) > 0 {
+    if !cfg!(windows) && count_for(app, Filter::Roblox) > 0 {
         chips.push(Filter::Roblox);
     }
     chips.extend(stores_with_games(app).into_iter().map(Filter::Store));

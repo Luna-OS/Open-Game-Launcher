@@ -7,7 +7,16 @@
 use crate::model::Art;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
+
+/// Fortschritt beim Laden (für die Anzeige „12 von 230“)
+#[derive(Default)]
+pub struct Progress {
+    pub done: AtomicUsize,
+    pub total: AtomicUsize,
+}
 
 const CLIENT_ID: &str = "34a02cf8f4414e29b15921876da36f9a";
 /// Base64 von "client_id:client_secret" des Epic Games Launchers
@@ -88,7 +97,13 @@ pub fn extract_code(text: &str) -> Option<String> {
     None
 }
 
+/// Eine gemeinsame Verbindung für alle Anfragen (spart pro Anfrage den TLS-Aufbau)
 fn agent() -> ureq::Agent {
+    static AGENT: OnceLock<ureq::Agent> = OnceLock::new();
+    AGENT.get_or_init(build_agent).clone()
+}
+
+fn build_agent() -> ureq::Agent {
     use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
     let tls = TlsConfig::builder()
         .provider(TlsProvider::NativeTls)
@@ -106,7 +121,8 @@ fn agent() -> ureq::Agent {
 fn read(resp: Result<ureq::http::Response<ureq::Body>, ureq::Error>) -> Result<(u16, serde_json::Value), String> {
     let mut resp = resp.map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
     let status = resp.status().as_u16();
-    let text = resp.body_mut().read_to_string().unwrap_or_default();
+    // Antworten begrenzen (Katalog-Antworten sind wenige hundert KB)
+    let text = resp.body_mut().with_config().limit(8 * 1024 * 1024).read_to_string().unwrap_or_default();
     let v = serde_json::from_str(&text).unwrap_or(serde_json::Value::Null);
     Ok((status, v))
 }
@@ -195,7 +211,7 @@ fn key_images(v: &serde_json::Value, types: &[&str]) -> Vec<String> {
 
 /// Bibliothek laden. `known` = bereits bekannte Einträge (Cache), damit nicht jedes Mal
 /// hunderte Katalog-Abfragen nötig sind.
-pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str) -> Result<Vec<OwnedEpic>, String> {
+pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str, progress: &Progress) -> Result<Vec<OwnedEpic>, String> {
     // 1. Alle Einträge der Bibliothek (seitenweise)
     let mut records: Vec<(String, String, String)> = Vec::new();
     let mut cursor = String::new();
@@ -245,6 +261,7 @@ pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str) -> Result
     };
     let mut out = Vec::new();
     let mut by_ns: BTreeMap<String, Vec<(String, String)>> = BTreeMap::new();
+    let total = records.len();
     for (ns, item, app) in records {
         if let Some(k) = known.iter().find(|k| k.app_name == app && !k.title.is_empty()) {
             out.push(k.clone());
@@ -252,49 +269,86 @@ pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str) -> Result
             by_ns.entry(ns).or_default().push((item, app));
         }
     }
+    progress.total.store(total, Ordering::Relaxed);
+    progress.done.store(out.len(), Ordering::Relaxed);
+
+    // Katalog-Abfragen parallel (fast jedes Spiel hat einen eigenen Namespace → sonst
+    // hunderte Anfragen nacheinander). 8 gleichzeitig ist schnell und schont Epic.
+    let mut jobs: Vec<(String, Vec<(String, String)>)> = Vec::new();
     for (ns, items) in by_ns {
         for chunk in items.chunks(40) {
-            let ids: String = chunk.iter().map(|(i, _)| format!("&id={}", crate::sys::url_encode(i))).collect();
-            let url = format!(
-                "{CATALOG}/{}/bulk/items?includeDLCDetails=true&includeMainGameDetails=true&country={country}&locale={locale}{ids}",
-                crate::sys::url_encode(&ns)
-            );
-            let Ok(v) = get(&url, auth) else { continue };
-            for (item, app) in chunk {
-                let Some(info) = v.get(item.as_str()) else { continue };
-                // DLCs, Zusatzinhalte und Programme ohne Spiel weglassen
-                if info.get("mainGameItem").map(|m| !m.is_null()).unwrap_or(false) {
-                    continue;
-                }
-                let cats: Vec<String> = info
-                    .get("categories")
-                    .and_then(|c| c.as_array())
-                    .map(|a| a.iter().map(|c| jstr(c, "path").to_lowercase()).collect())
-                    .unwrap_or_default();
-                if cats.iter().any(|c| matches!(c.as_str(), "addons" | "engines" | "digitalextras" | "plugins")) {
-                    continue;
-                }
-                if !cats.is_empty() && !cats.iter().any(|c| c == "games" || c == "applications") {
-                    continue;
-                }
-                let title = jstr(info, "title").trim().to_string();
-                if title.is_empty() {
-                    continue;
-                }
-                out.push(OwnedEpic {
-                    app_name: app.clone(),
-                    namespace: ns.clone(),
-                    item_id: item.clone(),
-                    title,
-                    cover: key_images(info, &["DieselGameBoxTall", "OfferImageTall", "Thumbnail"]),
-                    hero: key_images(info, &["DieselGameBox", "OfferImageWide", "DieselStoreFrontWide"]),
-                    logo: key_images(info, &["DieselGameBoxLogo"]),
-                });
-            }
+            jobs.push((ns.clone(), chunk.to_vec()));
         }
+    }
+    let jobs = Arc::new(Mutex::new(jobs));
+    let found: Arc<Mutex<Vec<OwnedEpic>>> = Arc::new(Mutex::new(Vec::new()));
+    std::thread::scope(|scope| {
+        for _ in 0..8 {
+            let (jobs, found) = (jobs.clone(), found.clone());
+            scope.spawn(move || loop {
+                let next = jobs.lock().ok().and_then(|mut j| j.pop());
+                let Some((ns, chunk)) = next else { break };
+                let items = catalog_items(auth, &ns, &chunk, locale, country);
+                progress.done.fetch_add(chunk.len(), Ordering::Relaxed);
+                if let Ok(mut f) = found.lock() {
+                    f.extend(items);
+                }
+            });
+        }
+    });
+    if let Ok(mut f) = found.lock() {
+        out.append(&mut f);
     }
     out.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
     Ok(out)
+}
+
+/// Titel und Bilder für einige Einträge eines Namespaces
+fn catalog_items(auth: &EpicAuth, ns: &str, chunk: &[(String, String)], locale: &str, country: &str) -> Vec<OwnedEpic> {
+    let ids: String = chunk.iter().map(|(i, _)| format!("&id={}", crate::sys::url_encode(i))).collect();
+    let url = format!(
+        "{CATALOG}/{}/bulk/items?includeDLCDetails=true&includeMainGameDetails=true&country={country}&locale={locale}{ids}",
+        crate::sys::url_encode(ns)
+    );
+    // Einmal neu versuchen (z. B. kurzer Verbindungsfehler)
+    let v = match get(&url, auth).or_else(|_| get(&url, auth)) {
+        Ok(v) => v,
+        Err(_) => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    for (item, app) in chunk {
+        let Some(info) = v.get(item.as_str()) else { continue };
+        // DLCs, Zusatzinhalte und Programme ohne Spiel weglassen
+        if info.get("mainGameItem").map(|m| !m.is_null()).unwrap_or(false) {
+            continue;
+        }
+        let cats: Vec<String> = info
+            .get("categories")
+            .and_then(|c| c.as_array())
+            .map(|a| a.iter().map(|c| jstr(c, "path").to_lowercase()).collect())
+            .unwrap_or_default();
+        if cats.iter().any(|c| matches!(c.as_str(), "addons" | "engines" | "digitalextras" | "plugins")) {
+            continue;
+        }
+        if !cats.is_empty() && !cats.iter().any(|c| c == "games" || c == "applications") {
+            continue;
+        }
+        let title = jstr(info, "title").trim().to_string();
+        if title.is_empty() {
+            continue;
+        }
+        let https = |v: Vec<String>| v.into_iter().filter(|u| u.starts_with("https://")).collect::<Vec<_>>();
+        out.push(OwnedEpic {
+            app_name: app.clone(),
+            namespace: ns.to_string(),
+            item_id: item.clone(),
+            title,
+            cover: https(key_images(info, &["DieselGameBoxTall", "OfferImageTall", "Thumbnail"])),
+            hero: https(key_images(info, &["DieselGameBox", "OfferImageWide", "DieselStoreFrontWide"])),
+            logo: https(key_images(info, &["DieselGameBoxLogo"])),
+        });
+    }
+    out
 }
 
 fn cache_path() -> std::path::PathBuf {
@@ -315,7 +369,7 @@ pub fn save_cache(list: &[OwnedEpic]) {
         let _ = std::fs::create_dir_all(dir);
     }
     if let Ok(text) = serde_json::to_string(list) {
-        let _ = std::fs::write(p, text);
+        let _ = crate::sys::write_private(&p, text.as_bytes());
     }
 }
 

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://mikeadamrgb.github.io/MAZ-Lauchner/sitemap.xml

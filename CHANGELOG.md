@@ -7,6 +7,32 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [1.6.0] – 2026-10-25
+
+### Neu
+- **Komplette Store-Bibliotheken:** GOG, Amazon Games und itch.io zeigen jetzt auch gekaufte, nicht installierte Spiele (lokal aus deren Programmen gelesen). Ein Klick öffnet die Installation im offiziellen Programm.
+- **PC-Anforderungen:** In den Spiel-Details stehen Mindest- und empfohlene Anforderungen für dein System.
+- **Steam-Deck-Bewertung:** Verifiziert / Spielbar / Nicht unterstützt – direkt in den Details.
+- **Zweite Quelle für Spiel-Infos:** Für Spiele ohne Steam-Seite (z. B. ROMs, GOG-, Xbox- oder eigene Spiele) kommen Beschreibung, Genres, Entwickler und Jahr aus Wikipedia/Wikidata – mit Quellenangabe. ROMs bekommen so auch ein Bild.
+- **Wine/Proton pro Spiel (Linux):** Für jedes Windows-Spiel wählbar – System-Wine, Steam-Proton, GE-Proton, Lutris- und Heroic-Versionen. Proton bekommt einen eigenen Prefix pro Spiel.
+- **Hinweis „Fehlen Epic-Spiele?“** oben in der Bibliothek, mit Knopf zum Verbinden.
+
+### Verbessert
+- **Epic-Konto verbinden:** deutlich schneller (Spiele werden parallel geladen) und übersichtlicher – drei Schritte mit Anzeige, wo du gerade bist, den richtigen Tastenkürzeln (auch ⌘ auf dem Mac) und einem Fortschrittsbalken „12 von 230 Spielen“.
+- **Neues Logo:** schwarz mit weißer Schrift – in der App, als Programm-Symbol und auf der Webseite.
+- **macOS:** echte Fenster-Knöpfe (Ampel) oben links, die eigene Titelleiste lässt Platz dafür.
+- **Webseite:** OLED-Schwarz, Screenshots in Fenster-Rahmen mit Vergrößern, bessere Suchmaschinen-Daten (Beschreibung, Vorschaubild, Sprachen, Sitemap).
+- Windows: Der eigene Roblox-Eintrag in der Seitenleiste ist weg – Roblox-Spiele stehen bei „Alle Spiele“.
+
+### Sicherheit
+- Einstellungen mit Schlüsseln/Anmeldung sind unter macOS und Linux nur noch für den eigenen Benutzer lesbar (0600).
+- Linux-Updates werden in einem privaten Ordner geprüft und installiert statt in „Downloads“.
+- Systemprogramme (xdg-open, Zwischenablage, rpm …) werden mit festem Pfad gestartet.
+- Fremde Datenbanken (GOG, Amazon, itch.io) werden nur lesend und ohne ausführbare Inhalte geöffnet; Links und Kennungen daraus werden streng geprüft.
+- Wine/Proton: Es startet nur eine Version, die der Launcher selbst gefunden hat.
+- Epic: Die Zwischenablage wird höchstens 10 Minuten beobachtet; Antworten sind in der Größe begrenzt.
+- Flatpak braucht keinen Zugriff mehr auf den Download-Ordner. Webseite mit Content-Security-Policy.
+
 ## [1.5.0] – 2026-10-25
 
 ### Neu

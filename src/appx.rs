@@ -71,6 +71,10 @@ pub fn find(name: &str) -> Option<Package> {
 
 /// App starten (wie aus dem Startmenü)
 pub fn launch(family: &str, app_id: &str) -> Result<(), String> {
+    let simple = |v: &str| !v.is_empty() && v.len() < 130 && v.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
+    if !simple(family) || !simple(app_id) {
+        return Err("Invalid app id".into());
+    }
     #[cfg(windows)]
     {
         crate::sys::quiet_command(crate::sys::system_program("explorer.exe"))

@@ -89,7 +89,7 @@ pub fn Icon(name: &'static str, #[props(into, default)] class: String, #[props(d
 pub fn MazLogo(#[props(into, default)] class: String) -> Element {
     let cls = if class.is_empty() { "size-8 text-[11px]".to_string() } else { class };
     rsx! {
-        div { class: "relative grid place-items-center rounded-xl maz-gradient-bg text-white font-black shadow-lg shadow-black/30 {cls}",
+        div { class: "relative grid place-items-center rounded-xl bg-black text-white font-black ring-1 ring-white/15 shadow-lg shadow-black/30 {cls}",
             span { class: "tracking-tighter leading-none", "MAZ" }
         }
     }

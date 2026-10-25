@@ -85,7 +85,7 @@ fn opener() -> Command {
     }
     #[cfg(not(target_os = "macos"))]
     {
-        Command::new("xdg-open")
+        Command::new(unix_tool("xdg-open"))
     }
 }
 
@@ -105,6 +105,41 @@ pub fn now_secs() -> u64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0)
+}
+
+/// macOS/Linux: Systemprogramm mit festem Pfad (/usr/bin, /bin) statt Suche im PATH –
+/// so kann kein gleichnamiges Programm aus einem fremden Ordner untergeschoben werden.
+pub fn unix_tool(name: &str) -> PathBuf {
+    for dir in ["/usr/bin", "/bin", "/usr/local/bin", "/run/current-system/sw/bin"] {
+        let p = Path::new(dir).join(name);
+        if p.is_file() {
+            return p;
+        }
+    }
+    PathBuf::from(name)
+}
+
+/// Datei schreiben, die nur der eigene Benutzer lesen darf (macOS/Linux: 0600, Ordner 0700).
+/// Unter Windows liegt sie im Benutzerprofil (nur für den Benutzer lesbar), Schlüssel sind dort
+/// zusätzlich mit DPAPI verschlüsselt.
+pub fn write_private(path: &Path, data: &[u8]) -> std::io::Result<()> {
+    #[cfg(unix)]
+    {
+        use std::io::Write;
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+            let _ = std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700));
+        }
+        let _ = std::fs::remove_file(path);
+        let mut f = std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(path)?;
+        f.write_all(data)?;
+        f.sync_all()
+    }
+    #[cfg(not(unix))]
+    {
+        std::fs::write(path, data)
+    }
 }
 
 /// Dateiname ohne verbotene Zeichen (für "Speichern unter")
@@ -162,6 +197,29 @@ pub fn host_command(program: impl AsRef<std::ffi::OsStr>) -> Command {
         c
     } else {
         Command::new(program)
+    }
+}
+
+/// Wie `host_command`, aber mit Umgebungsvariablen und Arbeitsordner (auch im Flatpak)
+pub fn host_command_env(program: impl AsRef<std::ffi::OsStr>, envs: &[(String, String)], dir: Option<&Path>) -> Command {
+    if std::env::var_os("FLATPAK_ID").is_some() {
+        let mut c = Command::new("flatpak-spawn");
+        c.arg("--host");
+        for (k, v) in envs {
+            c.arg(format!("--env={k}={v}"));
+        }
+        if let Some(d) = dir {
+            c.arg(format!("--directory={}", d.display()));
+        }
+        c.arg(program);
+        c
+    } else {
+        let mut c = Command::new(program);
+        c.envs(envs.iter().map(|(k, v)| (k.as_str(), v.as_str())));
+        if let Some(d) = dir {
+            c.current_dir(d);
+        }
+        c
     }
 }
 
@@ -272,7 +330,7 @@ pub fn read_clipboard() -> Option<String> {
             &[("wl-paste", &["--no-newline"]), ("xclip", &["-selection", "clipboard", "-o"]), ("xsel", &["--clipboard", "--output"])]
         };
         for (cmd, args) in tools {
-            if let Ok(out) = Command::new(cmd).args(*args).output() {
+            if let Ok(out) = Command::new(unix_tool(cmd)).args(*args).output() {
                 if out.status.success() {
                     return Some(String::from_utf8_lossy(&out.stdout).chars().take(65_536).collect());
                 }
@@ -297,7 +355,7 @@ pub fn copy_to_clipboard(text: &str) -> bool {
             &[("wl-copy", &[]), ("xclip", &["-selection", "clipboard"]), ("xsel", &["--clipboard", "--input"])]
         };
         for (cmd, args) in tools {
-            if let Ok(mut child) = Command::new(cmd).args(*args).stdin(Stdio::piped()).spawn() {
+            if let Ok(mut child) = Command::new(unix_tool(cmd)).args(*args).stdin(Stdio::piped()).spawn() {
                 if let Some(mut stdin) = child.stdin.take() {
                     let _ = stdin.write_all(text.as_bytes());
                 }
@@ -391,7 +449,7 @@ pub fn protocol_registered(name: &str) -> bool {
     #[cfg(not(any(windows, target_os = "macos")))]
     {
         // Linux: Gibt es ein Programm für x-scheme-handler/<name>?
-        Command::new("xdg-mime")
+        Command::new(unix_tool("xdg-mime"))
             .args(["query", "default", &format!("x-scheme-handler/{name}")])
             .output()
             .map(|o| o.status.success() && !String::from_utf8_lossy(&o.stdout).trim().is_empty())

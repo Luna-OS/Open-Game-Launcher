@@ -20,9 +20,9 @@ pub fn sync_epic(app: App, force: bool) {
     if *app.epic_busy.peek() || (!force && sys::now_secs().saturating_sub(last) < 6 * 3600) {
         return;
     }
-    run_epic(app, move || {
+    run_epic(app, move |p| {
         let fresh = crate::epicacct::ensure_fresh(&auth)?;
-        let list = crate::epicacct::fetch_library(&fresh, &crate::epicacct::load_cache(), &crate::i18n::current_code())?;
+        let list = crate::epicacct::fetch_library(&fresh, &crate::epicacct::load_cache(), &crate::i18n::current_code(), p)?;
         Ok((fresh, list))
     });
 }
@@ -37,22 +37,37 @@ pub fn epic_connect(app: App, pasted: String) {
         err.set(Some(t("epic.err_code")));
         return;
     };
-    run_epic(app, move || {
+    run_epic(app, move |p| {
         let auth = crate::epicacct::exchange(&code)?;
-        let list = crate::epicacct::fetch_library(&auth, &crate::epicacct::load_cache(), &crate::i18n::current_code())?;
+        // Anmeldung hat geklappt → ab jetzt zählt der Fortschritt
+        p.total.store(1, std::sync::atomic::Ordering::Relaxed);
+        let list = crate::epicacct::fetch_library(&auth, &crate::epicacct::load_cache(), &crate::i18n::current_code(), p)?;
         Ok((auth, list))
     });
 }
 
 fn run_epic<F>(app: App, job: F)
 where
-    F: FnOnce() -> Result<(crate::epicacct::EpicAuth, Vec<crate::epicacct::OwnedEpic>), String> + Send + 'static,
+    F: FnOnce(&crate::epicacct::Progress) -> Result<(crate::epicacct::EpicAuth, Vec<crate::epicacct::OwnedEpic>), String> + Send + 'static,
 {
-    let (mut busy, mut err) = (app.epic_busy, app.epic_error);
+    let (mut busy, mut err, mut prog) = (app.epic_busy, app.epic_error, app.epic_progress);
     busy.set(true);
     err.set(None);
+    prog.set((0, 0));
+    let progress = std::sync::Arc::new(crate::epicacct::Progress::default());
+    // Fortschritt regelmäßig in die Oberfläche übernehmen
+    let watch = progress.clone();
     spawn_forever(async move {
-        let res = tokio::task::spawn_blocking(job).await;
+        use std::sync::atomic::Ordering;
+        while *app.epic_busy.peek() {
+            let mut prog = app.epic_progress;
+            prog.set((watch.done.load(Ordering::Relaxed), watch.total.load(Ordering::Relaxed)));
+            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        }
+    });
+    spawn_forever(async move {
+        let p2 = progress.clone();
+        let res = tokio::task::spawn_blocking(move || job(&p2)).await;
         let (mut busy, mut err) = (app.epic_busy, app.epic_error);
         busy.set(false);
         match res {

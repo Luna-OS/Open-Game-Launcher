@@ -54,7 +54,7 @@ pub fn save(settings: &Settings) -> std::io::Result<()> {
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
     // Erst in eine Temp-Datei schreiben, dann umbenennen → nie halb geschriebene Datei.
     let tmp = dir.join("config.json.tmp");
-    fs::write(&tmp, json)?;
+    sys::write_private(&tmp, json.as_bytes())?;
     fs::rename(&tmp, config_path())
 }
 

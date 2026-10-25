@@ -771,3 +771,40 @@ theme.import_file = Open file
 coll.rename = Rename
 coll.delete = Delete collection
 coll.delete_hint = The games themselves are kept.
+
+# 1.6.0
+conn.more_uninstalled_text = GOG, Amazon Games and itch.io: also show games you own but haven't installed (read locally from their apps). One click opens the install.
+detail.note_install_store = You own this game, but it isn't installed. "Install" opens it in {store}.
+epic.s1 = Sign in at Epic
+epic.s1_text = Your browser opens the official Epic page. Sign in there – just like in the Epic Games Launcher. MAZ Launcher never sees your password.
+epic.s2 = Copy the page
+epic.s2_text = After signing in, Epic shows a page with text (it looks technical – that's correct). Click into it once and press:
+epic.then = then
+epic.watching = MAZ Launcher is waiting and detects the copy automatically …
+epic.paste_ph2 = Or paste it here ({key})
+epic.reopen = Open the sign-in page again
+epic.s3 = Load games
+epic.progress = {done} of {total} games loaded
+epic.signing_in = Checking the sign-in …
+epic.privacy = The sign-in is only stored on this computer (encrypted on Windows) and only used for your game list.
+epic.hint_title = Missing Epic games?
+epic.hint_text = Without connecting, the launcher only sees installed Epic games. Connect your Epic account (takes about 1 minute) and your whole library appears.
+epic.hint_button = Connect now
+meta.source_wiki = Source: Wikipedia (CC BY-SA) – open article
+deck.verified = Verified
+deck.playable = Playable
+deck.unsupported = Unsupported
+deck.title = Valve's Steam Deck rating (roughly applies to Linux with Proton too)
+specs.title = System requirements ({os})
+specs.min = Minimum
+specs.rec = Recommended
+p.runner_missing.title = Wine/Proton version for "{game}" is missing
+p.runner_missing.what = This game is set to use "{runner}" – that version no longer exists on this computer.
+p.runner_missing.why = Proton and Wine versions are often replaced by newer ones (e.g. by updates of Steam, Lutris or Heroic).
+p.runner_missing.steps = Click "Edit game" below.
+Pick another version under "Wine / Proton" (or "System Wine").
+Save and start again.
+edit.runner = Wine / Proton
+edit.runner_hint = What runs this Windows game on Linux. Proton gets its own folder (prefix) just for this game.
+edit.runner_default = System Wine (default)
+edit.runner_none = No Wine or Proton version found. Install Wine with your package manager or Proton through Steam.

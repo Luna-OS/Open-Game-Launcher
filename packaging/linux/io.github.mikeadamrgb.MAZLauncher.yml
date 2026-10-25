@@ -12,9 +12,9 @@ finish-args:
   - --device=dri
   # Spiele finden (Steam, Heroic, eigene Spiele) – nur lesen
   - --filesystem=host:ro
-  # Updates in den Download-Ordner legen
-  - --filesystem=xdg-download
-  # Spiele und Clients (Steam, Heroic, Sober …) auf dem Computer starten
+  # Spiele und Clients (Steam, Heroic, Sober, Wine/Proton …) auf dem Computer starten.
+  # Hinweis: Damit kann die App Programme außerhalb der Sandbox starten – das ist für einen
+  # Launcher nötig. Gestartet wird nur, was in der Bibliothek steht bzw. vorher bestätigt wurde.
   - --talk-name=org.freedesktop.Flatpak
 modules:
   - name: maz-launcher

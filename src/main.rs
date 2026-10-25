@@ -22,6 +22,7 @@ mod notes;
 mod playtime;
 mod problem;
 mod roblox;
+mod runners;
 mod steam;
 mod stores;
 mod sys;
@@ -70,8 +71,15 @@ fn main() {
         .with_title(sys::APP_NAME)
         .with_inner_size(LogicalSize::new(w, h))
         .with_min_inner_size(LogicalSize::new(860.0, 580.0))
-        .with_decorations(false)
+        // macOS: echte Ampel-Knöpfe (schließen/minimieren/Vollbild) in einer durchsichtigen
+        // Titelleiste – die eigene Leiste darunter lässt links Platz dafür.
+        .with_decorations(cfg!(target_os = "macos"))
         .with_resizable(true);
+    #[cfg(target_os = "macos")]
+    let window = {
+        use dioxus::desktop::tao::platform::macos::WindowBuilderExtMacOS;
+        window.with_titlebar_transparent(true).with_fullsize_content_view(true).with_title_hidden(true)
+    };
 
     let mut cfg = Config::new()
         .with_window(window)

@@ -28,6 +28,21 @@ pub fn ModalHost() -> Element {
         Some(Modal::Update) => rsx! { UpdateDialog {} },
         Some(Modal::EditMeta(id)) => rsx! { super::manage::EditMetaDialog { id } },
         Some(Modal::FolderScan) => rsx! { super::manage::FolderScanDialog {} },
+        Some(Modal::EpicConnect) => rsx! {
+            Dialog { on_close: move |_| app.close_modal(), class: "max-w-xl",
+                div { class: "p-6 pt-8",
+                    super::settings::EpicAccount {}
+                    if app.settings.read().epic_auth.is_some() && !*app.epic_busy.read() {
+                        div { class: "flex justify-end mt-4",
+                            Button { variant: ButtonVariant::Glow, onclick: move |_| app.close_modal(),
+                                Icon { name: "check", class: "size-4" }
+                                {t("theme.done")}
+                            }
+                        }
+                    }
+                }
+            }
+        },
         Some(Modal::Info(title, text)) => rsx! {
             Dialog { on_close: move |_| app.close_modal(), class: "max-w-md",
                 div { class: "p-8 text-center",
@@ -432,6 +447,9 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
     let mut cover = use_signal(|| init.cover.clone());
     let mut admin = use_signal(|| init.admin);
     let mut checklist = use_signal(|| init.checklist.clone());
+    let mut runner = use_signal(|| init.runner.clone());
+    // Linux: gefundene Wine-/Proton-Versionen (einmal beim Öffnen suchen)
+    let runners = use_hook(crate::runners::list);
     let mut error = use_signal(String::new);
 
     let save = move |_: MouseEvent| {
@@ -466,6 +484,7 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
         game.cover = cover.peek().trim().trim_matches('"').to_string();
         game.admin = *admin.peek();
         game.checklist = checklist.peek().clone();
+        game.runner = runner.peek().clone();
         let gid = game.id.clone();
         app.update(|s| match s.custom_games.iter_mut().find(|c| c.id == gid) {
             Some(c) => *c = game,
@@ -480,6 +499,10 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
     };
 
     let checklist_ph = t("edit.checklist_ph");
+    let show_runner = cfg!(target_os = "linux") && {
+        let e = exe().to_lowercase();
+        e.ends_with(".exe") || e.ends_with(".msi") || e.ends_with(".bat")
+    };
     let title = t(if is_new { "lib.add_custom" } else { "fix.edit" });
     let head_icon = if is_new { "plus" } else { "pencil" };
     let err = error();
@@ -548,6 +571,24 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
                                 },
                                 Icon { name: "image", class: "size-4" }
                                 {t("edit.pick_image")}
+                            }
+                        }
+                    }
+                    if show_runner {
+                        Field { label: t("edit.runner"), hint: t("edit.runner_hint"),
+                            select {
+                                class: "h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm outline-none cursor-pointer",
+                                onchange: move |e| runner.set(e.value()),
+                                option { value: "", selected: runner().is_empty(), {t("edit.runner_default")} }
+                                {runners.iter().map(|r| {
+                                    let path = r.path.clone();
+                                    let label = format!("{} {}", if r.kind == crate::runners::Kind::Proton { "Proton ·" } else { "Wine ·" }, r.name);
+                                    let sel = runner() == path;
+                                    rsx! { option { key: "{path}", value: "{path}", selected: sel, "{label}" } }
+                                })}
+                            }
+                            if runners.is_empty() {
+                                p { class: "text-xs text-warning", {t("edit.runner_none")} }
                             }
                         }
                     }

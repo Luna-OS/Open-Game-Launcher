@@ -48,10 +48,11 @@ Steam, Epic Games, Roblox and your own games in one fast, lightweight and good-l
 | 🎮 **Steam** | Shows **all** your Steam games – installed or not – across all drives, including playtime. Install and uninstall them right from the launcher. Works on Windows, macOS and Linux (incl. Flatpak/Snap Steam). |
 | 🟦 **Epic Games** | Detects every installed Epic Games title automatically. Connect your Epic account once to see your **complete** Epic library, then install or uninstall with one click. On Linux, Epic games come from the [Heroic Games Launcher](https://heroicgameslauncher.com). |
 | 🧱 **Roblox** | Detects Roblox and starts it. Paste links of your favorite Roblox games – each becomes its own tile that starts straight into the game. On Linux via [Sober](https://flathub.org/apps/org.vinegarhq.Sober). |
-| 🏪 **7 more stores** | GOG (Windows: GOG Galaxy, Linux: Heroic), EA app, Ubisoft Connect, Battle.net, Amazon Games, itch.io and Xbox / Microsoft Store. Installed games are found automatically and always started through the official app. If an app is missing, the launcher tells you where to get it. Every store can be turned off. |
+| 🏪 **7 more stores** | GOG (Windows: GOG Galaxy, Linux: Heroic), EA app, Ubisoft Connect, Battle.net, Amazon Games, itch.io and Xbox / Microsoft Store. Installed games are found automatically and always started through the official app. GOG, Amazon and itch.io also show your **whole library** (read locally from their apps), so you can install games with one click. Every store can be turned off. |
 | 🕹️ **Emulators** | Profiles for RetroArch, Dolphin, PCSX2, DuckStation, PPSSPP, mGBA, Snes9x or any other emulator. Pick your ROM folders – every ROM becomes its own game. |
 | 🗂️ **Organize your library** | Search, sort (name, last played, playtime, recently added) and filter (store, installed, favorites, genre, tags, collections). Your own tags and collections, playtime tracking, duplicates across stores merged into one tile. |
-| 📝 **Game info** | Description, genres, developer and release date loaded automatically (public Steam store data, cached). Edit name, cover, background, description and genres yourself. |
+| 📝 **Game info** | Description, genres, developer, release date, **minimum and recommended PC specs** and the **Steam Deck rating** – from the public Steam store, and from **Wikipedia/Wikidata** for everything else (e.g. ROMs, GOG or Xbox games). Cached locally; edit everything yourself. |
+| 🐧 **Wine & Proton per game** | On Linux, pick the Wine or Proton version for each Windows game (system Wine, Steam Proton, GE-Proton, Lutris and Heroic versions). |
 | 🎁 **Free games** | A tab with every game that is currently free on Epic Games and Steam, with a countdown of how long the offer lasts. *Add to library* opens the store page – one click on *Get* and it shows up in MAZ Launcher. |
 | 🚀 **Your own games** | Add any game: an `.exe`, a shortcut or a batch file. Before **every** launch a safety checklist asks *"Have you turned off everything important?"*. If you answer **No**, the game does not start. |
 | 🖼️ **Original icons & covers** | Real game icons (taken straight from the EXE or from Steam) and original cover art. You can set a custom cover for any game. |
@@ -164,13 +165,14 @@ MAZ Launcher checks GitHub for new versions (can be turned off in **Settings →
 - **Play:** hover over a game and click ▶. Clicking the cover opens the game details.
 - **Add your own game:** click **Add game** on the left → **Browse…** next to "Program" → pick the game's executable → **Add**.
 - **Change the look:** **Settings → Design** → choose a layout (MAZ / Steam / Epic) and a color theme.
-- **See all Epic games:** **Settings → Connections → Connect Epic account** and follow the 3 steps shown there.
+- **See all Epic games:** click **Connect** in the hint at the top of the library (or **Settings → Connections → Connect Epic account**). Three steps: sign in at Epic in your browser → press Ctrl + A and Ctrl + C on the page Epic shows (⌘ on Mac) → done. A progress bar shows how many games are loaded.
 - **More accurate Steam list (optional):** **Settings → Connections** → enter a free Steam Web API key. Instructions are shown right next to the field.
 - **Uninstall a game:** open the game → **Uninstall**.
 - **A game won't start?** open the game → **Won't start? Help**. If a game crashes right after launch, the explanation appears automatically.
 - **Roblox:** **Settings → Connections → Roblox** → paste the link of a Roblox game (e.g. `https://www.roblox.com/games/920587237/…`).
 - **Scan a folder:** empty library or **My games** → **Scan a folder** → pick e.g. `D:\Games` → tick the games → **Add**.
 - **Tags & collections:** open a game → type a tag at the bottom or click a collection. Create collections with **+** in the sidebar.
+- **Wine/Proton (Linux):** open a Windows game you added → **Edit** → pick a version under "Wine / Proton".
 - **Emulators:** **Settings → Connections → Emulators** → pick a preset → choose the emulator program and your ROM folders.
 - **Edit game info:** open a game → **Edit info**.
 - **Share a design:** **Settings → Design** → edit your design → **Save as file**.
@@ -215,7 +217,9 @@ The compiled stylesheet (`assets/maz.css`) is checked into the repository and em
 | Epic Games | Registry → launcher manifests (`*.item`), launcher catalog cache, optional Epic account for the full library |
 | Roblox | Roblox player / Microsoft Store app / Sober detection, official `roblox-player:` and `roblox://experiences/start?placeId=` links |
 | More stores | One `StoreLibrary` trait per store: registry / manifest files (GOG, EA, Ubisoft, Battle.net, Amazon), itch receipts, Xbox `MicrosoftGame.config` + AppX packages |
-| Game info | Public Steam store `appdetails` endpoint, cached locally |
+| Game info | Public Steam store `appdetails` + Steam Deck compatibility endpoints, Wikipedia REST API and Wikidata as second source; cached locally |
+| Store libraries | Read-only SQLite access (`rusqlite`, bundled) to the local GOG Galaxy, Amazon Games and itch.io databases |
+| Wine / Proton | Detects system Wine, Steam Proton, `compatibilitytools.d`, Lutris and Heroic runners; one prefix per game |
 | Updates | GitHub Releases API, SHA256 verification, in-place replacement or package manager |
 | Icons | Original icons extracted from the EXE through the Windows API (256 px) |
 | HTTP | `ureq` with the system TLS (SChannel / Security.framework / OpenSSL) |
@@ -248,6 +252,7 @@ src/
 ├── emulators.rs   emulator profiles, ROM scanner, folder scan
 ├── metadata.rs    automatic game info (cached)
 ├── playtime.rs    local playtime tracking
+├── runners.rs     Wine / Proton versions on Linux
 ├── notes.rs       changelog rendering for the update window
 ├── updater.rs     update check and in-app update
 ├── freegames.rs   free games on Epic and Steam

@@ -1,7 +1,7 @@
 name: maz-launcher
 title: MAZ Launcher
 version: '@VERSION@'
-summary: All your Steam, Epic, Roblox and own games in one launcher
+summary: All your Steam, Epic, GOG, Xbox, Roblox and own games in one launcher
 description: |
   MAZ Launcher shows your Steam, Epic Games (via Heroic), Roblox and your own
   games in one fast, good-looking library. Everything runs locally.

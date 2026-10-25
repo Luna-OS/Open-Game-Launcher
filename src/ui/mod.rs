@@ -56,6 +56,7 @@ pub fn Root() -> Element {
         update_state: Signal::new(UpdateState::Idle),
         epic_busy: Signal::new(false),
         epic_error: Signal::new(None),
+        epic_progress: Signal::new((0, 0)),
     });
 
     // Lokale Bilder (Steam-Cache, Icons, eigene Cover) für das Fenster bereitstellen
@@ -233,6 +234,10 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
             class: "h-11 shrink-0 flex items-center bg-sidenav/90 border-b border-border/60 relative z-40",
             onmousedown: move |_| window().drag(),
             ondoubleclick: move |_| window().toggle_maximized(),
+            // macOS: Platz für die Ampel-Knöpfe links oben
+            if cfg!(target_os = "macos") {
+                div { class: "w-[72px] shrink-0" }
+            }
             library::TitleBrand {}
             if nav {
                 div { class: "flex items-center gap-1 ml-6",
@@ -253,6 +258,7 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
                     {tf("update.pill", &[("version", &v)])}
                 }
             }
+            if !cfg!(target_os = "macos") {
             div {
                 class: "flex h-full",
                 onmousedown: move |e| e.stop_propagation(),
@@ -275,6 +281,7 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
                     onclick: move |_| window().close(),
                     Icon { name: "x", class: "size-4" }
                 }
+            }
             }
         }
     }

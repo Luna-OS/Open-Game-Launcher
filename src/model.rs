@@ -185,6 +185,8 @@ pub struct CustomGame {
     /// Zusätzliche Punkte für die Sicherheitsfrage (eine Zeile = ein Punkt)
     pub checklist: String,
     pub added: u64,
+    /// Linux: Wine/Proton für dieses Spiel (Pfad, leer = System-Wine)
+    pub runner: String,
 }
 
 /// Eine Roblox-Experience, die der Nutzer als eigene Kachel hinzugefügt hat
@@ -290,6 +292,8 @@ pub struct Settings {
     pub epic_auth: Option<crate::epicacct::EpicAuth>,
     /// Wann die Epic-Bibliothek zuletzt online geladen wurde
     pub epic_synced: u64,
+    /// Hinweis „Epic-Konto verbinden“ in der Bibliothek weggeklickt
+    pub epic_hint_dismissed: bool,
     /// Roblox anzeigen + eigene Roblox-Experiences
     pub roblox_enabled: bool,
     pub roblox_games: Vec<RobloxGame>,
@@ -303,6 +307,8 @@ pub struct Settings {
     pub stores_off: Vec<String>,
     /// Doppelte Spiele (gleiches Spiel in mehreren Stores) zusammenfassen
     pub merge_duplicates: bool,
+    /// Auch gekaufte, nicht installierte Spiele der weiteren Stores zeigen
+    pub stores_show_uninstalled: bool,
     /// Bedienung mit Controller (große Fokus-Rahmen, Steuerkreuz/Stick)
     pub controller_mode: bool,
 
@@ -364,12 +370,14 @@ impl Default for Settings {
             epic_show_uninstalled: true,
             epic_auth: None,
             epic_synced: 0,
+            epic_hint_dismissed: false,
             roblox_enabled: true,
             roblox_games: Vec::new(),
             update_check: true,
             update_skip: String::new(),
             stores_off: Vec::new(),
             merge_duplicates: true,
+            stores_show_uninstalled: true,
             controller_mode: false,
             playtime_local: BTreeMap::new(),
             first_seen: BTreeMap::new(),

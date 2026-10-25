@@ -926,10 +926,46 @@ fn RobloxSection() -> Element {
 }
 
 /// Epic-Konto verbinden → komplette Epic-Bibliothek
+/// Tastenkürzel passend zum System (Strg / ⌘)
+fn kbd_mod() -> &'static str {
+    if cfg!(target_os = "macos") { "⌘" } else { "Strg" }
+}
+
 #[component]
-fn EpicAccount() -> Element {
+fn Kbd(#[props(into)] k: String) -> Element {
+    rsx! { kbd { class: "inline-flex items-center h-6 px-2 rounded-md border border-border bg-background text-xs font-semibold font-mono shadow-sm", "{k}" } }
+}
+
+/// Ein Schritt im Epic-Ablauf
+#[component]
+fn EpicStep(n: u8, state: u8, #[props(into)] title: String, children: Element) -> Element {
+    // state: 0 = noch nicht, 1 = jetzt, 2 = erledigt
+    let (dot, txt) = match state {
+        2 => ("bg-success text-white", "text-muted-foreground"),
+        1 => ("maz-gradient-bg text-white ring-4 ring-primary/20", "text-foreground"),
+        _ => ("bg-muted text-muted-foreground", "text-muted-foreground"),
+    };
+    rsx! {
+        div { class: "flex gap-3",
+            div { class: "size-7 shrink-0 rounded-full grid place-items-center text-xs font-bold {dot}",
+                if state == 2 { Icon { name: "check", class: "size-4" } } else { "{n}" }
+            }
+            div { class: "min-w-0 flex-1 pb-4",
+                div { class: "text-sm font-semibold pt-1 {txt}", "{title}" }
+                if state == 1 {
+                    div { class: "mt-2", {children} }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+pub fn EpicAccount() -> Element {
     let app = use_app();
     let mut waiting = use_signal(|| false);
+    // Seit wann gewartet wird – nach 10 Minuten hört der Launcher auf, die Zwischenablage zu lesen
+    let mut since = use_signal(|| 0u64);
     let mut pasted = use_signal(String::new);
     let count = use_memo(move || {
         let _ = app.settings.read().epic_synced;
@@ -939,8 +975,12 @@ fn EpicAccount() -> Element {
     // Sobald die kopierte Epic-Seite darin ist, geht es automatisch weiter.
     use_future(move || async move {
         loop {
-            tokio::time::sleep(std::time::Duration::from_millis(700)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(400)).await;
             if !*waiting.peek() || *app.epic_busy.peek() {
+                continue;
+            }
+            if sys::now_secs().saturating_sub(*since.peek()) > 600 {
+                waiting.set(false);
                 continue;
             }
             if let Some(text) = sys::read_clipboard() {
@@ -955,16 +995,20 @@ fn EpicAccount() -> Element {
     });
 
     let busy = *app.epic_busy.read();
+    let (done, total) = *app.epic_progress.read();
     let err = app.epic_error.read().clone();
     let s = app.settings.read();
     let auth = s.epic_auth.clone();
     let synced = s.epic_synced;
     drop(s);
     let n = count();
-    let steps = i18n::tl("epic.steps");
+    let m = kbd_mod();
+    let pct = if total > 0 { (done as f64 / total as f64 * 100.0).min(100.0) } else { 0.0 };
+    let step = if busy { 3 } else if waiting() { 2 } else { 1 };
+    let st = |k: u8| if k < step { 2 } else if k == step { 1 } else { 0 };
 
     rsx! {
-        div { class: "mt-4 rounded-xl border border-border bg-muted/40 p-4",
+        div { class: "mt-4 rounded-xl border border-border bg-muted/40 p-5",
             div { class: "flex items-start gap-3",
                 div { class: "size-10 shrink-0 rounded-xl bg-primary/15 text-primary grid place-items-center",
                     Icon { name: "key", class: "size-5" }
@@ -986,50 +1030,47 @@ fn EpicAccount() -> Element {
                     }
                 }
             }
-            if auth.is_some() {
+            if auth.is_some() && !busy {
                 div { class: "flex flex-wrap gap-2 mt-4",
-                    Button { variant: ButtonVariant::Secondary, disabled: busy, onclick: move |_| super::net::sync_epic(app, true),
-                        if busy { Spinner {} } else { Icon { name: "refresh", class: "size-4" } }
+                    Button { variant: ButtonVariant::Secondary, onclick: move |_| super::net::sync_epic(app, true),
+                        Icon { name: "refresh", class: "size-4" }
                         {t("epic.sync_now")}
                     }
-                    Button { variant: ButtonVariant::Ghost, disabled: busy, onclick: move |_| super::net::epic_disconnect(app),
+                    Button { variant: ButtonVariant::Ghost, onclick: move |_| super::net::epic_disconnect(app),
                         Icon { name: "log-out", class: "size-4" }
                         {t("epic.disconnect")}
                     }
                 }
             } else {
-                ol { class: "mt-4 space-y-2",
-                    {steps.into_iter().enumerate().map(|(i, st)| {
-                        let k = i + 1;
-                        rsx! {
-                            li { key: "{i}", class: "flex gap-3 items-start text-sm",
-                                span { class: "size-6 shrink-0 rounded-full maz-gradient-bg text-white text-xs font-bold grid place-items-center", "{k}" }
-                                span { class: "pt-0.5 leading-relaxed", "{st}" }
-                            }
+                div { class: "mt-5",
+                    EpicStep { n: 1, state: st(1), title: t("epic.s1"),
+                        p { class: "text-sm text-muted-foreground leading-relaxed mb-3", {t("epic.s1_text")} }
+                        Button { variant: ButtonVariant::Glow,
+                            onclick: move |_| {
+                                let _ = sys::open_url(&crate::epicacct::login_url());
+                                let mut e = app.epic_error;
+                                e.set(None);
+                                since.set(sys::now_secs());
+                                waiting.set(true);
+                            },
+                            Icon { name: "external", class: "size-4" }
+                            {t("epic.connect")}
                         }
-                    })}
-                }
-                div { class: "flex flex-wrap gap-2 mt-4",
-                    Button { variant: ButtonVariant::Glow, disabled: busy,
-                        onclick: move |_| {
-                            let _ = sys::open_url(&crate::epicacct::login_url());
-                            let mut e = app.epic_error;
-                            e.set(None);
-                            waiting.set(true);
-                        },
-                        if busy { Spinner {} } else { Icon { name: "external", class: "size-4" } }
-                        {t("epic.connect")}
                     }
-                }
-                if waiting() || busy {
-                    div { class: "mt-4 grid gap-2",
-                        div { class: "flex items-center gap-2 text-sm text-muted-foreground",
+                    EpicStep { n: 2, state: st(2), title: t("epic.s2"),
+                        p { class: "text-sm text-muted-foreground leading-relaxed", {t("epic.s2_text")} }
+                        div { class: "flex flex-wrap items-center gap-2 my-3 text-sm",
+                            Kbd { k: format!("{m} + A") }
+                            span { class: "text-muted-foreground", {t("epic.then")} }
+                            Kbd { k: format!("{m} + C") }
+                        }
+                        div { class: "flex items-center gap-2 text-sm text-muted-foreground mb-3",
                             Spinner {}
-                            {t(if busy { "epic.loading" } else { "epic.waiting" })}
+                            {t("epic.watching")}
                         }
                         Input {
                             class: "font-mono text-xs",
-                            placeholder: t("epic.paste_ph"),
+                            placeholder: tf("epic.paste_ph2", &[("key", &format!("{m} + V"))]),
                             value: pasted(),
                             oninput: move |v: String| {
                                 pasted.set(v.clone());
@@ -1040,6 +1081,27 @@ fn EpicAccount() -> Element {
                                 }
                             },
                         }
+                        div { class: "flex flex-wrap gap-2 mt-3",
+                            Button { variant: ButtonVariant::Ghost, size: ButtonSize::Sm,
+                                onclick: move |_| { since.set(sys::now_secs()); let _ = sys::open_url(&crate::epicacct::login_url()); },
+                                Icon { name: "refresh", class: "size-3.5" }
+                                {t("epic.reopen")}
+                            }
+                            Button { variant: ButtonVariant::Ghost, size: ButtonSize::Sm, onclick: move |_| waiting.set(false),
+                                {t("common.cancel")}
+                            }
+                        }
+                    }
+                    EpicStep { n: 3, state: st(3), title: t("epic.s3"),
+                        div { class: "flex justify-between text-sm mb-2",
+                            span { class: "text-muted-foreground",
+                                {if total > 1 { tf("epic.progress", &[("done", &done.to_string()), ("total", &total.to_string())]) } else { t("epic.signing_in") }}
+                            }
+                            if total > 1 { span { class: "tabular-nums", {format!("{pct:.0} %")} } }
+                        }
+                        div { class: "h-2 rounded-full bg-muted overflow-hidden",
+                            div { class: "h-full maz-gradient-bg transition-all", style: "width: {pct}%" }
+                        }
                     }
                 }
             }
@@ -1048,6 +1110,10 @@ fn EpicAccount() -> Element {
                     Icon { name: "alert", class: "size-4 mt-0.5 shrink-0 text-destructive" }
                     span { "{e}" }
                 }
+            }
+            p { class: "mt-2 text-xs text-muted-foreground leading-relaxed flex gap-1.5",
+                Icon { name: "shield", class: "size-3.5 mt-0.5 shrink-0" }
+                {t("epic.privacy")}
             }
         }
     }
@@ -1235,6 +1301,10 @@ fn MoreStoresSection() -> Element {
                     let st = statuses.iter().find(|(x, _)| *x == src).map(|(_, st)| st.clone());
                     let (dot, line) = match (&st, on) {
                         (_, false) => ("bg-muted-foreground/40", t("conn.store_off")),
+                        (Some(st), true) if st.found && st.owned > st.installed => (
+                            "bg-success",
+                            format!("{} · {}", tf("conn.installed", &[("n", &st.installed.to_string())]), tf("conn.owned", &[("n", &st.owned.to_string())])),
+                        ),
                         (Some(st), true) if st.found => ("bg-success", tf("conn.installed", &[("n", &st.installed.to_string())])),
                         _ => ("bg-muted-foreground/40", tf("store.client_missing", &[("store", &src.label())])),
                     };
@@ -1270,6 +1340,12 @@ fn MoreStoresSection() -> Element {
                         }
                     }
                 })}
+            }
+            SwitchRow {
+                title: t("conn.uninstalled"),
+                description: t("conn.more_uninstalled_text"),
+                checked: s.stores_show_uninstalled,
+                onchange: move |v: bool| { app.update(|s| s.stores_show_uninstalled = v); rescan(app); },
             }
             p { class: "text-xs text-muted-foreground mt-3 leading-relaxed", {t("conn.more_privacy")} }
         }

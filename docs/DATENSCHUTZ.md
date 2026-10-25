@@ -23,11 +23,15 @@ Nur für diese Dinge – und immer direkt zum jeweiligen Anbieter, nie über ein
 | Wofür | Wohin | Was wird gesendet |
 |---|---|---|
 | Cover-Bilder | Steam-Store / Steam-CDN, Epic-CDN, Roblox-Bilder | nur die Bild-Adresse |
+| Spiel-Infos (abschaltbar mit „Bilder aus dem Internet“) | Steam-Store, Wikipedia, Wikidata | nur der Spielname bzw. die Steam-Nummer |
+| Bilder aus GOG/Amazon/itch.io-Bibliotheken | Bild-Server der Stores | nur die Bild-Adresse |
 | Gratis-Spiele-Liste | Epic Games Store, Steam-Store, GamerPower | nichts Persönliches |
 | Roblox-Spiel hinzufügen | öffentliche Roblox-Schnittstellen (Name, Bild) | nur die Spiel-Nummer |
 | Update-Prüfung (abschaltbar) | GitHub | nichts Persönliches |
 | Optional: Steam-Web-API-Schlüssel | Steam | dein Schlüssel und deine SteamID |
 | Optional: Epic-Konto verbinden | Epic Games | Anmeldung erfolgt bei Epic im Browser |
+
+Die Bibliotheken von GOG Galaxy, Amazon Games und itch.io werden **nur lokal** aus deren Dateien auf deinem Computer gelesen (nur lesend) – dabei wird nichts gesendet.
 
 Wie bei jeder Internetverbindung sehen diese Anbieter deine IP-Adresse. Es gelten deren Datenschutzbestimmungen.
 

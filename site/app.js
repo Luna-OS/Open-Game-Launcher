@@ -129,6 +129,22 @@
   applyLang(pickLang());
   fillLinks();
 
+  // Screenshots groß ansehen (nur Bilder aus dem eigenen img/-Ordner)
+  var box = document.getElementById("lightbox");
+  var boxImg = document.getElementById("lightbox-img");
+  if (box && boxImg && typeof box.showModal === "function") {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-zoom]"), function (b) {
+      b.addEventListener("click", function () {
+        var src = b.getAttribute("data-zoom") || "";
+        if (!/^img\/[a-z0-9-]+\.webp$/.test(src)) return;
+        boxImg.src = src;
+        boxImg.alt = b.getAttribute("aria-label") || "";
+        box.showModal();
+      });
+    });
+    box.addEventListener("click", function () { box.close(); });
+  }
+
   fetch("https://api.github.com/repos/" + REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (j) {

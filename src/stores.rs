@@ -23,6 +23,14 @@ pub trait StoreLibrary {
     fn download_url(&self) -> &'static str;
     /// Installierte Spiele finden
     fn games(&self) -> Vec<Game>;
+    /// Gekaufte, aber nicht installierte Spiele (soweit der Store sie lokal speichert)
+    fn owned(&self) -> Vec<Game> {
+        Vec::new()
+    }
+    /// Kann dieser Store auch nicht installierte Spiele zeigen?
+    fn has_library(&self) -> bool {
+        false
+    }
     /// Gibt es diesen Store auf diesem Betriebssystem?
     fn supported(&self) -> bool {
         cfg!(windows)
@@ -32,12 +40,21 @@ pub trait StoreLibrary {
         None
     }
 
-    fn scan(&self) -> StoreScan {
-        let games = self.games();
+    fn scan(&self, with_owned: bool) -> StoreScan {
+        let mut games = self.games();
+        let installed = games.len();
+        if with_owned {
+            for g in self.owned() {
+                let key = crate::model::normalize_name(&g.name);
+                if !games.iter().any(|o| o.id == g.id || crate::model::normalize_name(&o.name) == key) {
+                    games.push(g);
+                }
+            }
+        }
         let client = self.client_installed();
         let status = StoreStatus {
             found: client || !games.is_empty(),
-            installed: games.len(),
+            installed,
             owned: games.len(),
             note: (!client && games.is_empty()).then(|| crate::i18n::tf("store.client_missing", &[("store", &self.source().label())])),
             ..Default::default()
@@ -68,7 +85,7 @@ pub fn scan_all(settings: &Settings) -> Vec<(Source, StoreScan)> {
     all()
         .into_iter()
         .filter(|s| s.supported() && settings.store_on(s.source()))
-        .map(|s| (s.source(), s.scan()))
+        .map(|s| (s.source(), s.scan(settings.stores_show_uninstalled)))
         .collect()
 }
 
@@ -86,6 +103,130 @@ fn game(id: String, name: String, source: Source, dir: Option<String>, launch: L
         playtime_min: None,
         steam_appid: None,
     }
+}
+
+/// Nicht installiertes Spiel (Klick = im Store-Programm installieren)
+fn owned_game(id: String, name: String, source: Source, launch: LaunchTarget) -> Game {
+    let mut g = game(id, name, source, None, launch);
+    g.installed = false;
+    g
+}
+
+/// SQLite-Datenbank eines Stores nur lesend öffnen. "immutable" = keine Sperren, der Store
+/// kann gleichzeitig weiterlaufen; wir verändern nie etwas.
+pub fn open_db(path: &Path) -> Option<rusqlite::Connection> {
+    use rusqlite::OpenFlags;
+    if !path.is_file() {
+        return None;
+    }
+    // Pfad als file:-URI (Sonderzeichen kodieren, Windows-Laufwerk mit führendem /)
+    let mut p = path.to_string_lossy().replace('\\', "/");
+    if !p.starts_with('/') {
+        p.insert(0, '/');
+    }
+    let enc: String = p
+        .chars()
+        .map(|c| match c {
+            '%' => "%25".to_string(),
+            '?' => "%3f".to_string(),
+            '#' => "%23".to_string(),
+            ' ' => "%20".to_string(),
+            c => c.to_string(),
+        })
+        .collect();
+    let uri = format!("file://{enc}?immutable=1&mode=ro");
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = rusqlite::Connection::open_with_flags(uri, flags).ok()?;
+    // Schutz gegen riesige oder kaputte Dateien
+    let _ = conn.busy_timeout(std::time::Duration::from_millis(500));
+    // SICHERHEIT: Fremde Datenbank – keine Funktionen aus Views/Triggern ausführen lassen
+    conn.execute_batch("PRAGMA trusted_schema = OFF;").ok()?;
+    Some(conn)
+}
+
+/// Gibt es diese Spalte in der Tabelle?
+fn has_column(conn: &rusqlite::Connection, table: &str, col: &str) -> bool {
+    conn.prepare(&format!("PRAGMA table_info({table})"))
+        .and_then(|mut st| {
+            let names: Vec<String> = st.query_map([], |r| r.get::<_, String>(1))?.flatten().collect();
+            Ok(names.iter().any(|n| n.eq_ignore_ascii_case(col)))
+        })
+        .unwrap_or(false)
+}
+
+/// GOG Galaxy: alle gekauften GOG-Spiele aus galaxy-2.0.db
+pub fn galaxy_owned(conn: &rusqlite::Connection) -> Vec<(String, String, Option<String>)> {
+    let sql = "SELECT lr.releaseKey, gp.value FROM LibraryReleases lr \
+               JOIN GamePieces gp ON gp.releaseKey = lr.releaseKey \
+               JOIN GamePieceTypes t ON t.id = gp.gamePieceTypeId \
+               WHERE lr.releaseKey LIKE 'gog\\_%' ESCAPE '\\' AND t.type IN ('originalTitle', 'title', 'originalImages') \
+               LIMIT 20000";
+    let Ok(mut st) = conn.prepare(sql) else { return Vec::new() };
+    let rows: Vec<(String, String)> = st
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+        .map(|it| it.flatten().collect())
+        .unwrap_or_default();
+    let mut out: Vec<(String, String, Option<String>)> = Vec::new();
+    for (key, value) in rows {
+        let Some(id) = key.strip_prefix("gog_") else { continue };
+        if !id.chars().all(|c| c.is_ascii_digit()) {
+            continue;
+        }
+        let v: serde_json::Value = serde_json::from_str(&value).unwrap_or(serde_json::Value::Null);
+        let entry = match out.iter_mut().position(|e| e.0 == id) {
+            Some(i) => i,
+            None => {
+                out.push((id.to_string(), String::new(), None));
+                out.len() - 1
+            }
+        };
+        if let Some(t) = v.get("title").and_then(|t| t.as_str()) {
+            if out[entry].1.is_empty() {
+                out[entry].1 = t.trim().to_string();
+            }
+        }
+        if let Some(c) = v.get("verticalCover").and_then(|c| c.as_str()).filter(|u| u.starts_with("https://")) {
+            out[entry].2 = Some(c.to_string());
+        }
+    }
+    out.retain(|e| !e.1.is_empty());
+    out
+}
+
+/// Amazon Games: GameProductInfo.sqlite (Tabelle DbSet)
+pub fn amazon_owned(conn: &rusqlite::Connection) -> Vec<(String, String, Option<String>)> {
+    if !has_column(conn, "DbSet", "ProductIdStr") || !has_column(conn, "DbSet", "ProductTitle") {
+        return Vec::new();
+    }
+    let icon = if has_column(conn, "DbSet", "ProductIconUrl") { "ProductIconUrl" } else { "''" };
+    let sql = format!("SELECT ProductIdStr, ProductTitle, {icon} FROM DbSet LIMIT 20000");
+    let Ok(mut st) = conn.prepare(&sql) else { return Vec::new() };
+    st.query_map([], |r| {
+        Ok((
+            r.get::<_, Option<String>>(0)?.unwrap_or_default(),
+            r.get::<_, Option<String>>(1)?.unwrap_or_default(),
+            r.get::<_, Option<String>>(2)?.filter(|u| u.starts_with("https://")),
+        ))
+    })
+    .map(|it| it.flatten().filter(|(id, t, _)| !id.is_empty() && !t.trim().is_empty()).collect())
+    .unwrap_or_default()
+}
+
+/// itch.io: butler.db – Spiele, für die es einen Kauf-/Download-Schlüssel gibt
+pub fn itch_owned(conn: &rusqlite::Connection) -> Vec<(String, String, Option<String>, String)> {
+    let sql = "SELECT g.id, g.title, COALESCE(g.still_cover_url, g.cover_url, ''), COALESCE(g.url, '') \
+               FROM games g WHERE g.id IN (SELECT game_id FROM download_keys) LIMIT 20000";
+    let Ok(mut st) = conn.prepare(sql) else { return Vec::new() };
+    st.query_map([], |r| {
+        Ok((
+            r.get::<_, i64>(0)?.to_string(),
+            r.get::<_, Option<String>>(1)?.unwrap_or_default(),
+            r.get::<_, Option<String>>(2)?.filter(|u| u.starts_with("https://")),
+            r.get::<_, Option<String>>(3)?.unwrap_or_default(),
+        ))
+    })
+    .map(|it| it.flatten().filter(|(_, t, _, _)| !t.trim().is_empty()).collect())
+    .unwrap_or_default()
 }
 
 // ----------------------------------------------------------------------
@@ -172,6 +313,31 @@ fn galaxy_exe() -> Option<PathBuf> {
     p.exists().then_some(p)
 }
 
+/// Heroic: alle gekauften GOG-Spiele aus der Bibliothek (nicht installiert)
+pub fn parse_heroic_gog_library(library_json: &str) -> Vec<Game> {
+    let library: serde_json::Value = serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
+    let mut out = Vec::new();
+    for g in library.get("games").and_then(|g| g.as_array()).into_iter().flatten() {
+        let s = |k: &str| g.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let (app, title) = (s("app_name"), s("title"));
+        if app.is_empty() || title.is_empty() || !app.chars().all(|c| c.is_ascii_alphanumeric()) {
+            continue;
+        }
+        let mut game = owned_game(
+            format!("gog:{app}"),
+            title,
+            Source::Gog,
+            LaunchTarget::Uri(format!("heroic://launch?appName={}&runner=gog", sys::url_encode(&app))),
+        );
+        let cover = s("art_square");
+        if cover.starts_with("https://") {
+            game.art.cover.push(cover);
+        }
+        out.push(game);
+    }
+    out
+}
+
 /// Heroic (Linux): gog_store/installed.json + gog_store/library.json
 pub fn parse_heroic_gog(installed_json: &str, library_json: &str) -> Vec<Game> {
     let installed: serde_json::Value = serde_json::from_str(installed_json).unwrap_or(serde_json::Value::Null);
@@ -211,9 +377,46 @@ pub fn parse_heroic_gog(installed_json: &str, library_json: &str) -> Vec<Game> {
     out
 }
 
+#[cfg(windows)]
+fn galaxy_db() -> Option<PathBuf> {
+    sys::env_path("ProgramData").map(|p| p.join("GOG.com").join("Galaxy").join("storage").join("galaxy-2.0.db"))
+}
+
 impl StoreLibrary for Gog {
     fn supported(&self) -> bool {
         true
+    }
+    fn has_library(&self) -> bool {
+        true
+    }
+    fn owned(&self) -> Vec<Game> {
+        #[cfg(windows)]
+        {
+            let Some(conn) = galaxy_db().and_then(|p| open_db(&p)) else { return Vec::new() };
+            galaxy_owned(&conn)
+                .into_iter()
+                .map(|(id, title, cover)| {
+                    let mut g = owned_game(format!("gog:{id}"), title, Source::Gog, LaunchTarget::Uri(format!("goggalaxy://openGameView/{id}")));
+                    g.art.cover.extend(cover);
+                    g
+                })
+                .collect()
+        }
+        #[cfg(not(windows))]
+        {
+            let mut out: Vec<Game> = Vec::new();
+            for d in crate::epic::heroic_dirs() {
+                let library = std::fs::read_to_string(d.join("store_cache/gog_library.json"))
+                    .or_else(|_| std::fs::read_to_string(d.join("gog_store/library.json")))
+                    .unwrap_or_default();
+                for g in parse_heroic_gog_library(&library) {
+                    if !out.iter().any(|o| o.id == g.id) {
+                        out.push(g);
+                    }
+                }
+            }
+            out
+        }
     }
     fn client_uri(&self) -> Option<&'static str> {
         Some("goggalaxy://")
@@ -524,7 +727,34 @@ pub fn amazon_game_id(uninstall: &str) -> Option<String> {
     (!id.is_empty()).then_some(id)
 }
 
+#[cfg(windows)]
+fn amazon_db() -> Option<PathBuf> {
+    sys::env_path("LOCALAPPDATA").map(|p| p.join("Amazon Games").join("Data").join("Games").join("Sql").join("GameProductInfo.sqlite"))
+}
+
 impl StoreLibrary for Amazon {
+    fn has_library(&self) -> bool {
+        true
+    }
+    fn owned(&self) -> Vec<Game> {
+        #[cfg(windows)]
+        {
+            let Some(conn) = amazon_db().and_then(|p| open_db(&p)) else { return Vec::new() };
+            amazon_owned(&conn)
+                .into_iter()
+                .filter(|(id, _, _)| id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')))
+                .map(|(id, title, icon)| {
+                    let mut g = owned_game(format!("amazon:{id}"), title, Source::Amazon, LaunchTarget::Uri(format!("amazon-games://play/{}", sys::url_encode(&id))));
+                    g.art.icon.extend(icon);
+                    g
+                })
+                .collect()
+        }
+        #[cfg(not(windows))]
+        {
+            Vec::new()
+        }
+    }
     fn client_uri(&self) -> Option<&'static str> {
         Some("amazon-games://")
     }
@@ -623,9 +853,39 @@ fn guess_exe(dir: &Path, name: &str) -> Option<PathBuf> {
     }
 }
 
+/// Nur echte itch.io-Seiten (https://<name>.itch.io/…) öffnen
+pub fn is_itch_url(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else { return false };
+    let host = rest.split(['/', '?', '#']).next().unwrap_or("");
+    !host.contains('@') && !host.contains(':') && (host == "itch.io" || host.ends_with(".itch.io")) && host.len() < 80
+}
+
+fn itch_db() -> PathBuf {
+    itch_apps_dir().parent().map(|p| p.join("db").join("butler.db")).unwrap_or_default()
+}
+
 impl StoreLibrary for Itch {
     fn supported(&self) -> bool {
         true
+    }
+    fn has_library(&self) -> bool {
+        true
+    }
+    fn owned(&self) -> Vec<Game> {
+        let Some(conn) = open_db(&itch_db()) else { return Vec::new() };
+        itch_owned(&conn)
+            .into_iter()
+            .map(|(id, title, cover, url)| {
+                // Installieren geht über die itch-App; der Link öffnet die offizielle Spielseite
+                let page = if is_itch_url(&url) { url } else { "https://itch.io/my-purchases".to_string() };
+                let mut g = owned_game(format!("itch-owned:{id}"), title, Source::Itch, LaunchTarget::Uri(page));
+                if let Some(c) = cover {
+                    g.art.cover.push(c.clone());
+                    g.art.header.push(c);
+                }
+                g
+            })
+            .collect()
     }
     fn source(&self) -> Source {
         Source::Itch
@@ -742,6 +1002,11 @@ impl StoreLibrary for Xbox {
                 let content = e.path().join("Content");
                 let Ok(xml) = std::fs::read_to_string(content.join("MicrosoftGame.config")) else { continue };
                 let Some(cfg) = parse_xbox_config(&xml) else { continue };
+                // SICHERHEIT: nur einfache Kennungen an explorer.exe weitergeben
+                let simple = |v: &str| !v.is_empty() && v.len() < 130 && v.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
+                if !simple(&cfg.exe_id) || !simple(&cfg.identity) {
+                    continue;
+                }
                 let Some(pkg) = packages.iter().find(|p| p.name.eq_ignore_ascii_case(&cfg.identity)) else { continue };
                 let name = if !cfg.display_name.is_empty() && !cfg.display_name.starts_with("ms-resource") {
                     cfg.display_name.clone()
@@ -827,6 +1092,48 @@ mod tests {
         assert_eq!(g[0].name, "The Witcher");
         assert!(matches!(&g[0].launch, LaunchTarget::Uri(u) if u.contains("runner=gog")));
         assert_eq!(g[0].art.cover.len(), 1);
+    }
+
+    #[test]
+    fn owned_from_databases() {
+        let c = rusqlite::Connection::open_in_memory().unwrap();
+        c.execute_batch(
+            "CREATE TABLE LibraryReleases(releaseKey TEXT, userId INT);
+             CREATE TABLE GamePieceTypes(id INT, type TEXT);
+             CREATE TABLE GamePieces(releaseKey TEXT, gamePieceTypeId INT, value TEXT);
+             INSERT INTO GamePieceTypes VALUES (1,'originalTitle'),(2,'originalImages');
+             INSERT INTO LibraryReleases VALUES ('gog_1207658930',1),('steam_570',1),('gog_x1',1);
+             INSERT INTO GamePieces VALUES ('gog_1207658930',1,'{\"title\":\"The Witcher\"}'),
+               ('gog_1207658930',2,'{\"verticalCover\":\"https://images.gog.com/c.jpg\"}'),
+               ('steam_570',1,'{\"title\":\"Dota 2\"}'),('gog_x1',1,'{\"title\":\"Kaputt\"}');
+             CREATE TABLE DbSet(Id INT, ProductIdStr TEXT, ProductTitle TEXT, ProductIconUrl TEXT);
+             INSERT INTO DbSet VALUES (1,'amzn1.adg.product.abc','Spiel A','https://m.media-amazon.com/x.png'),(2,'','Leer',NULL);
+             CREATE TABLE games(id INT, title TEXT, url TEXT, cover_url TEXT, still_cover_url TEXT);
+             CREATE TABLE download_keys(id INT, game_id INT, owner_id INT);
+             INSERT INTO games VALUES (5,'Celeste','https://mattmakesgames.itch.io/celeste','https://img.itch.zone/c.png',NULL),(6,'Nicht gekauft','',NULL,NULL);
+             INSERT INTO download_keys VALUES (1,5,9);",
+        )
+        .unwrap();
+        let gog = galaxy_owned(&c);
+        assert_eq!(gog, vec![("1207658930".into(), "The Witcher".into(), Some("https://images.gog.com/c.jpg".into()))]);
+        let amz = amazon_owned(&c);
+        assert_eq!(amz.len(), 1);
+        assert_eq!(amz[0].1, "Spiel A");
+        let itch = itch_owned(&c);
+        assert_eq!(itch.len(), 1);
+        assert_eq!(itch[0].1, "Celeste");
+        let lib = parse_heroic_gog_library(r#"{"games":[{"app_name":"123","title":"Spiel"},{"app_name":"x;rm","title":"Böse"}]}"#);
+        assert_eq!(lib.len(), 1);
+        assert!(!lib[0].installed);
+    }
+
+    #[test]
+    fn itch_urls() {
+        assert!(is_itch_url("https://mattmakesgames.itch.io/celeste"));
+        assert!(!is_itch_url("https://evil.com/.itch.io/x"));
+        assert!(!is_itch_url("https://itch.io.evil.com/x"));
+        assert!(!is_itch_url("https://user@evil.itch.io.com/"));
+        assert!(!is_itch_url("http://a.itch.io/"));
     }
 
     #[test]
