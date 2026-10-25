@@ -417,7 +417,6 @@ pub fn MazSidebar() -> Element {
                         NavItem { filter: Filter::Hidden, count: count_for(app, Filter::Hidden) }
                     }
                 }
-                super::friends::SidebarFriends {}
             }
             div { class: "p-3 space-y-2 border-t border-border/60",
                 Button { variant: ButtonVariant::Glow, class: "w-full", onclick: move |_| app.open(Modal::EditGame(None)),

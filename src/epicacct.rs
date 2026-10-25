@@ -104,7 +104,7 @@ fn agent() -> ureq::Agent {
 }
 
 fn read(resp: Result<ureq::http::Response<ureq::Body>, ureq::Error>) -> Result<(u16, serde_json::Value), String> {
-    let mut resp = resp.map_err(|e| format!("{}: {e}", crate::i18n::t("acc.err_network")))?;
+    let mut resp = resp.map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
     let status = resp.status().as_u16();
     let text = resp.body_mut().read_to_string().unwrap_or_default();
     let v = serde_json::from_str(&text).unwrap_or(serde_json::Value::Null);

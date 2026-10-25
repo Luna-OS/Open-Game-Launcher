@@ -16,7 +16,6 @@ mod launch;
 mod library;
 mod model;
 mod problem;
-mod social;
 mod steam;
 mod sys;
 mod theme;

@@ -5,7 +5,6 @@ pub mod components;
 pub mod detail;
 pub mod dialogs;
 pub mod free;
-pub mod friends;
 pub mod icons;
 pub mod installer;
 pub mod library;
@@ -45,13 +44,6 @@ pub fn Root() -> Element {
         toasts: Signal::new(Vec::new()),
         free: Signal::new(Vec::new()),
         free_state: Signal::new(LoadState::Idle),
-        me: Signal::new(None),
-        friends: Signal::new(Vec::new()),
-        chat_with: Signal::new(None),
-        messages: Signal::new(Vec::new()),
-        social_busy: Signal::new(false),
-        social_error: Signal::new(None),
-        playing_now: Signal::new(None),
         epic_busy: Signal::new(false),
         epic_error: Signal::new(None),
     });
@@ -164,17 +156,11 @@ fn LauncherShell() -> Element {
         // Gratis-Spiele im Hintergrund laden (für die Zahl im Tab)
         net::load_free(app, false);
         net::sync_epic(app, false);
-        // Angemeldet? Dann Freunde & Online-Status starten
-        if app.settings.peek().session.is_some() {
-            net::refresh_all(app);
-            net::start_loop(app);
-        }
     });
     let page = *app.page.read();
     match page {
         Page::Library => rsx! { library::LibraryPage {} },
         Page::Free => rsx! { free::FreePage {} },
-        Page::Friends => rsx! { friends::FriendsPage {} },
         Page::Settings(_) => rsx! { settings::SettingsPage {} },
     }
 }
@@ -210,13 +196,10 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
     let filter = *app.filter.read();
     let lib_active = page == Page::Library && filter != Filter::Installed;
     let inst_active = page == Page::Library && filter == Filter::Installed;
-    let (free_badge, friends_badge, installed) = if nav {
-        let fr = app.friends.read();
-        let unread: i64 = fr.iter().map(|f| f.unread).sum();
-        let requests = fr.iter().filter(|f| f.incoming && !f.accepted()).count() as i64;
-        (free::unclaimed_count(app), (unread + requests).max(0) as usize, library::count_for(app, Filter::Installed))
+    let (free_badge, installed) = if nav {
+        (free::unclaimed_count(app), library::count_for(app, Filter::Installed))
     } else {
-        (0, 0, 0)
+        (0, 0)
     };
     let go_lib = move |f: Filter| {
         let mut fl = app.filter;
@@ -236,7 +219,6 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
                     NavTab { label: t("nav.library"), icon: "library", active: lib_active, badge: 0, onclick: move |_| go_lib(Filter::All) }
                     NavTab { label: t("filter.installed"), icon: "drive", active: inst_active, badge: installed, onclick: move |_| go_lib(Filter::Installed) }
                     NavTab { label: t("free.title"), icon: "gift", active: page == Page::Free, badge: free_badge, onclick: move |_| app.go(Page::Free) }
-                    NavTab { label: t("friends.title"), icon: "users", active: page == Page::Friends, badge: friends_badge, alert: true, onclick: move |_| app.go(Page::Friends) }
                 }
             }
             div { class: "flex-1" }
@@ -259,10 +241,7 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
                 button {
                     class: "titlebar-btn is-close w-12 h-full grid place-items-center text-muted-foreground hover:text-white cursor-pointer",
                     title: t("common.close"),
-                    onclick: move |_| {
-                        net::offline_on_exit(app);
-                        window().close();
-                    },
+                    onclick: move |_| window().close(),
                     Icon { name: "x", class: "size-4" }
                 }
             }

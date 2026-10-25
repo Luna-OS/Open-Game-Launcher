@@ -148,11 +148,6 @@ pub struct Settings {
     pub epic_synced: u64,
     pub online_art: bool,
 
-    // Konto & Freunde (Supabase). Leer = beim Bauen eingetragener Server.
-    pub server_url: String,
-    pub server_key: String,
-    pub session: Option<crate::social::Session>,
-    pub share_playing: bool,
 
     // Eigene Spiele
     /// Leer = Standardliste in der gewählten Sprache
@@ -198,10 +193,6 @@ impl Default for Settings {
             epic_auth: None,
             epic_synced: 0,
             online_art: true,
-            server_url: String::new(),
-            server_key: String::new(),
-            session: None,
-            share_playing: true,
             checklist: Vec::new(),
             custom_games: Vec::new(),
             minimize_on_launch: true,
@@ -234,13 +225,6 @@ impl Settings {
         } else {
             self.checklist.clone()
         }
-    }
-    /// Server für Konto & Freunde (eigene Einstellung oder eingebauter Server)
-    pub fn backend(&self) -> Option<crate::social::Backend> {
-        let (bu, bk) = crate::social::builtin_server();
-        let url = if self.server_url.trim().is_empty() { bu } else { self.server_url.clone() };
-        let key = if self.server_key.trim().is_empty() { bk } else { self.server_key.clone() };
-        crate::social::Backend::new(&url, &key)
     }
     pub fn last_played(&self, id: &str) -> u64 {
         self.last_played.get(id).copied().unwrap_or(0)

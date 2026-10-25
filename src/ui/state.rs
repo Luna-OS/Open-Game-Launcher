@@ -49,7 +49,6 @@ impl Filter {
 pub enum SettingsTab {
     Design,
     Language,
-    Account,
     Connections,
     Custom,
     General,
@@ -60,7 +59,6 @@ pub enum SettingsTab {
 pub enum Page {
     Library,
     Free,
-    Friends,
     Settings(SettingsTab),
 }
 
@@ -106,14 +104,6 @@ pub struct App {
     // Gratis-Spiele
     pub free: Signal<Vec<crate::freegames::FreeGame>>,
     pub free_state: Signal<LoadState>,
-    // Konto & Freunde
-    pub me: Signal<Option<crate::social::Profile>>,
-    pub friends: Signal<Vec<crate::social::Friend>>,
-    pub chat_with: Signal<Option<String>>,
-    pub messages: Signal<Vec<crate::social::Message>>,
-    pub social_busy: Signal<bool>,
-    pub social_error: Signal<Option<String>>,
-    pub playing_now: Signal<Option<String>>,
     // Epic-Konto
     pub epic_busy: Signal<bool>,
     pub epic_error: Signal<Option<String>>,
