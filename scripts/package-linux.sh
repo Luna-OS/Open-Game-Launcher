@@ -144,7 +144,9 @@ build_flatpak() {
   (
     cd "$d"
     flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --force-clean --repo=repo build "$ID.yml"
+    # Aktuelles flatpak-builder von Flathub (das aus Ubuntu 22.04 ist zu alt für neue GNOME-Runtimes)
+    flatpak install --user -y --noninteractive flathub org.flatpak.Builder
+    flatpak run org.flatpak.Builder --user --install-deps-from=flathub --disable-rofiles-fuse --force-clean --repo=repo build "$ID.yml"
     flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo repo "$OUT/$PKG-$VERSION-$ARCH.flatpak" "$ID"
   )
 }

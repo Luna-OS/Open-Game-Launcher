@@ -1,4 +1,4 @@
-## MAZ Launcher 1.4.0 🐧🍎🧱
+## MAZ Launcher 1.4.1 🐧🍎🧱
 
 Jetzt für **Windows, macOS und Linux** – und alles läuft lokal.
 
@@ -10,6 +10,9 @@ Jetzt für **Windows, macOS und Linux** – und alles läuft lokal.
 | **Linux** (x86_64 / ARM64) | AppImage, `.deb`, `.rpm`, `.pkg.tar.zst` (Pacman), Flatpak oder Snap – siehe Tabelle im README |
 
 Alle Prüfsummen stehen in `SHA256SUMS.txt`. Webseite: https://mikeadamrgb.github.io/MAZ-Lauchner/
+
+### Neu in 1.4.1
+- Linux: jetzt auch als **Flatpak**.
 
 ### Neu in 1.4.0
 - **Linux und macOS:** Steam (auch Flatpak/Snap-Steam), Epic (macOS: Epic Games Launcher, Linux: Heroic), eigene Spiele (Linux: auch .exe über Wine).
