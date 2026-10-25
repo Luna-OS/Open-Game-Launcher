@@ -16,9 +16,17 @@ use std::time::{Duration, Instant};
 pub const CALLBACK_PORT: u16 = 47821;
 
 /// Beim Bauen eingetragene Server-Daten (GitHub-Secrets MAZ_SUPABASE_URL / MAZ_SUPABASE_KEY)
+/// Öffentlicher Server des MAZ Launchers (der Publishable Key ist dafür gedacht, öffentlich zu sein).
+const DEFAULT_URL: &str = "https://mktstdquohoqhjlbyxzm.supabase.co";
+const DEFAULT_KEY: &str = "sb_publishable_OZpiHvwi0h8q1BvZ8aIThg_Gb5vmCTG";
+
 pub fn builtin_server() -> (String, String) {
-    let url = option_env!("MAZ_SUPABASE_URL").unwrap_or("").trim().trim_end_matches('/').to_string();
-    let key = option_env!("MAZ_SUPABASE_KEY").unwrap_or("").trim().to_string();
+    let pick = |v: Option<&'static str>, d: &'static str| {
+        let v = v.unwrap_or("").trim();
+        if v.is_empty() { d } else { v }
+    };
+    let url = pick(option_env!("MAZ_SUPABASE_URL"), DEFAULT_URL).trim_end_matches('/').to_string();
+    let key = pick(option_env!("MAZ_SUPABASE_KEY"), DEFAULT_KEY).to_string();
     (url, key)
 }
 
