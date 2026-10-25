@@ -25,6 +25,18 @@ pub fn ModalHost() -> Element {
         Some(Modal::DeleteGame(id)) => rsx! { DeleteDialog { id } },
         Some(Modal::Detail(id)) => rsx! { DetailModal { id } },
         Some(Modal::Welcome) => rsx! { WelcomeDialog {} },
+        Some(Modal::Info(title, text)) => rsx! {
+            Dialog { on_close: move |_| app.close_modal(), class: "max-w-md",
+                div { class: "p-8 text-center",
+                    div { class: "mx-auto size-14 rounded-2xl maz-gradient-bg grid place-items-center text-white mb-5",
+                        Icon { name: "mail", class: "size-7" }
+                    }
+                    h2 { class: "text-xl font-bold", "{title}" }
+                    p { class: "text-sm text-muted-foreground mt-3 leading-relaxed whitespace-pre-line", "{text}" }
+                    Button { variant: ButtonVariant::Glow, class: "mt-6", onclick: move |_| app.close_modal(), "OK" }
+                }
+            }
+        },
     }
 }
 

@@ -30,7 +30,7 @@ pub fn scan(settings: &Settings) -> ScanResult {
     }
 
     if settings.epic_enabled {
-        let e = epic::scan();
+        let e = epic::scan(settings.epic_show_uninstalled);
         result.games.extend(e.games);
         result.epic = e.status;
     } else {

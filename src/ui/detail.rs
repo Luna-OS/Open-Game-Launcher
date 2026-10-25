@@ -143,7 +143,7 @@ pub fn DetailModal(id: String) -> Element {
     let g3 = game.clone();
     let source = game.source;
     let note = match (&game.launch, game.source) {
-        (LaunchTarget::SteamInstall(_), _) => Some(t("detail.note_install")),
+        (LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_), _) => Some(t("detail.note_install")),
         (_, Source::Custom) => Some(t("detail.note_custom")),
         _ => None,
     };

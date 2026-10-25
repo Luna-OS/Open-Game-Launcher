@@ -163,6 +163,19 @@ pub fn reg_str(hive: Hive, path: &str, name: &str) -> Option<String> {
     }
 }
 
+pub fn reg_u32(hive: Hive, path: &str, name: &str) -> Option<u32> {
+    #[cfg(windows)]
+    {
+        let key = hive_key(hive).open_subkey(path).ok()?;
+        key.get_value::<u32, _>(name).ok()
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (hive, path, name);
+        None
+    }
+}
+
 pub fn reg_key_exists(hive: Hive, path: &str) -> bool {
     #[cfg(windows)]
     {

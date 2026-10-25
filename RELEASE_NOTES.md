@@ -1,13 +1,16 @@
-## MAZ Launcher 1.1.0 🌍🎨
+## MAZ Launcher 1.2.0 👥🎁
 
 **Download:** `MAZ-Launcher.exe` unten herunterladen → Doppelklick → „Installieren“ → „Jetzt öffnen“.
 (`MAZ-Launcher-mini.exe` ist dieselbe App, nur noch kleiner gepackt. Falls dein Virenscanner meckert, nimm die normale Version.)
 
-### Neu in 1.1.0
-- **9 Sprachen:** Deutsch, English, Español, Français, Italiano, Português, Polski, Türkçe, Русский – die ganze App inklusive aller Fehlererklärungen. Standard ist die Sprache von Windows, umschaltbar unter Einstellungen → Sprache. Eigene Sprachen lassen sich per Textdatei hinzufügen.
-- **Design-Editor:** Eigene Designs mit Farbwählern und Live-Vorschau erstellen, duplizieren, löschen und als Code mit Freunden teilen.
-- **16 fertige Designs** (neu: Synthwave, Ozean, Karmesin, Gold, Dracula, Nord, Kaffee, Minze).
-- **Hintergrundbild** mit Abdunkeln und Weichzeichnen.
-- **Benachrichtigungen** verschwinden nach 5 Sekunden (mit Fortschrittsbalken und ✕ zum sofortigen Schließen).
+### Neu in 1.2.0
+- **Konto & Freunde:** Anmelden mit Google, GitHub oder E-Mail. Freunde per Benutzername hinzufügen, Anfragen annehmen/ablehnen.
+- **Chat:** Mit Freunden direkt im Launcher schreiben – mit Benachrichtigung bei neuen Nachrichten.
+- **Was spielen meine Freunde?** Online-Status und das gerade laufende Spiel (abschaltbar unter Einstellungen → Konto).
+- **Gratis-Spiele:** Neuer Tab mit allen Spielen, die es gerade bei Epic Games und Steam kostenlos gibt – inklusive Countdown, wie lange noch. „Zur Bibliothek hinzufügen“ öffnet das Spiel im Store, ein Klick auf „Holen“ und es erscheint automatisch im MAZ Launcher.
+- **Alle deine Spiele:** Auch nicht installierte Steam- und Epic-Spiele werden angezeigt und lassen sich direkt aus dem MAZ Launcher installieren.
+- **Neuer Tab „Installiert“** zeigt nur die Spiele, die auf dem PC sind.
+
+Freunde & Chat brauchen einen (kostenlosen) Server – Anleitung: `docs/SERVER-SETUP.md`.
 
 Windows zeigt „Der Computer wurde durch Windows geschützt“? → „Weitere Informationen“ → „Trotzdem ausführen“.

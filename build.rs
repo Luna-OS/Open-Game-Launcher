@@ -4,6 +4,8 @@ fn main() {
     println!("cargo:rerun-if-changed=assets/icon.ico");
     println!("cargo:rerun-if-changed=assets/maz.css");
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-env-changed=MAZ_SUPABASE_URL");
+    println!("cargo:rerun-if-env-changed=MAZ_SUPABASE_KEY");
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;

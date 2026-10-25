@@ -21,7 +21,7 @@ pub fn launch_store(game: &Game) -> Result<(), Problem> {
             };
             sys::open_url(&uri).map_err(|code| Problem::launcher_uri_failed(&game.name, "Steam", code, &uri))
         }
-        LaunchTarget::Epic(uri) => {
+        LaunchTarget::Epic(uri) | LaunchTarget::EpicInstall(uri) => {
             if !epic::launcher_installed() {
                 return Err(Problem::epic_missing());
             }

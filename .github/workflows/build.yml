@@ -16,6 +16,9 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  # Server für Konto & Freunde (optional, siehe docs/SERVER-SETUP.md)
+  MAZ_SUPABASE_URL: ${{ secrets.MAZ_SUPABASE_URL }}
+  MAZ_SUPABASE_KEY: ${{ secrets.MAZ_SUPABASE_KEY }}
 
 jobs:
   build:

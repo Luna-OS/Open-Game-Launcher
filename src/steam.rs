@@ -268,7 +268,100 @@ pub fn scan(api_key: &str, steam_id_setting: &str, show_uninstalled: bool) -> St
         }
     }
 
+    // Ohne API-Schlüssel (oder wenn die API nicht erreichbar ist):
+    // Bibliothek aus Steams eigenen Dateien auf dem PC zusammensetzen.
+    if status.owned == 0 {
+        let local = local_library(&root, user.as_ref().map(|(id, _)| id.as_str()));
+        let by_id: HashMap<u32, usize> = games
+            .iter()
+            .enumerate()
+            .filter_map(|(i, g)| g.steam_appid.map(|a| (a, i)))
+            .collect();
+        let mut owned = games.len();
+        for (appid, name, playtime) in local {
+            if let Some(&i) = by_id.get(&appid) {
+                if games[i].playtime_min.is_none() && playtime > 0 {
+                    games[i].playtime_min = Some(playtime);
+                }
+            } else if show_uninstalled && !NOT_GAMES.contains(&appid) {
+                owned += 1;
+                games.push(Game {
+                    id: format!("steam:{appid}"),
+                    name,
+                    source: Source::Steam,
+                    installed: false,
+                    install_dir: None,
+                    exe: None,
+                    launch: LaunchTarget::SteamInstall(appid),
+                    art: art_for(Some(&root), appid),
+                    size_bytes: None,
+                    playtime_min: (playtime > 0).then_some(playtime),
+                    steam_appid: Some(appid),
+                });
+            }
+        }
+        status.owned = owned;
+    }
+
     SteamScan { games, status, warning }
+}
+
+/// Spiele der Steam-Bibliothek aus lokalen Dateien: (AppID, Name, Spielzeit in Minuten).
+/// Quellen: Bild-Cache der Bibliothek + localconfig.vdf, Namen aus appinfo.vdf.
+fn local_library(root: &Path, steam_id64: Option<&str>) -> Vec<(u32, String, u64)> {
+    let mut ids: HashMap<u32, u64> = HashMap::new();
+
+    // 1) Steam legt für jedes Spiel der Bibliothek Bilder im librarycache ab
+    if let Ok(rd) = fs::read_dir(root.join("appcache").join("librarycache")) {
+        for e in rd.flatten() {
+            let name = e.file_name().to_string_lossy().to_string();
+            let id_part = name.split(['_', '.']).next().unwrap_or("");
+            if let Ok(id) = id_part.parse::<u32>() {
+                ids.entry(id).or_insert(0);
+            }
+        }
+    }
+
+    // 2) Alle jemals gestarteten Spiele + Spielzeit
+    if let Some(account) = steam_id64.and_then(|s| s.parse::<u64>().ok()).map(|v| v & 0xFFFF_FFFF) {
+        let cfg = root.join("userdata").join(account.to_string()).join("config").join("localconfig.vdf");
+        if let Ok(text) = fs::read_to_string(cfg) {
+            let v = vdf::parse(&text);
+            let apps = v
+                .get("UserLocalConfigStore")
+                .and_then(|x| x.get("Software"))
+                .and_then(|x| x.get("Valve"))
+                .and_then(|x| x.get("Steam"))
+                .and_then(|x| x.get("apps"));
+            if let Some(apps) = apps {
+                for (k, app) in apps.entries() {
+                    if let Ok(id) = k.parse::<u32>() {
+                        let pt = app.str("Playtime").and_then(|p| p.parse::<u64>().ok()).unwrap_or(0);
+                        let e = ids.entry(id).or_insert(0);
+                        *e = (*e).max(pt);
+                    }
+                }
+            }
+        }
+    }
+    if ids.is_empty() {
+        return Vec::new();
+    }
+
+    // 3) Namen und Typ aus appinfo.vdf – nur echte Spiele behalten
+    let Ok(data) = fs::read(root.join("appcache").join("appinfo.vdf")) else {
+        return Vec::new();
+    };
+    let meta = crate::appinfo::parse(&data);
+    let mut out: Vec<(u32, String, u64)> = ids
+        .into_iter()
+        .filter_map(|(id, pt)| {
+            let m = meta.get(&id)?;
+            (m.kind == "game").then(|| (id, m.name.clone(), pt))
+        })
+        .collect();
+    out.sort_by(|a, b| a.1.to_lowercase().cmp(&b.1.to_lowercase()));
+    out
 }
 
 pub struct OwnedGame {

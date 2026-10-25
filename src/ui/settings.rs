@@ -19,6 +19,7 @@ pub fn SettingsPage() -> Element {
     };
     let tabs = [
         (SettingsTab::Design, t("set.tab.design"), "palette"),
+        (SettingsTab::Account, t("set.tab.account"), "user"),
         (SettingsTab::Language, t("set.tab.language"), "globe"),
         (SettingsTab::Connections, t("set.tab.connections"), "plug"),
         (SettingsTab::Custom, t("set.tab.custom"), "rocket"),
@@ -53,6 +54,7 @@ pub fn SettingsPage() -> Element {
                     {match tab {
                         SettingsTab::Design => rsx! { DesignTab {} },
                         SettingsTab::Language => rsx! { LanguageTab {} },
+                        SettingsTab::Account => rsx! { AccountTab {} },
                         SettingsTab::Connections => rsx! { ConnectionsTab {} },
                         SettingsTab::Custom => rsx! { CustomTab {} },
                         SettingsTab::General => rsx! { GeneralTab {} },
@@ -836,7 +838,7 @@ fn ConnectionsTab() -> Element {
                         title: t("conn.uninstalled"),
                         description: t("conn.uninstalled_text"),
                         checked: s.steam_show_uninstalled,
-                        onchange: move |v: bool| app.update(|s| s.steam_show_uninstalled = v),
+                        onchange: move |v: bool| { app.update(|s| s.steam_show_uninstalled = v); rescan(app); },
                     }
                 }
             }
@@ -857,6 +859,12 @@ fn ConnectionsTab() -> Element {
                     title: t("conn.show_epic"),
                     checked: s.epic_enabled,
                     onchange: move |v: bool| { app.update(|s| s.epic_enabled = v); rescan(app); },
+                }
+                SwitchRow {
+                    title: t("conn.uninstalled"),
+                    description: t("conn.epic_uninstalled_text"),
+                    checked: s.epic_show_uninstalled,
+                    onchange: move |v: bool| { app.update(|s| s.epic_show_uninstalled = v); rescan(app); },
                 }
             }
         }
@@ -1087,6 +1095,124 @@ fn AboutTab() -> Element {
                 }
             }
             p { class: "text-xs text-muted-foreground mt-12 max-w-md leading-relaxed", {t("about.legal")} }
+        }
+    }
+}
+
+// ----------------------------------------------------------------------
+// Konto
+// ----------------------------------------------------------------------
+
+#[component]
+fn AccountTab() -> Element {
+    let app = use_app();
+    let s = app.settings.read().clone();
+    let me = app.me.read().clone();
+    let mut username = use_signal(String::new);
+    let mut display = use_signal(String::new);
+    let mut server_url = use_signal(|| s.server_url.clone());
+    let mut server_key = use_signal(|| s.server_key.clone());
+    // Formular mit dem geladenen Profil füllen
+    use_effect(move || {
+        if let Some(m) = app.me.read().clone() {
+            username.set(m.username.clone());
+            display.set(m.display_name.clone().unwrap_or_default());
+        }
+    });
+    use_effect(move || {
+        if super::net::logged_in(app) && app.me.peek().is_none() {
+            super::net::refresh_all(app);
+        }
+    });
+    let session = s.session.clone();
+    let (builtin_url, _) = crate::social::builtin_server();
+    let has_builtin = !builtin_url.is_empty();
+    rsx! {
+        PageTitle { title: t("set.tab.account"), sub: t("acc.page_sub") }
+        {match session {
+            None => rsx! {
+                Card { class: "mb-6 bg-card/80 backdrop-blur py-8",
+                    super::friends::LoginPanel {}
+                }
+            },
+            Some(sess) => {
+                let name = me.as_ref().map(|m| m.name()).unwrap_or_else(|| sess.email.clone());
+                let avatar = me.as_ref().and_then(|m| m.avatar_url.clone());
+                let provider = match sess.provider.as_str() {
+                    "google" => "Google",
+                    "github" => "GitHub",
+                    _ => "E-Mail",
+                };
+                let email = sess.email.clone();
+                rsx! {
+                    Section { title: t("acc.profile"),
+                        div { class: "flex items-center gap-4 mb-5",
+                            super::friends::Avatar { name: name.clone(), url: avatar, online: Some(true), class: "size-16" }
+                            div { class: "min-w-0",
+                                div { class: "text-lg font-semibold truncate", "{name}" }
+                                div { class: "text-sm text-muted-foreground truncate", {tf("acc.signed_in_with", &[("provider", provider), ("email", &email)])} }
+                            }
+                        }
+                        div { class: "grid grid-cols-2 gap-4",
+                            div { class: "grid gap-2",
+                                Label { {t("acc.username")} }
+                                Input { value: username(), oninput: move |v: String| username.set(v) }
+                                p { class: "text-xs text-muted-foreground", {t("acc.username_hint")} }
+                            }
+                            div { class: "grid gap-2",
+                                Label { {t("acc.display_name")} }
+                                Input { value: display(), oninput: move |v: String| display.set(v) }
+                            }
+                        }
+                        div { class: "flex gap-2 mt-4",
+                            Button { variant: ButtonVariant::Glow, onclick: move |_| super::net::save_profile(app, username.peek().clone(), display.peek().clone()),
+                                Icon { name: "check", class: "size-4" }
+                                {t("edit.save")}
+                            }
+                            Button { variant: ButtonVariant::Ghost, class: "text-destructive", onclick: move |_| super::net::logout(app),
+                                Icon { name: "log-out", class: "size-4" }
+                                {t("acc.logout")}
+                            }
+                        }
+                    }
+                    Section { title: t("acc.privacy_title"),
+                        SwitchRow {
+                            title: t("acc.share_playing"),
+                            description: t("acc.share_playing_text"),
+                            checked: s.share_playing,
+                            onchange: move |v: bool| app.update(|s| s.share_playing = v),
+                        }
+                    }
+                }
+            }
+        }}
+        Section { title: t("acc.server"), description: t(if has_builtin { "acc.server_builtin" } else { "acc.server_text" }),
+            div { class: "grid gap-3",
+                Input { class: "font-mono text-xs", placeholder: "https://xxxx.supabase.co", value: server_url(), oninput: move |v: String| server_url.set(v) }
+                Input { kind: "password", class: "font-mono text-xs", placeholder: t("acc.server_key"), value: server_key(), oninput: move |v: String| server_key.set(v) }
+            }
+            div { class: "flex flex-wrap gap-2 mt-4",
+                Button { variant: ButtonVariant::Secondary,
+                    onclick: move |_| {
+                        let (u, k) = (server_url.peek().trim().to_string(), server_key.peek().trim().to_string());
+                        if !u.is_empty() && crate::social::Backend::new(&u, &k).is_none() {
+                            app.toast(&t("acc.server_invalid"), "alert");
+                            return;
+                        }
+                        app.update(|s| {
+                            s.server_url = u;
+                            s.server_key = k;
+                        });
+                        app.toast(&t("acc.saved"), "check-circle");
+                    },
+                    Icon { name: "check", class: "size-4" }
+                    {t("edit.save")}
+                }
+                Button { variant: ButtonVariant::Outline, onclick: move |_| { let _ = sys::open_url(&format!("{}/blob/main/docs/SERVER-SETUP.md", sys::GITHUB_URL)); },
+                    Icon { name: "external", class: "size-4" }
+                    {t("acc.setup_guide")}
+                }
+            }
         }
     }
 }

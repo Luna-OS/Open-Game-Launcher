@@ -4,8 +4,10 @@
 // Kein schwarzes Konsolenfenster im Release-Build
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
+mod appinfo;
 mod config;
 mod epic;
+mod freegames;
 mod i18n;
 mod icons;
 mod install;
@@ -13,10 +15,12 @@ mod launch;
 mod library;
 mod model;
 mod problem;
+mod social;
 mod steam;
 mod sys;
 mod theme;
 mod ui;
+mod util;
 mod vdf;
 #[cfg(windows)]
 mod winffi;

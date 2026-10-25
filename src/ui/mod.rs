@@ -4,9 +4,12 @@ pub mod art;
 pub mod components;
 pub mod detail;
 pub mod dialogs;
+pub mod free;
+pub mod friends;
 pub mod icons;
 pub mod installer;
 pub mod library;
+pub mod net;
 pub mod settings;
 pub mod state;
 
@@ -40,6 +43,15 @@ pub fn Root() -> Element {
         selected: Signal::new(None),
         modal: Signal::new(None),
         toasts: Signal::new(Vec::new()),
+        free: Signal::new(Vec::new()),
+        free_state: Signal::new(LoadState::Idle),
+        me: Signal::new(None),
+        friends: Signal::new(Vec::new()),
+        chat_with: Signal::new(None),
+        messages: Signal::new(Vec::new()),
+        social_busy: Signal::new(false),
+        social_error: Signal::new(None),
+        playing_now: Signal::new(None),
     });
 
     // Lokale Bilder (Steam-Cache, Icons, eigene Cover) für das Fenster bereitstellen
@@ -112,7 +124,7 @@ pub fn Root() -> Element {
             // Bei Sprachwechsel alles neu aufbauen (Schlüssel = Sprache)
             {std::iter::once(rsx! {
                 div { key: "{lang}", class: "relative z-[1] flex-1 min-h-0 flex flex-col",
-                    TitleBar {}
+                    TitleBar { nav: matches!(mode(), StartMode::Launcher) }
                     div { class: "flex-1 min-h-0 relative",
                         {match mode() {
                             StartMode::Launcher => rsx! { LauncherShell {} },
@@ -147,23 +159,83 @@ fn LauncherShell() -> Element {
         if !app.settings.peek().welcome_done {
             app.open(Modal::Welcome);
         }
+        // Gratis-Spiele im Hintergrund laden (für die Zahl im Tab)
+        net::load_free(app, false);
+        // Angemeldet? Dann Freunde & Online-Status starten
+        if app.settings.peek().session.is_some() {
+            net::refresh_all(app);
+            net::start_loop(app);
+        }
     });
     let page = *app.page.read();
     match page {
         Page::Library => rsx! { library::LibraryPage {} },
+        Page::Free => rsx! { free::FreePage {} },
+        Page::Friends => rsx! { friends::FriendsPage {} },
         Page::Settings(_) => rsx! { settings::SettingsPage {} },
     }
 }
 
-/// Eigene Titelleiste (ziehen zum Verschieben, Doppelklick = maximieren)
+/// Haupt-Tab in der Titelleiste
 #[component]
-fn TitleBar() -> Element {
+fn NavTab(#[props(into)] label: String, icon: &'static str, active: bool, badge: usize, #[props(default = false)] alert: bool, onclick: EventHandler<()>) -> Element {
+    let cls = if active {
+        "relative h-8 px-3 rounded-md flex items-center gap-2 text-[13px] font-medium bg-sidenav-accent text-foreground cursor-pointer"
+    } else {
+        "relative h-8 px-3 rounded-md flex items-center gap-2 text-[13px] text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground cursor-pointer"
+    };
+    let badge_cls = if alert { "bg-primary text-primary-foreground" } else { "bg-success/20 text-success" };
+    rsx! {
+        button { class: "{cls}", onclick: move |_| onclick.call(()),
+            Icon { name: icon, class: "size-4" }
+            "{label}"
+            if badge > 0 {
+                span { class: "min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold grid place-items-center {badge_cls}", "{badge}" }
+            }
+            if active {
+                span { class: "absolute left-3 right-3 -bottom-[5px] h-0.5 rounded-full maz-gradient-bg" }
+            }
+        }
+    }
+}
+
+/// Eigene Titelleiste (ziehen zum Verschieben, Doppelklick = maximieren) + Haupt-Tabs
+#[component]
+fn TitleBar(#[props(default = false)] nav: bool) -> Element {
+    let app = use_app();
+    let page = *app.page.read();
+    let filter = *app.filter.read();
+    let lib_active = page == Page::Library && filter != Filter::Installed;
+    let inst_active = page == Page::Library && filter == Filter::Installed;
+    let (free_badge, friends_badge, installed) = if nav {
+        let fr = app.friends.read();
+        let unread: i64 = fr.iter().map(|f| f.unread).sum();
+        let requests = fr.iter().filter(|f| f.incoming && !f.accepted()).count() as i64;
+        (free::unclaimed_count(app), (unread + requests).max(0) as usize, library::count_for(app, Filter::Installed))
+    } else {
+        (0, 0, 0)
+    };
+    let go_lib = move |f: Filter| {
+        let mut fl = app.filter;
+        fl.set(f);
+        app.go(Page::Library);
+    };
     rsx! {
         div {
-            class: "h-10 shrink-0 flex items-center bg-sidenav/90 border-b border-border/60 relative z-40",
+            class: "h-11 shrink-0 flex items-center bg-sidenav/90 border-b border-border/60 relative z-40",
             onmousedown: move |_| window().drag(),
             ondoubleclick: move |_| window().toggle_maximized(),
             library::TitleBrand {}
+            if nav {
+                div { class: "flex items-center gap-1 ml-6",
+                    onmousedown: move |e| e.stop_propagation(),
+                    ondoubleclick: move |e| e.stop_propagation(),
+                    NavTab { label: t("nav.library"), icon: "library", active: lib_active, badge: 0, onclick: move |_| go_lib(Filter::All) }
+                    NavTab { label: t("filter.installed"), icon: "drive", active: inst_active, badge: installed, onclick: move |_| go_lib(Filter::Installed) }
+                    NavTab { label: t("free.title"), icon: "gift", active: page == Page::Free, badge: free_badge, onclick: move |_| app.go(Page::Free) }
+                    NavTab { label: t("friends.title"), icon: "users", active: page == Page::Friends, badge: friends_badge, alert: true, onclick: move |_| app.go(Page::Friends) }
+                }
+            }
             div { class: "flex-1" }
             div {
                 class: "flex h-full",
@@ -184,7 +256,10 @@ fn TitleBar() -> Element {
                 button {
                     class: "titlebar-btn is-close w-12 h-full grid place-items-center text-muted-foreground hover:text-white cursor-pointer",
                     title: t("common.close"),
-                    onclick: move |_| window().close(),
+                    onclick: move |_| {
+                        net::offline_on_exit(app);
+                        window().close();
+                    },
                     Icon { name: "x", class: "size-4" }
                 }
             }

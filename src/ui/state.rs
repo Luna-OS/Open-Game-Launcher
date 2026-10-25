@@ -49,6 +49,7 @@ impl Filter {
 pub enum SettingsTab {
     Design,
     Language,
+    Account,
     Connections,
     Custom,
     General,
@@ -58,6 +59,8 @@ pub enum SettingsTab {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Page {
     Library,
+    Free,
+    Friends,
     Settings(SettingsTab),
 }
 
@@ -74,6 +77,8 @@ pub enum Modal {
     DeleteGame(String),
     Detail(String),
     Welcome,
+    /// Einfacher Hinweis (Titel, Text)
+    Info(String, String),
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -98,6 +103,26 @@ pub struct App {
     pub selected: Signal<Option<String>>,
     pub modal: Signal<Option<Modal>>,
     pub toasts: Signal<Vec<Toast>>,
+    // Gratis-Spiele
+    pub free: Signal<Vec<crate::freegames::FreeGame>>,
+    pub free_state: Signal<LoadState>,
+    // Konto & Freunde
+    pub me: Signal<Option<crate::social::Profile>>,
+    pub friends: Signal<Vec<crate::social::Friend>>,
+    pub chat_with: Signal<Option<String>>,
+    pub messages: Signal<Vec<crate::social::Message>>,
+    pub social_busy: Signal<bool>,
+    pub social_error: Signal<Option<String>>,
+    pub playing_now: Signal<Option<String>>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum LoadState {
+    #[default]
+    Idle,
+    Loading,
+    Done,
+    Failed,
 }
 
 pub fn use_app() -> App {
@@ -133,7 +158,7 @@ impl App {
         let id = sys::now_secs().wrapping_mul(1000) + (self.toasts.peek().len() as u64) + rand_small();
         let mut toasts = self.toasts;
         toasts.write().push(Toast { id, text: text.to_string(), icon });
-        spawn(async move {
+        dioxus::core::spawn_forever(async move {
             tokio::time::sleep(std::time::Duration::from_millis(5000)).await;
             toasts.write().retain(|t| t.id != id);
         });
@@ -167,7 +192,7 @@ pub fn rescan(app: App) {
     let mut scanning = app.scanning;
     scanning.set(true);
     let settings = app.settings.peek().clone();
-    spawn(async move {
+    dioxus::core::spawn_forever(async move {
         let s2 = settings.clone();
         let res = tokio::task::spawn_blocking(move || library::scan(&s2)).await;
         let mut games = app.games;
@@ -208,6 +233,18 @@ pub fn rescan(app: App) {
     });
 }
 
+/// Bibliothek nach ein paar Sekunden erneut einlesen (z. B. nach Installation oder Gratis-Spiel)
+pub fn rescan_later(app: App, delays_secs: &'static [u64]) {
+    dioxus::core::spawn_forever(async move {
+        let mut waited = 0;
+        for d in delays_secs {
+            tokio::time::sleep(std::time::Duration::from_secs(d - waited)).await;
+            waited = *d;
+            rescan(app);
+        }
+    });
+}
+
 /// Ein eigenes Spiel nach dem Hinzufügen/Bearbeiten neu in die Liste übernehmen.
 pub fn refresh_custom(app: App, id: String) {
     let settings = app.settings.peek().clone();
@@ -227,7 +264,7 @@ pub fn refresh_custom(app: App, id: String) {
         }
     }
     let online = settings.online_art;
-    spawn(async move {
+    dioxus::core::spawn_forever(async move {
         let name = c.name.clone();
         let known = settings.art_lookup.clone();
         let res = tokio::task::spawn_blocking(move || {
@@ -283,12 +320,14 @@ pub fn play(app: App, id: String) {
     match game.source {
         Source::Steam | Source::Epic => match launch::launch_store(&game) {
             Ok(()) => {
-                let installing = matches!(game.launch, LaunchTarget::SteamInstall(_));
+                let installing = matches!(game.launch, LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_));
+                let store = if game.source == Source::Steam { "Steam" } else { "Epic Games" };
                 if installing {
-                    app.toast(&tf("toast.installing", &[("name", &game.name)]), "download");
+                    app.toast(&tf("toast.installing", &[("name", &game.name), ("store", store)]), "download");
+                    // Nach der Installation taucht das Spiel automatisch als installiert auf
+                    rescan_later(app, &[90, 300, 900]);
                 } else {
                     mark_played(app, &id);
-                    let store = if game.source == Source::Steam { "Steam" } else { "Epic Games" };
                     app.toast(&tf("toast.started_via", &[("name", &game.name), ("store", store)]), "rocket");
                     if app.settings.peek().minimize_on_launch {
                         minimize_window();
@@ -322,7 +361,7 @@ pub fn start_custom(app: App, id: String, force_admin: bool) {
             if let Some(child) = child {
                 let name = c.name.clone();
                 let exe = c.exe.clone();
-                spawn(async move {
+                dioxus::core::spawn_forever(async move {
                     let res = tokio::task::spawn_blocking(move || launch::watch(child, name, exe)).await;
                     if let Ok(Some(p)) = res {
                         restore_window();

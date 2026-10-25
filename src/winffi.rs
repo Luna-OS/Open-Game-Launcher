@@ -275,3 +275,88 @@ pub fn set_clipboard(text: &str) -> bool {
         ok
     }
 }
+
+// ----------------------------------------------------------------------
+// Laufende Prozesse (für "spielt gerade")
+// ----------------------------------------------------------------------
+
+#[repr(C)]
+struct ProcessEntry32W {
+    size: u32,
+    usage: u32,
+    process_id: u32,
+    default_heap_id: usize,
+    module_id: u32,
+    threads: u32,
+    parent_process_id: u32,
+    pri_class_base: i32,
+    flags: u32,
+    exe_file: [u16; 260],
+}
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn CreateToolhelp32Snapshot(flags: u32, pid: u32) -> HANDLE;
+    fn Process32FirstW(snap: HANDLE, entry: *mut ProcessEntry32W) -> BOOL;
+    fn Process32NextW(snap: HANDLE, entry: *mut ProcessEntry32W) -> BOOL;
+    fn CloseHandle(h: HANDLE) -> BOOL;
+}
+
+/// Dateinamen aller laufenden Prozesse (klein geschrieben, z. B. "witcher3.exe")
+pub fn process_names() -> Vec<String> {
+    let mut out = Vec::new();
+    unsafe {
+        let snap = CreateToolhelp32Snapshot(0x0000_0002, 0); // TH32CS_SNAPPROCESS
+        if snap.is_null() || snap as isize == -1 {
+            return out;
+        }
+        let mut e: ProcessEntry32W = zeroed();
+        e.size = size_of::<ProcessEntry32W>() as u32;
+        if Process32FirstW(snap, &mut e) != 0 {
+            loop {
+                let len = e.exe_file.iter().position(|c| *c == 0).unwrap_or(e.exe_file.len());
+                out.push(String::from_utf16_lossy(&e.exe_file[..len]).to_lowercase());
+                if Process32NextW(snap, &mut e) == 0 {
+                    break;
+                }
+            }
+        }
+        CloseHandle(snap);
+    }
+    out
+}
+
+// ----------------------------------------------------------------------
+// Zeitzone (für Uhrzeiten im Chat)
+// ----------------------------------------------------------------------
+
+#[repr(C)]
+struct TimeZoneInformation {
+    bias: i32,
+    standard_name: [u16; 32],
+    standard_date: [u16; 8],
+    standard_bias: i32,
+    daylight_name: [u16; 32],
+    daylight_date: [u16; 8],
+    daylight_bias: i32,
+}
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn GetTimeZoneInformation(info: *mut TimeZoneInformation) -> u32;
+}
+
+/// Abstand der lokalen Zeit zu UTC in Sekunden (z. B. +3600 im Winter in Deutschland)
+pub fn utc_offset_secs() -> i64 {
+    unsafe {
+        let mut tz: TimeZoneInformation = zeroed();
+        let id = GetTimeZoneInformation(&mut tz);
+        let mut bias = tz.bias;
+        if id == 2 {
+            bias += tz.daylight_bias;
+        } else if id == 1 {
+            bias += tz.standard_bias;
+        }
+        -(bias as i64) * 60
+    }
+}

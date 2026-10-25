@@ -28,6 +28,8 @@ pub enum LaunchTarget {
     SteamInstall(u32),
     /// com.epicgames.launcher://apps/…?action=launch
     Epic(String),
+    /// Nicht installiert → com.epicgames.launcher://apps/…?action=install
+    EpicInstall(String),
     /// Eigenes Spiel (Details stehen in den Einstellungen)
     Custom,
 }
@@ -138,7 +140,14 @@ pub struct Settings {
     pub steam_api_key: String,
     pub steam_id: String,
     pub steam_show_uninstalled: bool,
+    pub epic_show_uninstalled: bool,
     pub online_art: bool,
+
+    // Konto & Freunde (Supabase). Leer = beim Bauen eingetragener Server.
+    pub server_url: String,
+    pub server_key: String,
+    pub session: Option<crate::social::Session>,
+    pub share_playing: bool,
 
     // Eigene Spiele
     /// Leer = Standardliste in der gewählten Sprache
@@ -180,7 +189,12 @@ impl Default for Settings {
             steam_api_key: String::new(),
             steam_id: String::new(),
             steam_show_uninstalled: true,
+            epic_show_uninstalled: true,
             online_art: true,
+            server_url: String::new(),
+            server_key: String::new(),
+            session: None,
+            share_playing: true,
             checklist: Vec::new(),
             custom_games: Vec::new(),
             minimize_on_launch: true,
@@ -213,6 +227,13 @@ impl Settings {
         } else {
             self.checklist.clone()
         }
+    }
+    /// Server für Konto & Freunde (eigene Einstellung oder eingebauter Server)
+    pub fn backend(&self) -> Option<crate::social::Backend> {
+        let (bu, bk) = crate::social::builtin_server();
+        let url = if self.server_url.trim().is_empty() { bu } else { self.server_url.clone() };
+        let key = if self.server_key.trim().is_empty() { bk } else { self.server_key.clone() };
+        crate::social::Backend::new(&url, &key)
     }
     pub fn last_played(&self, id: &str) -> u64 {
         self.last_played.get(id).copied().unwrap_or(0)
