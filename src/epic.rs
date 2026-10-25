@@ -1,32 +1,180 @@
 //! Epic-Games-Anbindung: liest die Installations-Manifeste des Epic Games Launchers.
 
 use crate::model::{Art, Game, LaunchTarget, Source, StoreStatus};
-use crate::sys::{self, Hive};
+use crate::sys;
+#[cfg(windows)]
+use crate::sys::Hive;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 pub fn manifests_dir() -> Option<PathBuf> {
-    let candidates = [
-        sys::reg_str(Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher", "AppDataPath"),
-        sys::reg_str(Hive::LocalMachine, "SOFTWARE\\Epic Games\\EpicGamesLauncher", "AppDataPath"),
-    ];
-    for c in candidates.into_iter().flatten() {
-        let p = PathBuf::from(c).join("Manifests");
-        if p.exists() {
-            return Some(p);
+    #[cfg(windows)]
+    {
+        let candidates = [
+            sys::reg_str(Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher", "AppDataPath"),
+            sys::reg_str(Hive::LocalMachine, "SOFTWARE\\Epic Games\\EpicGamesLauncher", "AppDataPath"),
+        ];
+        for c in candidates.into_iter().flatten() {
+            let p = PathBuf::from(c).join("Manifests");
+            if p.exists() {
+                return Some(p);
+            }
         }
+        let p = sys::env_path("ProgramData")
+            .unwrap_or_else(|| PathBuf::from("C:\\ProgramData"))
+            .join("Epic")
+            .join("EpicGamesLauncher")
+            .join("Data")
+            .join("Manifests");
+        p.exists().then_some(p)
     }
-    let p = sys::env_path("ProgramData")
-        .unwrap_or_else(|| PathBuf::from("C:\\ProgramData"))
-        .join("Epic")
-        .join("EpicGamesLauncher")
-        .join("Data")
-        .join("Manifests");
-    p.exists().then_some(p)
+    #[cfg(target_os = "macos")]
+    {
+        let p = sys::home_dir().join("Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests");
+        p.exists().then_some(p)
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        None
+    }
 }
 
+/// Ist der Epic Games Launcher da? (Linux: Heroic Games Launcher)
 pub fn launcher_installed() -> bool {
-    sys::protocol_registered("com.epicgames.launcher")
+    #[cfg(windows)]
+    {
+        sys::protocol_registered("com.epicgames.launcher")
+    }
+    #[cfg(target_os = "macos")]
+    {
+        ["/Applications/Epic Games Launcher.app"]
+            .iter()
+            .map(PathBuf::from)
+            .chain(std::iter::once(sys::home_dir().join("Applications/Epic Games Launcher.app")))
+            .any(|p| p.exists())
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        !heroic_dirs().is_empty()
+    }
+}
+
+// ----------------------------------------------------------------------
+// Linux: Epic-Spiele über den Heroic Games Launcher
+// ----------------------------------------------------------------------
+
+/// Konfigurationsordner von Heroic (normal und Flatpak)
+pub fn heroic_dirs() -> Vec<PathBuf> {
+    let h = sys::home_dir();
+    let mut out: Vec<PathBuf> = Vec::new();
+    // XDG_CONFIG_HOME zeigt im Flatpak auf die Sandbox → zusätzlich immer ~/.config prüfen
+    for p in [
+        sys::env_path("XDG_CONFIG_HOME").map(|c| c.join("heroic")),
+        Some(h.join(".config/heroic")),
+        Some(h.join(".var/app/com.heroicgameslauncher.hgl/config/heroic")),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        if p.join("legendaryConfig").exists() || p.join("store_cache").exists() {
+            if !out.contains(&p) {
+                out.push(p);
+            }
+        }
+    }
+    out
+}
+
+pub fn heroic_uri(app_name: &str) -> String {
+    format!("heroic://launch?appName={}&runner=legendary", sys::url_encode(app_name))
+}
+
+/// Heroic: installed.json (installierte Spiele) + legendary_library.json (alle Spiele)
+pub fn parse_heroic(installed_json: &str, library_json: &str, show_uninstalled: bool) -> Vec<Game> {
+    let mut games: Vec<Game> = Vec::new();
+    let installed: serde_json::Value = serde_json::from_str(installed_json).unwrap_or(serde_json::Value::Null);
+    let library: serde_json::Value = serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
+    let lib_list: Vec<serde_json::Value> = library.get("library").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+    let art_for = |app: &str| -> Art {
+        let Some(e) = lib_list.iter().find(|e| jstr(e, "app_name") == app) else { return Art::default() };
+        let pick = |k: &str| -> Vec<String> {
+            let u = jstr(e, k);
+            if u.starts_with("https://") { vec![u.to_string()] } else { Vec::new() }
+        };
+        Art { cover: pick("art_square"), hero: pick("art_cover"), logo: pick("art_logo"), icon: pick("art_square"), header: pick("art_cover") }
+    };
+    if let Some(map) = installed.as_object() {
+        for (app, v) in map {
+            if v.get("is_dlc").and_then(|b| b.as_bool()) == Some(true) {
+                continue;
+            }
+            let title = jstr(v, "title").trim().to_string();
+            if title.is_empty() {
+                continue;
+            }
+            let dir = jstr(v, "install_path").to_string();
+            let exe_rel = jstr(v, "executable").to_string();
+            games.push(Game {
+                id: format!("epic:{app}"),
+                name: title,
+                source: Source::Epic,
+                installed: true,
+                exe: (!dir.is_empty() && !exe_rel.is_empty()).then(|| Path::new(&dir).join(&exe_rel).to_string_lossy().to_string()),
+                install_dir: (!dir.is_empty()).then_some(dir),
+                launch: LaunchTarget::Epic(heroic_uri(app)),
+                art: art_for(app),
+                size_bytes: v.get("install_size").and_then(|s| s.as_u64()).filter(|s| *s > 0),
+                playtime_min: None,
+                steam_appid: None,
+            });
+        }
+    }
+    if show_uninstalled {
+        for e in &lib_list {
+            let app = jstr(e, "app_name");
+            let title = jstr(e, "title").trim().to_string();
+            if app.is_empty() || title.is_empty() || games.iter().any(|g| g.id == format!("epic:{app}")) {
+                continue;
+            }
+            if e.get("install").and_then(|i| i.get("is_dlc")).and_then(|b| b.as_bool()) == Some(true) {
+                continue;
+            }
+            games.push(Game {
+                id: format!("epic:{app}"),
+                name: title,
+                source: Source::Epic,
+                installed: false,
+                install_dir: None,
+                exe: None,
+                launch: LaunchTarget::EpicInstall(heroic_uri(app)),
+                art: art_for(app),
+                size_bytes: None,
+                playtime_min: None,
+                steam_appid: None,
+            });
+        }
+    }
+    games
+}
+
+fn scan_heroic(show_uninstalled: bool) -> EpicScan {
+    let mut status = StoreStatus::default();
+    let dirs = heroic_dirs();
+    let Some(dir) = dirs.first() else {
+        status.note = Some(crate::i18n::t("store.heroic_not_found"));
+        return EpicScan { games: Vec::new(), status };
+    };
+    status.found = true;
+    status.path = Some(dir.to_string_lossy().to_string());
+    let installed = fs::read_to_string(dir.join("legendaryConfig/legendary/installed.json")).unwrap_or_default();
+    let library = fs::read_to_string(dir.join("store_cache/legendary_library.json")).unwrap_or_default();
+    let games = parse_heroic(&installed, &library, show_uninstalled);
+    status.installed = games.iter().filter(|g| g.installed).count();
+    status.owned = games.len();
+    if games.is_empty() {
+        status.note = Some(crate::i18n::t("store.heroic_note"));
+    }
+    EpicScan { games, status }
 }
 
 pub struct EpicScan {
@@ -41,6 +189,10 @@ fn jstr<'a>(v: &'a serde_json::Value, key: &str) -> &'a str {
 /// Epic-Datenordner (…\EpicGamesLauncher\Data)
 fn data_dir() -> Option<PathBuf> {
     manifests_dir().and_then(|m| m.parent().map(|p| p.to_path_buf())).or_else(|| {
+        if cfg!(target_os = "macos") {
+            let p = sys::home_dir().join("Library/Application Support/Epic/EpicGamesLauncher/Data");
+            return p.exists().then_some(p);
+        }
         let p = sys::env_path("ProgramData")
             .unwrap_or_else(|| PathBuf::from("C:\\ProgramData"))
             .join("Epic")
@@ -145,6 +297,9 @@ pub fn epic_uri(ns: &str, item: &str, app: &str, action: &str) -> String {
 }
 
 pub fn scan(show_uninstalled: bool) -> EpicScan {
+    if cfg!(not(any(windows, target_os = "macos"))) {
+        return scan_heroic(show_uninstalled);
+    }
     let mut status = StoreStatus::default();
     let mut catalog = read_catalog();
     // Mit verbundenem Epic-Konto: komplette Online-Bibliothek (zwischengespeichert)
@@ -209,8 +364,8 @@ pub fn scan(show_uninstalled: bool) -> EpicScan {
         }
         let ns = jstr(&v, "CatalogNamespace");
         let item = jstr(&v, "CatalogItemId");
-        let install = jstr(&v, "InstallLocation").replace('/', "\\");
-        let exe_rel = jstr(&v, "LaunchExecutable").replace('/', "\\");
+        let install = sys::native_path(jstr(&v, "InstallLocation"));
+        let exe_rel = sys::native_path(jstr(&v, "LaunchExecutable"));
         let exe = if !install.is_empty() && !exe_rel.is_empty() {
             Some(Path::new(&install).join(&exe_rel).to_string_lossy().to_string())
         } else {

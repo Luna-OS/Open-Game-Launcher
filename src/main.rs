@@ -16,10 +16,12 @@ mod launch;
 mod library;
 mod model;
 mod problem;
+mod roblox;
 mod steam;
 mod sys;
 mod theme;
 mod ui;
+mod updater;
 mod util;
 mod vdf;
 #[cfg(windows)]
@@ -52,6 +54,7 @@ fn main() {
         return;
     }
 
+    updater::cleanup_old();
     let mode = install::decide(&args);
     let installer = matches!(mode, install::StartMode::Installer { .. });
     let _ = START.set(mode);
@@ -93,7 +96,7 @@ fn show_startup_problem(p: &problem::Problem) {
     for (i, s) in p.steps.iter().enumerate() {
         text.push_str(&format!("{}. {}\n", i + 1, s));
     }
-    #[cfg(windows)]
+    eprintln!("{}\n{}", p.title, text);
     {
         use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
         let res = MessageDialog::new()
@@ -110,10 +113,6 @@ fn show_startup_problem(p: &problem::Problem) {
                 }
             }
         }
-    }
-    #[cfg(not(windows))]
-    {
-        eprintln!("{}\n{}", p.title, text);
     }
 }
 

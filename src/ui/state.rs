@@ -12,6 +12,7 @@ pub enum Filter {
     Installed,
     Steam,
     Epic,
+    Roblox,
     Custom,
     Favorites,
     Recent,
@@ -25,6 +26,7 @@ impl Filter {
             Filter::Installed => "filter.installed",
             Filter::Steam => "filter.steam",
             Filter::Epic => "filter.epic",
+            Filter::Roblox => "filter.roblox",
             Filter::Custom => "filter.custom",
             Filter::Favorites => "filter.favorites",
             Filter::Recent => "filter.recent",
@@ -37,6 +39,7 @@ impl Filter {
             Filter::Installed => "drive",
             Filter::Steam => "gamepad",
             Filter::Epic => "layers",
+            Filter::Roblox => "cube",
             Filter::Custom => "rocket",
             Filter::Favorites => "star",
             Filter::Recent => "clock",
@@ -77,6 +80,8 @@ pub enum Modal {
     Welcome,
     /// Einfacher Hinweis (Titel, Text)
     Info(String, String),
+    /// Neue Version verfügbar
+    Update,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -92,6 +97,7 @@ pub struct App {
     pub games: Signal<Vec<Game>>,
     pub steam: Signal<StoreStatus>,
     pub epic: Signal<StoreStatus>,
+    pub roblox: Signal<StoreStatus>,
     pub warnings: Signal<Vec<Problem>>,
     pub scanning: Signal<bool>,
     pub loaded: Signal<bool>,
@@ -104,9 +110,29 @@ pub struct App {
     // Gratis-Spiele
     pub free: Signal<Vec<crate::freegames::FreeGame>>,
     pub free_state: Signal<LoadState>,
+    // Updates
+    pub update_avail: Signal<Option<crate::updater::Release>>,
+    pub update_state: Signal<UpdateState>,
     // Epic-Konto
     pub epic_busy: Signal<bool>,
     pub epic_error: Signal<Option<String>>,
+}
+
+#[derive(Clone, PartialEq, Debug, Default)]
+pub enum UpdateState {
+    #[default]
+    Idle,
+    Checking,
+    /// Lädt: (geladen, gesamt) in Bytes
+    Downloading(u64, u64),
+    Installing,
+    /// Fertig – mit dem Knopf neu starten (Pfad zur neuen Version)
+    Ready(std::path::PathBuf),
+    /// Paket installiert – Launcher bitte neu öffnen
+    Done,
+    /// Datei liegt bereit, Befehl muss selbst ausgeführt werden
+    Manual(String, String),
+    Failed(String),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
@@ -191,12 +217,14 @@ pub fn rescan(app: App) {
         let mut games = app.games;
         let mut steam = app.steam;
         let mut epic = app.epic;
+        let mut roblox = app.roblox;
         let mut warnings = app.warnings;
         let mut loaded = app.loaded;
         if let Ok(r) = res {
             games.set(r.games);
             steam.set(r.steam);
             epic.set(r.epic);
+            roblox.set(r.roblox);
             warnings.set(r.warnings);
         }
         loaded.set(true);
@@ -207,7 +235,7 @@ pub fn rescan(app: App) {
             let names: Vec<String> = games
                 .peek()
                 .iter()
-                .filter(|g| g.source != Source::Steam)
+                .filter(|g| matches!(g.source, Source::Epic | Source::Custom))
                 .map(|g| g.name.clone())
                 .collect();
             let known = settings.art_lookup.clone();
@@ -339,6 +367,22 @@ pub fn play(app: App, id: String) {
             }
             Err(p) => app.show_problem(p, Some(id)),
         },
+        Source::Roblox => {
+            let place = match game.launch {
+                LaunchTarget::Roblox(p) => p,
+                _ => None,
+            };
+            match crate::roblox::launch(place) {
+                Ok(()) => {
+                    mark_played(app, &id);
+                    app.toast(&tf("toast.started_via", &[("name", &game.name), ("store", "Roblox")]), "rocket");
+                    if app.settings.peek().minimize_on_launch {
+                        minimize_window();
+                    }
+                }
+                Err(p) => app.show_problem(p, Some(id)),
+            }
+        }
         Source::Custom => {
             let Some(c) = app.settings.peek().custom(&id).cloned() else { return };
             match launch::precheck_custom(&c) {
@@ -420,6 +464,46 @@ pub fn run_fix(app: App, fix: Fix, game_id: Option<String>) {
     }
 }
 
+/// Roblox-Experience hinzufügen (Link oder Place-ID). Name und Bilder werden online geladen.
+pub fn add_roblox(app: App, input: &str) -> bool {
+    let Some(place) = crate::roblox::place_id_from(input) else {
+        app.toast(&t("roblox.invalid"), "alert");
+        return false;
+    };
+    if app.settings.peek().roblox_games.iter().any(|g| g.place_id == place) {
+        app.toast(&t("roblox.exists"), "info");
+        return false;
+    }
+    app.update(|s| {
+        s.roblox_enabled = true;
+        s.roblox_games.push(crate::model::RobloxGame { place_id: place, added: sys::now_secs(), ..Default::default() });
+    });
+    rescan(app);
+    dioxus::core::spawn_forever(async move {
+        if let Ok(info) = tokio::task::spawn_blocking(move || crate::roblox::fetch_info(place)).await {
+            let name = info.name.clone();
+            app.update(|s| {
+                if let Some(g) = s.roblox_games.iter_mut().find(|g| g.place_id == place) {
+                    g.name = info.name;
+                    g.icon = info.icon;
+                    g.thumb = info.thumb;
+                }
+            });
+            let shown = if name.is_empty() { format!("Roblox {place}") } else { name };
+            app.toast(&tf("roblox.added", &[("name", &shown)]), "check-circle");
+            rescan(app);
+        }
+    });
+    true
+}
+
+pub fn remove_roblox(app: App, id: &str) {
+    let Some(place) = id.strip_prefix("roblox:").and_then(|p| p.parse::<u64>().ok()) else { return };
+    app.update(|s| s.roblox_games.retain(|g| g.place_id != place));
+    app.close_modal();
+    rescan(app);
+}
+
 /// "Spiel startet nicht?" – Hilfe mit allen typischen Lösungen
 pub fn start_help(app: App, id: String) {
     let Some(game) = app.game(&id) else { return };
@@ -434,7 +518,6 @@ pub fn start_help(app: App, id: String) {
 
 /// Sicherheitsfrage vor dem Deinstallieren eines eigenen Spiels
 fn confirm_uninstall(game: &str, u: &launch::Uninstaller) -> bool {
-    #[cfg(windows)]
     {
         use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
         let text = tf(
@@ -448,11 +531,6 @@ fn confirm_uninstall(game: &str, u: &launch::Uninstaller) -> bool {
             .set_buttons(MessageButtons::YesNo)
             .show()
             == MessageDialogResult::Yes
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = (game, u);
-        false
     }
 }
 
@@ -470,8 +548,13 @@ pub fn uninstall(app: App, id: String) {
                 app.show_problem(Problem::steam_missing(), Some(id));
             }
         }
-        LaunchTarget::Epic(_) => {
-            let _ = sys::open_url("com.epicgames.launcher://");
+        LaunchTarget::Epic(uri) => {
+            // Linux (Heroic): Heroic selbst öffnen, sonst den Epic Games Launcher
+            if uri.starts_with("heroic://") {
+                let _ = sys::host_command("heroic").spawn();
+            } else {
+                let _ = sys::open_url("com.epicgames.launcher://");
+            }
             app.show_problem(Problem::epic_uninstall(&game.name), Some(id));
             rescan_later(app, &[60, 180, 600]);
         }
@@ -551,54 +634,36 @@ pub fn reset_cover(app: App, id: &str) {
 // ----------------------------------------------------------------------
 
 pub fn pick_game_file(start: Option<&str>) -> Option<String> {
-    #[cfg(windows)]
-    {
-        let mut d = rfd::FileDialog::new()
-            .set_title(t("pick.game_title"))
-            .add_filter(t("pick.game_filter"), &["exe", "lnk", "bat", "cmd", "url"])
-            .add_filter(t("pick.all_files"), &["*"]);
-        if let Some(s) = start.filter(|s| !s.is_empty()) {
-            if let Some(parent) = std::path::Path::new(s).parent() {
-                d = d.set_directory(parent);
-            }
+    let mut d = rfd::FileDialog::new().set_title(t("pick.game_title"));
+    if cfg!(windows) {
+        d = d.add_filter(t("pick.game_filter"), &["exe", "lnk", "bat", "cmd", "url"]);
+    } else if cfg!(target_os = "macos") {
+        d = d.add_filter(t("pick.game_filter"), &["app", "command", "sh"]);
+    } else {
+        d = d.add_filter(t("pick.game_filter"), &["sh", "AppImage", "appimage", "desktop", "x86_64", "exe", "py"]);
+    }
+    d = d.add_filter(t("pick.all_files"), &["*"]);
+    if let Some(s) = start.filter(|s| !s.is_empty()) {
+        if let Some(parent) = std::path::Path::new(s).parent() {
+            d = d.set_directory(parent);
         }
-        d.pick_file().map(|p| p.to_string_lossy().to_string())
     }
-    #[cfg(not(windows))]
-    {
-        let _ = start;
-        None
-    }
+    d.pick_file().map(|p| p.to_string_lossy().to_string())
 }
 
 pub fn pick_folder(title: &str) -> Option<String> {
-    #[cfg(windows)]
-    {
-        rfd::FileDialog::new()
-            .set_title(title)
-            .pick_folder()
-            .map(|p| p.to_string_lossy().to_string())
-    }
-    #[cfg(not(windows))]
-    {
-        let _ = title;
-        None
-    }
+    rfd::FileDialog::new()
+        .set_title(title)
+        .pick_folder()
+        .map(|p| p.to_string_lossy().to_string())
 }
 
 pub fn pick_image_file() -> Option<String> {
-    #[cfg(windows)]
-    {
-        rfd::FileDialog::new()
-            .set_title(t("pick.cover_title"))
-            .add_filter(t("pick.images"), &["jpg", "jpeg", "png", "webp", "gif", "bmp"])
-            .pick_file()
-            .map(|p| p.to_string_lossy().to_string())
-    }
-    #[cfg(not(windows))]
-    {
-        None
-    }
+    rfd::FileDialog::new()
+        .set_title(t("pick.cover_title"))
+        .add_filter(t("pick.images"), &["jpg", "jpeg", "png", "webp", "gif", "bmp"])
+        .pick_file()
+        .map(|p| p.to_string_lossy().to_string())
 }
 
 /// Bilder eines Spiels inkl. eigenem Cover

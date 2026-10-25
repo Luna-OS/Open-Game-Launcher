@@ -85,6 +85,7 @@ pub fn CoverFallback(game: Game, #[props(default = true)] show_name: bool) -> El
     let src_icon = match game.source {
         Source::Steam => "gamepad",
         Source::Epic => "layers",
+        Source::Roblox => "cube",
         Source::Custom => "rocket",
     };
     rsx! {

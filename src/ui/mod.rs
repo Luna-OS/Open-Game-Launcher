@@ -14,7 +14,7 @@ pub mod state;
 
 use crate::install::StartMode;
 use crate::model::{layout, StoreStatus};
-use crate::i18n::t;
+use crate::i18n::{t, tf};
 use crate::{config, sys, theme};
 use dioxus::desktop::wry::http::Response;
 use dioxus::desktop::{use_asset_handler, window, LogicalSize};
@@ -33,6 +33,7 @@ pub fn Root() -> Element {
         games: Signal::new(Vec::new()),
         steam: Signal::new(StoreStatus::default()),
         epic: Signal::new(StoreStatus::default()),
+        roblox: Signal::new(StoreStatus::default()),
         warnings: Signal::new(Vec::new()),
         scanning: Signal::new(false),
         loaded: Signal::new(false),
@@ -44,6 +45,8 @@ pub fn Root() -> Element {
         toasts: Signal::new(Vec::new()),
         free: Signal::new(Vec::new()),
         free_state: Signal::new(LoadState::Idle),
+        update_avail: Signal::new(None),
+        update_state: Signal::new(UpdateState::Idle),
         epic_busy: Signal::new(false),
         epic_error: Signal::new(None),
     });
@@ -156,6 +159,7 @@ fn LauncherShell() -> Element {
         // Gratis-Spiele im Hintergrund laden (für die Zahl im Tab)
         net::load_free(app, false);
         net::sync_epic(app, false);
+        net::update_loop(app);
     });
     let page = *app.page.read();
     match page {
@@ -222,6 +226,15 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
                 }
             }
             div { class: "flex-1" }
+            if let Some(v) = app.update_avail.read().as_ref().map(|r| r.version.clone()) {
+                button {
+                    class: "mr-2 h-7 px-3 rounded-full text-[12px] font-semibold maz-gradient-bg text-white flex items-center gap-1.5 shadow cursor-pointer animate-pop-in",
+                    onmousedown: move |e| e.stop_propagation(),
+                    onclick: move |_| app.open(Modal::Update),
+                    Icon { name: "download", class: "size-3.5" }
+                    {tf("update.pill", &[("version", &v)])}
+                }
+            }
             div {
                 class: "flex h-full",
                 onmousedown: move |e| e.stop_propagation(),

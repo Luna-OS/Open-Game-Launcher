@@ -23,10 +23,11 @@ pub fn launch_store(game: &Game) -> Result<(), Problem> {
         }
         LaunchTarget::Epic(uri) | LaunchTarget::EpicInstall(uri) => {
             if !epic::launcher_installed() {
-                return Err(Problem::epic_missing());
+                return Err(if uri.starts_with("heroic://") { Problem::heroic_missing() } else { Problem::epic_missing() });
             }
             sys::open_url(uri).map_err(|code| Problem::launcher_uri_failed(&game.name, "Epic Games", code, uri))
         }
+        LaunchTarget::Roblox(place) => crate::roblox::launch(*place),
         LaunchTarget::Custom => Err(Problem::unknown(&game.name, "Internal error: custom game without data")),
     }
 }
@@ -64,7 +65,8 @@ pub fn launch_custom(c: &CustomGame, force_admin: bool) -> Result<Option<Child>,
         .and_then(|e| e.to_str())
         .map(|e| e.to_ascii_lowercase())
         .unwrap_or_default();
-    let is_exe = ext == "exe" || ext == "com";
+    // Unter macOS/Linux startet immer shell_start (dort gibt es keine Windows-Fehlercodes)
+    let is_exe = cfg!(windows) && (ext == "exe" || ext == "com");
     let as_admin = c.admin || force_admin;
 
     if as_admin || !is_exe {
@@ -102,9 +104,47 @@ fn shell_start(c: &CustomGame, exe: &str, workdir: &str, as_admin: bool) -> Resu
     }
     #[cfg(not(windows))]
     {
-        let _ = (workdir, as_admin);
-        Command::new(exe)
-            .spawn()
+        use std::os::unix::fs::PermissionsExt;
+        let _ = as_admin;
+        let p = Path::new(exe);
+        let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+        let executable = p.is_file() && p.metadata().map(|m| m.permissions().mode() & 0o111 != 0).unwrap_or(false);
+        let mut cmd = if ext == "exe" && !cfg!(target_os = "macos") {
+            // Windows-Programm unter Linux: über Wine starten (falls installiert)
+            let mut cmd = sys::host_command("wine");
+            cmd.arg(p);
+            if !c.args.trim().is_empty() {
+                cmd.args(c.args.split_whitespace());
+            }
+            cmd
+        } else if executable && ext != "desktop" {
+            let mut cmd = sys::host_command(p);
+            let args = c.args.trim();
+            if !args.is_empty() {
+                cmd.args(args.split_whitespace());
+            }
+            cmd
+        } else if cfg!(target_os = "macos") {
+            // .app-Bundles und andere Dateien über "open"
+            let mut cmd = Command::new("/usr/bin/open");
+            cmd.arg(p);
+            if !c.args.trim().is_empty() {
+                cmd.arg("--args").args(c.args.split_whitespace());
+            }
+            cmd
+        } else {
+            // .desktop-Dateien und alles andere: mit dem Standardprogramm öffnen
+            let mut cmd = sys::host_command(if ext == "desktop" { "gio" } else { "xdg-open" });
+            if ext == "desktop" {
+                cmd.arg("launch");
+            }
+            cmd.arg(p);
+            cmd
+        };
+        if !workdir.is_empty() && Path::new(workdir).is_dir() {
+            cmd.current_dir(workdir);
+        }
+        cmd.spawn()
             .map(|_| ())
             .map_err(|e| Problem::from_os_error(&c.name, exe, e.raw_os_error(), &e.to_string()))
     }
@@ -140,7 +180,7 @@ pub fn verify_fix(game: &Game) -> Option<crate::problem::Fix> {
             label: crate::i18n::t("fix.verify"),
             url: format!("steam://validate/{id}"),
         }),
-        LaunchTarget::Epic(uri) => Some(Fix::OpenUrl {
+        LaunchTarget::Epic(uri) if uri.starts_with("com.epicgames.launcher://") => Some(Fix::OpenUrl {
             label: crate::i18n::t("fix.verify"),
             url: uri.replace("action=launch", "action=verify"),
         }),

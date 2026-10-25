@@ -175,3 +175,99 @@ pub fn remaining(fg: &FreeGame) -> String {
     };
     tf(key, &[("n", &n.to_string())])
 }
+
+// ----------------------------------------------------------------------
+// Updates
+// ----------------------------------------------------------------------
+
+static UPDATE_LOOP: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Kurz nach dem Start und danach alle 6 Stunden nach Updates suchen
+pub fn update_loop(app: App) {
+    if UPDATE_LOOP.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    spawn_forever(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(8)).await;
+        loop {
+            if app.settings.peek().update_check {
+                check_update(app, false);
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(6 * 3600)).await;
+        }
+    });
+}
+
+/// Nach Updates suchen. `manual` = vom Nutzer angestoßen (dann auch "kein Update" melden).
+pub fn check_update(app: App, manual: bool) {
+    if matches!(*app.update_state.peek(), UpdateState::Checking | UpdateState::Downloading(..) | UpdateState::Installing) {
+        return;
+    }
+    let mut st = app.update_state;
+    st.set(UpdateState::Checking);
+    spawn_forever(async move {
+        let res = tokio::task::spawn_blocking(crate::updater::check).await;
+        let mut st = app.update_state;
+        let mut upd = app.update_avail;
+        match res {
+            Ok(Ok(Some(r))) => {
+                let skipped = app.settings.peek().update_skip == r.version;
+                st.set(UpdateState::Idle);
+                if manual || !skipped {
+                    app.toast(&tf("update.available", &[("version", &r.version)]), "download");
+                    upd.set(Some(r));
+                    if manual {
+                        app.open(Modal::Update);
+                    }
+                }
+            }
+            Ok(Ok(None)) => {
+                st.set(UpdateState::Idle);
+                upd.set(None);
+                if manual {
+                    app.toast(&tf("update.latest", &[("version", crate::sys::VERSION)]), "check-circle");
+                }
+            }
+            Ok(Err(e)) => st.set(if manual { UpdateState::Failed(e) } else { UpdateState::Idle }),
+            Err(_) => st.set(UpdateState::Idle),
+        }
+    });
+}
+
+/// Update herunterladen und installieren
+pub fn start_update(app: App) {
+    let Some(release) = app.update_avail.peek().clone() else { return };
+    let kind = crate::updater::InstallKind::detect();
+    let total = crate::updater::pick_asset(&kind, &release.assets).map(|a| a.size).unwrap_or(0);
+    let progress = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+    let mut st = app.update_state;
+    st.set(UpdateState::Downloading(0, total));
+    let p2 = progress.clone();
+    let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let done2 = done.clone();
+    // Fortschritt anzeigen
+    spawn_forever(async move {
+        while !done2.load(std::sync::atomic::Ordering::Relaxed) {
+            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+            let got = p2.load(std::sync::atomic::Ordering::Relaxed);
+            let mut st = app.update_state;
+            if matches!(*st.peek(), UpdateState::Downloading(..)) {
+                st.set(if total > 0 && got >= total { UpdateState::Installing } else { UpdateState::Downloading(got, total) });
+            }
+        }
+    });
+    spawn_forever(async move {
+        let res = tokio::task::spawn_blocking(move || crate::updater::install(&release, &kind, progress)).await;
+        done.store(true, std::sync::atomic::Ordering::Relaxed);
+        let mut st = app.update_state;
+        match res {
+            Ok(Ok(crate::updater::Outcome::Restart(p))) => st.set(UpdateState::Ready(p)),
+            Ok(Ok(crate::updater::Outcome::Installed)) => st.set(UpdateState::Done),
+            Ok(Ok(crate::updater::Outcome::Manual { file, command })) => {
+                st.set(UpdateState::Manual(file.to_string_lossy().to_string(), command))
+            }
+            Ok(Err(e)) => st.set(UpdateState::Failed(e)),
+            Err(_) => st.set(UpdateState::Failed(t("common.err_unknown"))),
+        }
+    });
+}

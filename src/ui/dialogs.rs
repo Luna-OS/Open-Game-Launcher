@@ -25,6 +25,7 @@ pub fn ModalHost() -> Element {
         Some(Modal::DeleteGame(id)) => rsx! { DeleteDialog { id } },
         Some(Modal::Detail(id)) => rsx! { DetailModal { id } },
         Some(Modal::Welcome) => rsx! { WelcomeDialog {} },
+        Some(Modal::Update) => rsx! { UpdateDialog {} },
         Some(Modal::Info(title, text)) => rsx! {
             Dialog { on_close: move |_| app.close_modal(), class: "max-w-md",
                 div { class: "p-8 text-center",
@@ -37,6 +38,129 @@ pub fn ModalHost() -> Element {
                 }
             }
         },
+    }
+}
+
+/// "Neue Version verfügbar" – mit Knopf zum direkten Updaten
+#[component]
+fn UpdateDialog() -> Element {
+    let app = use_app();
+    let Some(r) = app.update_avail.read().clone() else {
+        return rsx! {};
+    };
+    let state = app.update_state.read().clone();
+    let kind = crate::updater::InstallKind::detect();
+    let can = kind.can_update() && crate::updater::pick_asset(&kind, &r.assets).is_some();
+    let version = r.version.clone();
+    let current = crate::sys::VERSION;
+    let notes = r.notes.clone();
+    let page = r.page.clone();
+    let page2 = r.page.clone();
+    let busy = matches!(state, UpdateState::Downloading(..) | UpdateState::Installing | UpdateState::Checking);
+    let pct = match state {
+        UpdateState::Downloading(got, total) if total > 0 => (got as f64 / total as f64 * 100.0).min(100.0),
+        UpdateState::Installing => 100.0,
+        _ => 0.0,
+    };
+    let pct_s = format!("{:.0} %", pct);
+    let how = if kind.label().is_empty() { String::new() } else { tf("update.how", &[("kind", kind.label())]) };
+    rsx! {
+        Dialog { on_close: move |_| if !busy { app.close_modal() }, class: "max-w-xl",
+            div { class: "p-8",
+                div { class: "flex items-center gap-4",
+                    div { class: "size-14 shrink-0 rounded-2xl maz-gradient-bg grid place-items-center text-white",
+                        Icon { name: "download", class: "size-7" }
+                    }
+                    div {
+                        h2 { class: "text-2xl font-bold font-display", {tf("update.title", &[("version", &version)])} }
+                        p { class: "text-sm text-muted-foreground", {tf("update.current", &[("version", current)])} }
+                    }
+                }
+                if !notes.trim().is_empty() {
+                    div { class: "mt-5 max-h-56 overflow-y-auto rounded-xl bg-muted p-4 text-sm leading-relaxed whitespace-pre-line select-text", "{notes}" }
+                }
+                {match state.clone() {
+                    UpdateState::Downloading(..) | UpdateState::Installing => rsx! {
+                        div { class: "mt-6",
+                            div { class: "flex justify-between text-sm mb-2",
+                                span { {t(if matches!(state, UpdateState::Installing) { "update.installing" } else { "update.downloading" })} }
+                                span { class: "text-muted-foreground", "{pct_s}" }
+                            }
+                            div { class: "h-2 rounded-full bg-muted overflow-hidden",
+                                div { class: "h-full maz-gradient-bg transition-all", style: "width: {pct}%" }
+                            }
+                        }
+                    },
+                    UpdateState::Ready(path) => rsx! {
+                        div { class: "mt-6 rounded-xl border border-success/40 bg-success/10 p-4 text-sm", {t("update.ready")} }
+                        div { class: "mt-6 flex justify-end",
+                            Button { variant: ButtonVariant::Glow, onclick: move |_| crate::updater::restart(&path),
+                                Icon { name: "refresh", class: "size-4" }
+                                {t("update.restart")}
+                            }
+                        }
+                    },
+                    UpdateState::Done => rsx! {
+                        div { class: "mt-6 rounded-xl border border-success/40 bg-success/10 p-4 text-sm", {t("update.done")} }
+                    },
+                    UpdateState::Manual(file, cmd) => {
+                        let c2 = cmd.clone();
+                        rsx! {
+                            div { class: "mt-6 rounded-xl border border-border bg-muted p-4 text-sm",
+                                p { {tf("update.manual", &[("file", &file)])} }
+                                pre { class: "mt-3 rounded-lg bg-background p-3 text-xs font-mono whitespace-pre-wrap break-all select-text", "{cmd}" }
+                                Button { variant: ButtonVariant::Outline, class: "mt-3", onclick: move |_| { crate::sys::copy_to_clipboard(&c2); app.toast(&t("problem.copied"), "check"); },
+                                    Icon { name: "copy", class: "size-4" }
+                                    {t("problem.copy")}
+                                }
+                            }
+                        }
+                    },
+                    UpdateState::Failed(e) => rsx! {
+                        div { class: "mt-6 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm",
+                            Icon { name: "alert", class: "size-4 mt-0.5 shrink-0 text-destructive" }
+                            span { "{e}" }
+                        }
+                    },
+                    _ => rsx! {},
+                }}
+                if !matches!(state, UpdateState::Ready(_) | UpdateState::Done) {
+                    if !how.is_empty() && can {
+                        p { class: "mt-5 text-xs text-muted-foreground", "{how}" }
+                    }
+                    if !can {
+                        p { class: "mt-5 text-sm text-muted-foreground", {t("update.no_auto")} }
+                    }
+                    div { class: "mt-6 flex flex-wrap justify-end gap-2",
+                        Button { variant: ButtonVariant::Ghost, disabled: busy,
+                            onclick: move |_| {
+                                let v = version.clone();
+                                app.update(|s| s.update_skip = v);
+                                let mut u = app.update_avail;
+                                u.set(None);
+                                app.close_modal();
+                            },
+                            {t("update.skip")}
+                        }
+                        Button { variant: ButtonVariant::Outline, disabled: busy, onclick: move |_| { let _ = crate::sys::open_url(&page); },
+                            Icon { name: "external", class: "size-4" }
+                            {t("update.github")}
+                        }
+                        if can {
+                            Button { variant: ButtonVariant::Glow, disabled: busy, onclick: move |_| super::net::start_update(app),
+                                if busy { Spinner {} } else { Icon { name: "download", class: "size-4" } }
+                                {t("update.now")}
+                            }
+                        } else {
+                            Button { variant: ButtonVariant::Glow, onclick: move |_| { let _ = crate::sys::open_url(&page2); },
+                                Icon { name: "download", class: "size-4" }
+                                {t("update.download")}
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.mikeadamrgb.MAZLauncher</id>
+  <name>MAZ Launcher</name>
+  <summary>All your games in one launcher</summary>
+  <summary xml:lang="de">Alle deine Spiele in einem Launcher</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="io.github.mikeadamrgb">
+    <name>MikeAdamRGB</name>
+  </developer>
+  <description>
+    <p>MAZ Launcher shows your Steam, Epic Games (via Heroic on Linux), Roblox and your own games in one fast, good-looking library. Everything runs locally – no account needed.</p>
+    <ul>
+      <li>Installed and not installed games, install and uninstall through the official clients</li>
+      <li>Free games on Epic and Steam with a countdown</li>
+      <li>3 layouts, 16 designs and a design editor, 9 languages</li>
+      <li>Start errors explained step by step</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.mikeadamrgb.MAZLauncher.desktop</launchable>
+  <url type="homepage">https://mikeadamrgb.github.io/MAZ-Lauchner/</url>
+  <url type="bugtracker">https://github.com/MikeAdamRGB/MAZ-Lauchner/issues</url>
+  <url type="vcs-browser">https://github.com/MikeAdamRGB/MAZ-Lauchner</url>
+  <content_rating type="oars-1.1"/>
+  <categories>
+    <category>Game</category>
+  </categories>
+</component>

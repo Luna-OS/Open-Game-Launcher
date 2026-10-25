@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 pub enum Source {
     Steam,
     Epic,
+    Roblox,
     Custom,
 }
 
@@ -15,6 +16,7 @@ impl Source {
         match self {
             Source::Steam => "Steam".into(),
             Source::Epic => "Epic Games".into(),
+            Source::Roblox => "Roblox".into(),
             Source::Custom => crate::i18n::t("source.custom"),
         }
     }
@@ -30,6 +32,8 @@ pub enum LaunchTarget {
     Epic(String),
     /// Nicht installiert → com.epicgames.launcher://apps/…?action=install
     EpicInstall(String),
+    /// Roblox: None = die Roblox-App, Some(placeId) = direkt in eine Experience
+    Roblox(Option<u64>),
     /// Eigenes Spiel (Details stehen in den Einstellungen)
     Custom,
 }
@@ -91,6 +95,19 @@ pub struct CustomGame {
     pub added: u64,
 }
 
+/// Eine Roblox-Experience, die der Nutzer als eigene Kachel hinzugefügt hat
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[serde(default)]
+pub struct RobloxGame {
+    pub place_id: u64,
+    pub name: String,
+    /// Quadratisches Spiel-Icon (https)
+    pub icon: String,
+    /// Breites Vorschaubild (https)
+    pub thumb: String,
+    pub added: u64,
+}
+
 pub mod layout {
     pub const MAZ: &str = "maz";
     pub const STEAM: &str = "steam";
@@ -146,6 +163,13 @@ pub struct Settings {
     pub epic_auth: Option<crate::epicacct::EpicAuth>,
     /// Wann die Epic-Bibliothek zuletzt online geladen wurde
     pub epic_synced: u64,
+    /// Roblox anzeigen + eigene Roblox-Experiences
+    pub roblox_enabled: bool,
+    pub roblox_games: Vec<RobloxGame>,
+    /// Automatisch nach Updates suchen
+    pub update_check: bool,
+    /// Diese Version nicht mehr anbieten
+    pub update_skip: String,
     pub online_art: bool,
 
 
@@ -192,6 +216,10 @@ impl Default for Settings {
             epic_show_uninstalled: true,
             epic_auth: None,
             epic_synced: 0,
+            roblox_enabled: true,
+            roblox_games: Vec::new(),
+            update_check: true,
+            update_skip: String::new(),
             online_art: true,
             checklist: Vec::new(),
             custom_games: Vec::new(),

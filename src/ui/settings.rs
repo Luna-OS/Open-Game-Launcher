@@ -734,6 +734,93 @@ fn DesignTab() -> Element {
 // Verbindungen
 // ----------------------------------------------------------------------
 
+/// Roblox: App + eigene Experiences
+#[component]
+fn RobloxSection() -> Element {
+    let app = use_app();
+    let mut input = use_signal(String::new);
+    let status = app.roblox.read().clone();
+    let s = app.settings.read();
+    let enabled = s.roblox_enabled;
+    let list = s.roblox_games.clone();
+    drop(s);
+    let mut add = move || {
+        let v = input.peek().clone();
+        if add_roblox(app, &v) {
+            input.set(String::new());
+        }
+    };
+    let dl = if cfg!(target_os = "linux") {
+        ("https://flathub.org/apps/org.vinegarhq.Sober", t("fix.sober_dl"))
+    } else {
+        ("https://www.roblox.com/download", t("fix.roblox_dl"))
+    };
+    rsx! {
+        Section { title: "Roblox", description: t("roblox.sub"),
+            StatusLine { status: status.clone(), store: "Roblox" }
+            if !status.found {
+                div { class: "mt-3",
+                    Button { variant: ButtonVariant::Outline, onclick: move |_| { let _ = sys::open_url(dl.0); },
+                        Icon { name: "download", class: "size-4" }
+                        "{dl.1}"
+                    }
+                }
+            }
+            div { class: "mt-2",
+                SwitchRow {
+                    title: t("roblox.show"),
+                    checked: enabled,
+                    onchange: move |v: bool| { app.update(|s| s.roblox_enabled = v); rescan(app); },
+                }
+            }
+            div { class: "mt-4",
+                div { class: "text-sm font-medium mb-1", {t("roblox.add_title")} }
+                p { class: "text-xs text-muted-foreground mb-2", {t("roblox.add_text")} }
+                div { class: "flex gap-2",
+                    Input {
+                        class: "font-mono text-xs",
+                        placeholder: "https://www.roblox.com/games/920587237/…",
+                        value: input(),
+                        oninput: move |v: String| input.set(v),
+                        onenter: move |_| add(),
+                    }
+                    Button { variant: ButtonVariant::Glow, class: "h-10", onclick: move |_| add(),
+                        Icon { name: "plus", class: "size-4" }
+                        {t("edit.add")}
+                    }
+                }
+            }
+            if !list.is_empty() {
+                div { class: "mt-4 grid gap-2",
+                    {list.into_iter().map(|g| {
+                        let id = format!("roblox:{}", g.place_id);
+                        let name = if g.name.is_empty() { format!("Roblox {}", g.place_id) } else { g.name.clone() };
+                        let icon = g.icon.clone();
+                        let pid = g.place_id;
+                        rsx! {
+                            div { key: "{pid}", class: "flex items-center gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2",
+                                if !icon.is_empty() {
+                                    img { src: "{icon}", class: "size-9 rounded-md object-cover", "draggable": "false" }
+                                } else {
+                                    div { class: "size-9 rounded-md bg-muted grid place-items-center", Icon { name: "cube", class: "size-4" } }
+                                }
+                                div { class: "min-w-0 flex-1",
+                                    div { class: "text-sm font-medium truncate", "{name}" }
+                                    div { class: "text-xs text-muted-foreground font-mono", "{pid}" }
+                                }
+                                Button { variant: ButtonVariant::Ghost, size: ButtonSize::Icon, class: "size-9", title: t("act.remove"),
+                                    onclick: move |_| remove_roblox(app, &id),
+                                    Icon { name: "trash", class: "size-4" }
+                                }
+                            }
+                        }
+                    })}
+                }
+            }
+        }
+    }
+}
+
 /// Epic-Konto verbinden → komplette Epic-Bibliothek
 #[component]
 fn EpicAccount() -> Element {
@@ -970,13 +1057,16 @@ fn ConnectionsTab() -> Element {
             }
         }
 
-        Section { title: "Epic Games",
+        Section { title: if cfg!(target_os = "linux") { "Epic Games (Heroic)" } else { "Epic Games" },
             StatusLine { status: epic, store: "Epic Games" }
             if !epic_found {
                 div { class: "mt-3",
-                    Button { variant: ButtonVariant::Outline, onclick: move |_| { let _ = sys::open_url("https://store.epicgames.com/download"); },
+                    Button { variant: ButtonVariant::Outline,
+                        onclick: move |_| {
+                            let _ = sys::open_url(if cfg!(target_os = "linux") { "https://flathub.org/apps/com.heroicgameslauncher.hgl" } else { "https://store.epicgames.com/download" });
+                        },
                         Icon { name: "download", class: "size-4" }
-                        {t("fix.epic_dl")}
+                        {t(if cfg!(target_os = "linux") { "fix.heroic_dl" } else { "fix.epic_dl" })}
                     }
                 }
             }
@@ -993,8 +1083,12 @@ fn ConnectionsTab() -> Element {
                     onchange: move |v: bool| { app.update(|s| s.epic_show_uninstalled = v); rescan(app); },
                 }
             }
-            EpicAccount {}
+            if !cfg!(target_os = "linux") {
+                EpicAccount {}
+            }
         }
+
+        RobloxSection {}
 
         Section { title: t("conn.images"),
             SwitchRow {
@@ -1141,6 +1235,8 @@ fn GeneralTab() -> Element {
             }
         }
 
+        UpdateSection {}
+
         Section { title: t("general.install"),
             div { class: "rounded-xl bg-muted p-4 mb-4",
                 div { class: "text-xs text-muted-foreground", {t(if installed { "general.installed_in" } else { "general.portable" })} }
@@ -1151,6 +1247,7 @@ fn GeneralTab() -> Element {
                     Icon { name: "folder", class: "size-4" }
                     {t("fix.folder_app")}
                 }
+                if cfg!(windows) {
                 Button { variant: ButtonVariant::Outline,
                     onclick: move |_| {
                         let lnk = sys::desktop_dir().join(format!("{}.lnk", sys::APP_NAME));
@@ -1161,6 +1258,7 @@ fn GeneralTab() -> Element {
                     },
                     Icon { name: "monitor", class: "size-4" }
                     {t("general.shortcut")}
+                }
                 }
                 if installed {
                     Button { variant: ButtonVariant::Ghost, class: "text-destructive",
@@ -1226,3 +1324,53 @@ fn AboutTab() -> Element {
     }
 }
 
+
+/// Updates: aktuelle Version, automatisch prüfen, jetzt prüfen
+#[component]
+fn UpdateSection() -> Element {
+    let app = use_app();
+    let auto = app.settings.read().update_check;
+    let checking = matches!(*app.update_state.read(), UpdateState::Checking);
+    let avail = app.update_avail.read().as_ref().map(|r| r.version.clone());
+    let failed = match &*app.update_state.read() {
+        UpdateState::Failed(e) => Some(e.clone()),
+        _ => None,
+    };
+    let kind = crate::updater::InstallKind::detect();
+    let kind_label = kind.label();
+    rsx! {
+        Section { title: t("update.section"), description: tf("update.current", &[("version", sys::VERSION)]),
+            SwitchRow {
+                title: t("update.auto"),
+                description: t("update.auto_text"),
+                checked: auto,
+                onchange: move |v: bool| app.update(|s| s.update_check = v),
+            }
+            if !kind_label.is_empty() {
+                p { class: "text-xs text-muted-foreground mt-1", {tf("update.how", &[("kind", kind_label)])} }
+            }
+            div { class: "flex flex-wrap gap-2 mt-4",
+                Button { variant: ButtonVariant::Secondary, disabled: checking, onclick: move |_| super::net::check_update(app, true),
+                    if checking { Spinner {} } else { Icon { name: "refresh", class: "size-4" } }
+                    {t("update.check")}
+                }
+                if let Some(v) = avail {
+                    Button { variant: ButtonVariant::Glow, onclick: move |_| app.open(Modal::Update),
+                        Icon { name: "download", class: "size-4" }
+                        {tf("update.pill", &[("version", &v)])}
+                    }
+                }
+                Button { variant: ButtonVariant::Ghost, onclick: move |_| { let _ = sys::open_url(&format!("{}/releases", sys::GITHUB_URL)); },
+                    Icon { name: "external", class: "size-4" }
+                    {t("update.github")}
+                }
+            }
+            if let Some(e) = failed {
+                div { class: "mt-3 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm",
+                    Icon { name: "alert", class: "size-4 mt-0.5 shrink-0 text-destructive" }
+                    span { "{e}" }
+                }
+            }
+        }
+    }
+}

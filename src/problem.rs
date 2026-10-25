@@ -263,6 +263,22 @@ impl Problem {
         )
     }
 
+    /// Roblox ist nicht installiert (Linux: Sober fehlt)
+    pub fn roblox_missing() -> Problem {
+        let (url_, label) = if cfg!(target_os = "linux") {
+            ("https://flathub.org/apps/org.vinegarhq.Sober", "fix.sober_dl")
+        } else {
+            ("https://www.roblox.com/download", "fix.roblox_dl")
+        };
+        build(
+            if cfg!(target_os = "linux") { "roblox_missing_linux" } else { "roblox_missing" },
+            Severity::Error,
+            &[],
+            vec![url(label, url_), Fix::Rescan],
+            "Roblox client not found.".into(),
+        )
+    }
+
     /// Epic hat keinen direkten "Deinstallieren"-Link → Anleitung + Launcher öffnen
     pub fn epic_uninstall(game: &str) -> Problem {
         build(
@@ -336,6 +352,17 @@ impl Problem {
             &[],
             vec![url("fix.epic_dl", EPIC_DL), Fix::Rescan],
             "No handler registered for com.epicgames.launcher://.".into(),
+        )
+    }
+
+    /// Linux: Epic-Spiele laufen über den Heroic Games Launcher
+    pub fn heroic_missing() -> Problem {
+        build(
+            "heroic_missing",
+            Severity::Error,
+            &[],
+            vec![url("fix.heroic_dl", "https://flathub.org/apps/com.heroicgameslauncher.hgl"), Fix::Rescan],
+            "Heroic Games Launcher config not found (~/.config/heroic).".into(),
         )
     }
 
@@ -463,6 +490,8 @@ mod tests {
             Problem::start_help("x", "Steam", None, None, false),
             Problem::start_help("x", "x", None, None, true),
             Problem::epic_uninstall("x"),
+            Problem::roblox_missing(),
+            Problem::heroic_missing(),
             Problem::no_uninstaller("x", None),
         ] {
             assert!(!p.title.starts_with("p."), "Schlüssel fehlt: {}", p.title);

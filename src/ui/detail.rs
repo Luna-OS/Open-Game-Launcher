@@ -65,7 +65,13 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
         game.id.clone(),
         game.id.clone(),
     );
-    let (id7, id8) = (game.id.clone(), game.id.clone());
+    let (id7, id8, id9) = (game.id.clone(), game.id.clone(), game.id.clone());
+    let rb_place = match game.launch {
+        LaunchTarget::Roblox(Some(p)) => Some(p),
+        _ => None,
+    };
+    let is_roblox_exp = rb_place.is_some();
+    let rb_page = rb_place.map(crate::roblox::experience_page).unwrap_or_default();
     let dir = game.install_dir.clone();
     let appid = game.steam_appid;
     let fav_label = t(if fav { "act.unfav" } else { "act.fav" });
@@ -106,7 +112,17 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
                     {t("fix.edit")}
                 }
             }
-            if game.installed {
+            if is_roblox_exp {
+                Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| { let _ = sys::open_url(&rb_page); },
+                    Icon { name: "external", class: "size-4" }
+                    {t("roblox.page")}
+                }
+                Button { variant: ButtonVariant::Ghost, class: "{btn} text-destructive hover:text-destructive", onclick: move |_| remove_roblox(app, &id9),
+                    Icon { name: "trash", class: "size-4" }
+                    {t("act.remove")}
+                }
+            }
+            if game.installed && game.source != Source::Roblox && (cfg!(windows) || game.source != Source::Custom) {
                 Button { variant: ButtonVariant::Outline, class: btn, onclick: move |_| start_help(app, id7.clone()),
                     Icon { name: "wrench", class: "size-4" }
                     {t("act.help")}

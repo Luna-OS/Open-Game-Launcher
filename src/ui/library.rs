@@ -31,6 +31,7 @@ pub fn visible_games(app: App) -> Vec<Game> {
                 Filter::Installed => g.installed,
                 Filter::Steam => g.source == Source::Steam,
                 Filter::Epic => g.source == Source::Epic,
+                Filter::Roblox => g.source == Source::Roblox,
                 Filter::Custom => g.source == Source::Custom,
                 Filter::Favorites => s.is_favorite(&g.id),
                 Filter::Recent => s.last_played(&g.id) > 0,
@@ -64,6 +65,7 @@ pub fn count_for(app: App, f: Filter) -> usize {
                 Filter::Installed => g.installed,
                 Filter::Steam => g.source == Source::Steam,
                 Filter::Epic => g.source == Source::Epic,
+                Filter::Roblox => g.source == Source::Roblox,
                 Filter::Custom => g.source == Source::Custom,
                 Filter::Favorites => s.is_favorite(&g.id),
                 Filter::Recent => s.last_played(&g.id) > 0,
@@ -102,6 +104,7 @@ pub fn SourceBadge(source: Source) -> Element {
     match source {
         Source::Steam => rsx! { Badge { variant: BadgeVariant::Steam, "STEAM" } },
         Source::Epic => rsx! { Badge { variant: BadgeVariant::Epic, "EPIC" } },
+        Source::Roblox => rsx! { Badge { variant: BadgeVariant::Roblox, "ROBLOX" } },
         Source::Custom => rsx! { Badge { variant: BadgeVariant::Custom, {t("badge.custom")} } },
     }
 }
@@ -241,6 +244,7 @@ fn EmptyState() -> Element {
             Filter::Hidden => (t("empty.hidden.title"), t("empty.hidden.text")),
             Filter::Steam => (t("empty.steam.title"), t("empty.steam.text")),
             Filter::Epic => (t("empty.epic.title"), t("empty.epic.text")),
+            Filter::Roblox => (t("empty.roblox.title"), t("empty.roblox.text")),
             _ => (t("empty.all.title"), t("empty.all.text")),
         }
     };
@@ -410,6 +414,9 @@ pub fn MazSidebar() -> Element {
                     div { class: "px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", {t("nav.platforms")} }
                     NavItem { filter: Filter::Steam, count: count_for(app, Filter::Steam) }
                     NavItem { filter: Filter::Epic, count: count_for(app, Filter::Epic) }
+                    if count_for(app, Filter::Roblox) > 0 {
+                        NavItem { filter: Filter::Roblox, count: count_for(app, Filter::Roblox) }
+                    }
                     NavItem { filter: Filter::Custom, count: count_for(app, Filter::Custom) }
                 }
                 if count_for(app, Filter::Hidden) > 0 {
@@ -550,6 +557,7 @@ fn SteamLayout() -> Element {
                                     "installed" => Filter::Installed,
                                     "steam" => Filter::Steam,
                                     "epic" => Filter::Epic,
+                                    "roblox" => Filter::Roblox,
                                     "custom" => Filter::Custom,
                                     "fav" => Filter::Favorites,
                                     "recent" => Filter::Recent,
@@ -563,6 +571,7 @@ fn SteamLayout() -> Element {
                             option { value: "installed", selected: filter == Filter::Installed, {t("filter.installed").to_uppercase()} }
                             option { value: "steam", selected: filter == Filter::Steam, "STEAM" }
                             option { value: "epic", selected: filter == Filter::Epic, "EPIC GAMES" }
+                            option { value: "roblox", selected: filter == Filter::Roblox, "ROBLOX" }
                             option { value: "custom", selected: filter == Filter::Custom, {t("filter.custom").to_uppercase()} }
                             option { value: "fav", selected: filter == Filter::Favorites, {t("filter.favorites").to_uppercase()} }
                             option { value: "recent", selected: filter == Filter::Recent, {t("filter.recent").to_uppercase()} }
@@ -753,7 +762,7 @@ fn EpicLayout() -> Element {
     let page = *app.page.read();
     let search = app.search.read().clone();
     let sort = app.settings.read().sort.clone();
-    let chips = [Filter::All, Filter::Installed, Filter::Favorites, Filter::Steam, Filter::Epic, Filter::Custom, Filter::Recent];
+    let chips = [Filter::All, Filter::Installed, Filter::Favorites, Filter::Steam, Filter::Epic, Filter::Roblox, Filter::Custom, Filter::Recent];
     let s = app.settings.read();
     let min = min_card_width(&s) + 20;
     let cards: Vec<(Game, Vec<String>, bool)> = games
@@ -846,6 +855,7 @@ fn EpicCard(game: Game, covers: Vec<String>, favorite: bool) -> Element {
         match game.source {
             Source::Steam => "Steam".to_string(),
             Source::Epic => "Epic Games".to_string(),
+            Source::Roblox => "Roblox".to_string(),
             Source::Custom => t("source.custom"),
         }
     };

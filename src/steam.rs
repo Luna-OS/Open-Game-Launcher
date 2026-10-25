@@ -3,7 +3,7 @@
 
 use crate::model::{normalize_name, Art, Game, LaunchTarget, Source, StoreStatus};
 use crate::problem::Problem;
-use crate::sys::{self, Hive};
+use crate::sys;
 use crate::vdf;
 use std::collections::HashMap;
 use std::fs;
@@ -15,33 +15,58 @@ const CDN: &str = "https://cdn.cloudflare.steamstatic.com/steam/apps";
 const NOT_GAMES: &[u32] = &[228980, 1070560, 1391110, 1628350, 1493710, 1826330, 1161040, 1580130, 961940, 1887720, 2180100, 250820, 365670, 223850];
 
 pub fn find_steam_root() -> Option<PathBuf> {
-    let candidates = [
-        sys::reg_str(Hive::CurrentUser, "Software\\Valve\\Steam", "SteamPath"),
-        sys::reg_str(Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath"),
-        sys::reg_str(Hive::LocalMachine, "SOFTWARE\\Valve\\Steam", "InstallPath"),
-    ];
-    for c in candidates.into_iter().flatten() {
-        let p = PathBuf::from(c.replace('/', "\\"));
-        if p.join("steamapps").exists() {
-            return Some(p);
-        }
+    let p = steam_roots().into_iter().find(|p| p.join("steamapps").exists())?;
+    // Linux: ~/.steam/steam ist meist nur ein Verweis → echten Pfad nehmen (keine doppelten Ordner)
+    if cfg!(windows) {
+        Some(p)
+    } else {
+        Some(p.canonicalize().unwrap_or(p))
     }
-    for base in ["ProgramFiles(x86)", "ProgramFiles"] {
-        if let Some(b) = sys::env_path(base) {
-            let p = b.join("Steam");
-            if p.join("steamapps").exists() {
-                return Some(p);
+}
+
+/// Mögliche Steam-Ordner je nach System
+fn steam_roots() -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    #[cfg(windows)]
+    {
+        for c in [
+            sys::reg_str(sys::Hive::CurrentUser, "Software\\Valve\\Steam", "SteamPath"),
+            sys::reg_str(sys::Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath"),
+            sys::reg_str(sys::Hive::LocalMachine, "SOFTWARE\\Valve\\Steam", "InstallPath"),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            out.push(PathBuf::from(sys::native_path(&c)));
+        }
+        for base in ["ProgramFiles(x86)", "ProgramFiles"] {
+            if let Some(b) = sys::env_path(base) {
+                out.push(b.join("Steam"));
             }
         }
     }
-    None
+    #[cfg(target_os = "macos")]
+    {
+        out.push(sys::home_dir().join("Library").join("Application Support").join("Steam"));
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        let h = sys::home_dir();
+        // normales Steam, Steam aus Flatpak und Snap
+        out.push(h.join(".steam").join("steam"));
+        out.push(h.join(".local").join("share").join("Steam"));
+        out.push(h.join(".steam").join("root"));
+        out.push(h.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"));
+        out.push(h.join("snap/steam/common/.local/share/Steam"));
+    }
+    out
 }
 
 /// Alle Steam-Bibliotheksordner (C:\…\Steam, D:\SteamLibrary, …)
 pub fn library_folders(root: &Path) -> Vec<PathBuf> {
     let mut out = vec![root.to_path_buf()];
-    for file in ["steamapps\\libraryfolders.vdf", "config\\libraryfolders.vdf"] {
-        let Ok(text) = fs::read_to_string(root.join(file)) else { continue };
+    for file in [root.join("steamapps").join("libraryfolders.vdf"), root.join("config").join("libraryfolders.vdf")] {
+        let Ok(text) = fs::read_to_string(&file) else { continue };
         let v = vdf::parse(&text);
         let Some(lf) = v.get("libraryfolders") else { continue };
         for (key, entry) in lf.entries() {
@@ -51,7 +76,10 @@ pub fn library_folders(root: &Path) -> Vec<PathBuf> {
                 _ => None,
             };
             if let Some(p) = path {
-                let p = PathBuf::from(p.replace('/', "\\"));
+                let mut p = PathBuf::from(sys::native_path(&p));
+                if !cfg!(windows) {
+                    p = p.canonicalize().unwrap_or(p);
+                }
                 if !out.iter().any(|o| same_path(o, &p)) {
                     out.push(p);
                 }

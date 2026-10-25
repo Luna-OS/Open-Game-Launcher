@@ -2,7 +2,7 @@
 
 use crate::model::{normalize_name, Art, CustomGame, Game, LaunchTarget, Settings, Source, StoreStatus};
 use crate::problem::Problem;
-use crate::{epic, icons, steam, sys};
+use crate::{epic, icons, roblox, steam, sys};
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -11,6 +11,7 @@ pub struct ScanResult {
     pub games: Vec<Game>,
     pub steam: StoreStatus,
     pub epic: StoreStatus,
+    pub roblox: StoreStatus,
     pub warnings: Vec<Problem>,
 }
 
@@ -37,6 +38,14 @@ pub fn scan(settings: &Settings) -> ScanResult {
         result.epic.note = Some(crate::i18n::t("store.epic_off"));
     }
 
+    if settings.roblox_enabled {
+        let (games, status) = roblox::scan(&settings.roblox_games);
+        result.games.extend(games);
+        result.roblox = status;
+    } else {
+        result.roblox.note = Some(crate::i18n::t("roblox.off"));
+    }
+
     for g in result.games.iter_mut() {
         match g.source {
             Source::Epic => {
@@ -59,7 +68,7 @@ pub fn scan(settings: &Settings) -> ScanResult {
                     }
                 }
             }
-            Source::Custom => {}
+            Source::Roblox | Source::Custom => {}
         }
     }
 

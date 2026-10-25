@@ -147,6 +147,7 @@ pub enum BadgeVariant {
     Destructive,
     Steam,
     Epic,
+    Roblox,
     Custom,
 }
 
@@ -161,6 +162,7 @@ impl BadgeVariant {
             Self::Destructive => "border-transparent bg-destructive/15 text-destructive",
             Self::Steam => "border-transparent bg-[#1b2838] text-[#66c0f4]",
             Self::Epic => "border-transparent bg-[#2a2a2a] text-white",
+            Self::Roblox => "border-transparent bg-[#e2231a] text-white",
             Self::Custom => "border-transparent bg-primary/20 text-primary",
         }
     }

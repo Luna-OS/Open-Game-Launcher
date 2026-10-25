@@ -114,10 +114,22 @@ pub fn system_language() -> String {
     }
     #[cfg(not(windows))]
     {
-        std::env::var("LANG")
-            .ok()
+        let mut candidates: Vec<String> = ["LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"]
+            .iter()
+            .filter_map(|v| std::env::var(v).ok())
+            .collect();
+        // macOS: Programme aus dem Finder bekommen kein LANG → Systemeinstellung lesen
+        #[cfg(target_os = "macos")]
+        if let Ok(out) = std::process::Command::new("/usr/bin/defaults").args(["read", "-g", "AppleLanguages"]).output() {
+            let text = String::from_utf8_lossy(&out.stdout).to_string();
+            if let Some(first) = text.split('"').nth(1).or_else(|| text.lines().nth(1).map(|l| l.trim().trim_end_matches(','))) {
+                candidates.insert(0, first.to_string());
+            }
+        }
+        candidates
+            .into_iter()
             .map(|l| l.chars().take(2).collect::<String>().to_lowercase())
-            .filter(|l| builtin_text(l).is_some())
+            .find(|l| builtin_text(l).is_some())
             .unwrap_or_else(|| "en".into())
     }
 }

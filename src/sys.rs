@@ -1,12 +1,15 @@
 //! Systemfunktionen: Ordner, Registry, URLs öffnen, Zwischenablage …
-//! Auf Nicht-Windows-Systemen gibt es einfache Platzhalter, damit das Projekt
-//! dort zumindest kompiliert (der Launcher selbst ist für Windows gemacht).
+//! Läuft auf Windows, macOS und Linux. Windows-Spezialitäten (Registry …) liefern
+//! auf den anderen Systemen einfach "nichts gefunden".
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub const APP_NAME: &str = "MAZ Launcher";
+#[cfg(windows)]
 pub const EXE_NAME: &str = "MAZ-Launcher.exe";
+#[cfg(not(windows))]
+pub const EXE_NAME: &str = "maz-launcher";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GITHUB_URL: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner";
 
@@ -16,20 +19,74 @@ pub fn env_path(var: &str) -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
-/// %APPDATA%\MAZ Launcher – Einstellungen & eigene Spiele
-pub fn roaming_dir() -> PathBuf {
-    env_path("APPDATA")
-        .or_else(|| env_path("HOME").map(|h| h.join(".config")))
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(APP_NAME)
+fn home() -> PathBuf {
+    env_path("HOME").or_else(|| env_path("USERPROFILE")).unwrap_or_else(|| PathBuf::from("."))
 }
 
-/// %LOCALAPPDATA%\MAZ Launcher – Cache (Icons, WebView-Daten)
+/// Einstellungen & eigene Spiele
+/// - Windows: %APPDATA%\MAZ Launcher
+/// - macOS: ~/Library/Application Support/MAZ Launcher
+/// - Linux: ~/.config/maz-launcher (bzw. $XDG_CONFIG_HOME)
+pub fn roaming_dir() -> PathBuf {
+    #[cfg(windows)]
+    {
+        env_path("APPDATA").unwrap_or_else(home).join(APP_NAME)
+    }
+    #[cfg(target_os = "macos")]
+    {
+        home().join("Library").join("Application Support").join(APP_NAME)
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        env_path("XDG_CONFIG_HOME").unwrap_or_else(|| home().join(".config")).join("maz-launcher")
+    }
+}
+
+/// Cache (Icons, WebView-Daten)
+/// - Windows: %LOCALAPPDATA%\MAZ Launcher
+/// - macOS: ~/Library/Caches/MAZ Launcher
+/// - Linux: ~/.cache/maz-launcher (bzw. $XDG_CACHE_HOME)
 pub fn local_dir() -> PathBuf {
-    env_path("LOCALAPPDATA")
-        .or_else(|| env_path("HOME").map(|h| h.join(".cache")))
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(APP_NAME)
+    #[cfg(windows)]
+    {
+        env_path("LOCALAPPDATA").unwrap_or_else(home).join(APP_NAME)
+    }
+    #[cfg(target_os = "macos")]
+    {
+        home().join("Library").join("Caches").join(APP_NAME)
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        env_path("XDG_CACHE_HOME").unwrap_or_else(|| home().join(".cache")).join("maz-launcher")
+    }
+}
+
+/// Pfad aus einer Konfigurationsdatei in die Schreibweise des Systems bringen
+/// (Windows: "\\", sonst unverändert).
+pub fn native_path(s: &str) -> String {
+    if cfg!(windows) {
+        s.replace('/', "\\")
+    } else {
+        s.to_string()
+    }
+}
+
+/// Heimatordner des Benutzers
+pub fn home_dir() -> PathBuf {
+    home()
+}
+
+/// Programm zum Öffnen von Links/Ordnern auf macOS bzw. Linux
+#[cfg(not(windows))]
+fn opener() -> Command {
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("/usr/bin/open")
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Command::new("xdg-open")
+    }
 }
 
 pub fn icon_cache_dir() -> PathBuf {
@@ -78,6 +135,18 @@ pub fn system_program(name: &str) -> PathBuf {
     }
 }
 
+/// Programm auf dem Computer starten. Läuft der Launcher als Flatpak, geht das nur über
+/// "flatpak-spawn --host" (sonst würde er nur in seiner Sandbox suchen).
+pub fn host_command(program: impl AsRef<std::ffi::OsStr>) -> Command {
+    if std::env::var_os("FLATPAK_ID").is_some() {
+        let mut c = Command::new("flatpak-spawn");
+        c.arg("--host").arg(program);
+        c
+    } else {
+        Command::new(program)
+    }
+}
+
 /// Kommando ohne aufblitzendes Konsolenfenster.
 pub fn quiet_command(program: impl AsRef<std::ffi::OsStr>) -> Command {
     #[allow(unused_mut)]
@@ -103,7 +172,7 @@ pub fn open_folder(path: &str) {
     }
     #[cfg(not(windows))]
     {
-        let _ = Command::new("xdg-open").arg(path).spawn();
+        let _ = opener().arg(path).spawn();
     }
 }
 
@@ -115,7 +184,11 @@ pub fn reveal_file(path: &str) {
             .arg(format!("/select,{path}"))
             .spawn();
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("/usr/bin/open").arg("-R").arg(path).spawn();
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         if let Some(p) = Path::new(path).parent() {
             open_folder(&p.to_string_lossy());
@@ -131,10 +204,12 @@ pub fn is_safe_url(url: &str) -> bool {
     if u.contains('\n') || u.contains('\r') || u.contains('"') {
         return false;
     }
-    const ALLOWED: [&str; 8] = [
+    const ALLOWED: [&str; 10] = [
         "https://",
         "http://",
         "steam://",
+        "roblox://",
+        "heroic://",
         "com.epicgames.launcher://",
         "ms-settings:",
         "windowsdefender://",
@@ -155,7 +230,7 @@ pub fn open_url(url: &str) -> Result<(), i32> {
     }
     #[cfg(not(windows))]
     {
-        Command::new("xdg-open").arg(url).spawn().map(|_| ()).map_err(|_| 0)
+        opener().arg(url).spawn().map(|_| ()).map_err(|_| 0)
     }
 }
 
@@ -167,6 +242,18 @@ pub fn read_clipboard() -> Option<String> {
     }
     #[cfg(not(windows))]
     {
+        let tools: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
+            &[("/usr/bin/pbpaste", &[])]
+        } else {
+            &[("wl-paste", &["--no-newline"]), ("xclip", &["-selection", "clipboard", "-o"]), ("xsel", &["--clipboard", "--output"])]
+        };
+        for (cmd, args) in tools {
+            if let Ok(out) = Command::new(cmd).args(*args).output() {
+                if out.status.success() {
+                    return Some(String::from_utf8_lossy(&out.stdout).chars().take(65_536).collect());
+                }
+            }
+        }
         None
     }
 }
@@ -178,7 +265,23 @@ pub fn copy_to_clipboard(text: &str) -> bool {
     }
     #[cfg(not(windows))]
     {
-        let _ = text;
+        use std::io::Write;
+        use std::process::Stdio;
+        let tools: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
+            &[("/usr/bin/pbcopy", &[])]
+        } else {
+            &[("wl-copy", &[]), ("xclip", &["-selection", "clipboard"]), ("xsel", &["--clipboard", "--input"])]
+        };
+        for (cmd, args) in tools {
+            if let Ok(mut child) = Command::new(cmd).args(*args).stdin(Stdio::piped()).spawn() {
+                if let Some(mut stdin) = child.stdin.take() {
+                    let _ = stdin.write_all(text.as_bytes());
+                }
+                if child.wait().map(|s| s.success()).unwrap_or(false) {
+                    return true;
+                }
+            }
+        }
         false
     }
 }
@@ -250,8 +353,26 @@ pub fn reg_key_exists(hive: Hive, path: &str) -> bool {
 
 /// Ist ein Link-Protokoll wie "steam" oder "com.epicgames.launcher" registriert?
 pub fn protocol_registered(name: &str) -> bool {
-    reg_key_exists(Hive::ClassesRoot, &format!("{name}\\shell\\open\\command"))
-        || reg_key_exists(Hive::CurrentUser, &format!("Software\\Classes\\{name}\\shell\\open\\command"))
+    #[cfg(windows)]
+    {
+        reg_key_exists(Hive::ClassesRoot, &format!("{name}\\shell\\open\\command"))
+            || reg_key_exists(Hive::CurrentUser, &format!("Software\\Classes\\{name}\\shell\\open\\command"))
+    }
+    #[cfg(target_os = "macos")]
+    {
+        // macOS fragt beim Öffnen selbst nach – die passenden Apps prüfen die Stores selbst
+        let _ = name;
+        true
+    }
+    #[cfg(not(any(windows, target_os = "macos")))]
+    {
+        // Linux: Gibt es ein Programm für x-scheme-handler/<name>?
+        Command::new("xdg-mime")
+            .args(["query", "default", &format!("x-scheme-handler/{name}")])
+            .output()
+            .map(|o| o.status.success() && !String::from_utf8_lossy(&o.stdout).trim().is_empty())
+            .unwrap_or(true)
+    }
 }
 
 /// Ist die Microsoft-WebView2-Laufzeit installiert? (Wird für das Fenster gebraucht.)

@@ -1,0 +1,22 @@
+name: maz-launcher
+title: MAZ Launcher
+version: '@VERSION@'
+summary: All your Steam, Epic, Roblox and own games in one launcher
+description: |
+  MAZ Launcher shows your Steam, Epic Games (via Heroic), Roblox and your own
+  games in one fast, good-looking library. Everything runs locally.
+  Needs webkit2gtk-4.1 on the system (installed on most desktops).
+base: core22
+grade: stable
+confinement: classic
+license: MIT
+architectures:
+  - build-on: [@ARCH@]
+parts:
+  maz-launcher:
+    plugin: dump
+    source: snap-src
+apps:
+  maz-launcher:
+    command: bin/maz-launcher
+    desktop: share/applications/io.github.mikeadamrgb.MAZLauncher.desktop
