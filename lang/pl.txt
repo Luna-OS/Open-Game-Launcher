@@ -696,3 +696,4 @@ epic.paste_ph = Wklej tutaj skopiowaną stronę Epic (Ctrl + V)
 epic.err_code = Kod od Epic jest nieprawidłowy lub wygasł. Kliknij ponownie „Połącz konto Epic” i od razu skopiuj nową stronę.
 epic.err_expired = Logowanie do Epic wygasło. Twoja lista gier zostaje – połącz ponownie, aby ją zaktualizować.
 epic.synced_toast = Wczytano bibliotekę Epic: {n} gier
+uninstall.custom_confirm = Odinstalować „{game}” teraz?\n\nWpis Windows: {name}\nProgram: {program}\n\nUruchomi się deinstalator gry. Jeśli nazwa się nie zgadza, kliknij „Nie”.

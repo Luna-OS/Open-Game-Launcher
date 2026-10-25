@@ -696,3 +696,4 @@ epic.paste_ph = Colle ici la page Epic copiée (Ctrl + V)
 epic.err_code = Le code d'Epic est invalide ou expiré. Clique à nouveau sur « Connecter le compte Epic » et copie la nouvelle page tout de suite.
 epic.err_expired = Ta connexion Epic a expiré. Ta liste de jeux est conservée – reconnecte-toi simplement pour la mettre à jour.
 epic.synced_toast = Bibliothèque Epic chargée : {n} jeux
+uninstall.custom_confirm = Désinstaller « {game} » maintenant ?\n\nEntrée Windows : {name}\nProgramme : {program}\n\nLe programme de désinstallation du jeu va démarrer. Si le nom ne correspond pas, clique sur « Non ».

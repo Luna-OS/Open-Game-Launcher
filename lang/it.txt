@@ -696,3 +696,4 @@ epic.paste_ph = Incolla qui la pagina di Epic copiata (Ctrl + V)
 epic.err_code = Il codice di Epic non è valido o è scaduto. Clicca di nuovo su «Collega account Epic» e copia subito la nuova pagina.
 epic.err_expired = L'accesso a Epic è scaduto. Il tuo elenco di giochi resta salvato: ricollega l'account per aggiornarlo.
 epic.synced_toast = Libreria Epic caricata: {n} giochi
+uninstall.custom_confirm = Disinstallare «{game}» adesso?\n\nVoce di Windows: {name}\nProgramma: {program}\n\nVerrà avviato il programma di disinstallazione del gioco. Se il nome non corrisponde, clicca su «No».

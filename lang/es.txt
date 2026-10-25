@@ -696,3 +696,4 @@ epic.paste_ph = Pega aquí la página de Epic copiada (Ctrl + V)
 epic.err_code = El código de Epic no es válido o ha caducado. Vuelve a hacer clic en «Conectar cuenta de Epic» y copia la nueva página enseguida.
 epic.err_expired = Tu sesión de Epic ha caducado. Tu lista de juegos se conserva: vuelve a conectar para actualizarla.
 epic.synced_toast = Biblioteca de Epic cargada: {n} juegos
+uninstall.custom_confirm = ¿Desinstalar «{game}» ahora?\n\nEntrada de Windows: {name}\nPrograma: {program}\n\nSe iniciará el desinstalador del juego. Si el nombre no coincide, haz clic en «No».

@@ -1,0 +1,4 @@
+# C-Laufzeit fest in die EXE einbauen: keine vcruntime140.dll nötig (läuft auch ohne
+# Visual-C++-Paket) und keine DLL, die jemand neben die EXE legen könnte.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

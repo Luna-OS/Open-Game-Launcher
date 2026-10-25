@@ -1,31 +1,41 @@
 name: Build
 
-# Baut bei jedem Push die Windows-EXE.
-# Bei einem Tag wie "v1.0.0" wird automatisch ein GitHub-Release mit der EXE erstellt.
+# Baut bei jedem Push die Windows-EXE und prüft sie (Tests + cargo audit).
+# Auf main wird für jede NEUE Version (aus Cargo.toml) einmalig ein GitHub-Release erstellt.
+# Ein bestehendes Release wird nie still überschrieben.
+#
+# Sicherheit:
+# - Der Build-Job hat nur Leserechte (fremder Code aus Abhängigkeiten kommt nicht an Schreibrechte).
+# - Schreibrechte haben nur die kleinen Jobs "release" und "ci-log", die keinen Projektcode ausführen.
+# - Alle Actions sind auf feste Commits gepinnt.
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
   workflow_dispatch:
-  release:
-    types: [published]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
-  # Server für Konto & Freunde (optional, siehe docs/SERVER-SETUP.md)
-  MAZ_SUPABASE_URL: ${{ secrets.MAZ_SUPABASE_URL }}
-  MAZ_SUPABASE_KEY: ${{ secrets.MAZ_SUPABASE_KEY }}
 
 jobs:
   build:
     name: Windows-EXE bauen
     runs-on: windows-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    env:
+      # Server für Konto & Freunde (optional, siehe docs/SERVER-SETUP.md)
+      MAZ_SUPABASE_URL: ${{ secrets.MAZ_SUPABASE_URL }}
+      MAZ_SUPABASE_KEY: ${{ secrets.MAZ_SUPABASE_KEY }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
 
       - name: Rust installieren
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
@@ -33,14 +43,12 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
 
-      - name: Tailwind-CSS neu erzeugen
-        shell: pwsh
-        run: ./scripts/build-css.ps1
-
       - name: Release-Build
         shell: pwsh
         run: |
-          cargo build --release --message-format=short 2>&1 | Tee-Object -FilePath build.log
+          $locked = @()
+          if (Test-Path Cargo.lock) { $locked = @('--locked') }
+          cargo build --release @locked --message-format=short 2>&1 | Tee-Object -FilePath build.log
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Tests
@@ -56,32 +64,29 @@ jobs:
           cargo audit 2>&1 | Tee-Object -FilePath audit.log
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
-      - name: Fehlerprotokoll in Branch "ci-log" speichern
-        if: failure() && github.event_name != 'pull_request'
-        shell: pwsh
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          New-Item -ItemType Directory -Force ../ci | Out-Null
-          if (Test-Path build.log) { Copy-Item build.log ../ci/ }
-          if (Test-Path test.log) { Copy-Item test.log ../ci/ }
-          if (Test-Path audit.log) { Copy-Item audit.log ../ci/ }
-          git worktree add --orphan -b ci-log ../cilog
-          Copy-Item ../ci/* ../cilog/
-          Set-Location ../cilog
-          git add -A
-          git commit -m "CI-Log ${{ github.sha }}"
-          git push -f origin ci-log
-
       - name: EXE einsammeln (+ Mini-Version mit UPX)
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item target/release/MAZ-Launcher.exe dist/MAZ-Launcher.exe
-          choco install upx -y --no-progress
-          upx --best --lzma -o dist/MAZ-Launcher-mini.exe target/release/MAZ-Launcher.exe
-          Get-ChildItem dist | ForEach-Object { "{0,-28} {1,8:N2} MB" -f $_.Name, ($_.Length / 1MB) }
+          choco install upx --version=4.2.4 -y --no-progress
+          if ($LASTEXITCODE -eq 0) {
+            upx --best --lzma -o dist/MAZ-Launcher-mini.exe target/release/MAZ-Launcher.exe
+          }
+          $global:LASTEXITCODE = 0
+          Get-ChildItem dist -Filter *.exe | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          } | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          Get-Content dist/SHA256SUMS.txt
           Copy-Item Cargo.lock dist/Cargo.lock
+
+      - name: Version lesen
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { throw "Ungültige Version: $v" }
+          "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Artefakt hochladen
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -89,22 +94,98 @@ jobs:
           name: MAZ-Launcher
           path: dist/
 
-      - name: Version lesen
-        id: ver
-        shell: pwsh
-        run: |
-          $v = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
-          "version=$v" >> $env:GITHUB_OUTPUT
+      - name: Protokolle hochladen (bei Fehler)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: logs
+          path: |
+            build.log
+            test.log
+            audit.log
+          if-no-files-found: ignore
 
-      - name: GitHub-Release erstellen / aktualisieren
-        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+  ci-log:
+    name: Fehlerprotokoll speichern
+    needs: build
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        continue-on-error: true
+        with:
+          name: logs
+          path: logs
+      - name: In Branch "ci-log" schreiben
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          mkdir -p logs && cd logs
+          git init -q -b ci-log
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -q --allow-empty -m "CI-Log $SHA"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-log
+
+  release:
+    name: Release veröffentlichen
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: MAZ-Launcher
+          path: dist
+
+      - name: Gibt es diese Version schon?
+        id: exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release v$VERSION existiert schon – wird nicht überschrieben."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: GitHub-Release erstellen
+        if: steps.exists.outputs.skip == 'false'
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          tag_name: v${{ steps.ver.outputs.version }}
+          tag_name: v${{ needs.build.outputs.version }}
           target_commitish: ${{ github.sha }}
-          name: MAZ Launcher ${{ steps.ver.outputs.version }}
+          name: MAZ Launcher ${{ needs.build.outputs.version }}
           body_path: RELEASE_NOTES.md
           make_latest: true
+          fail_on_unmatched_files: false
           files: |
             dist/MAZ-Launcher.exe
             dist/MAZ-Launcher-mini.exe
+            dist/SHA256SUMS.txt
+
+      - name: Cargo.lock ins Repository übernehmen (feste Versionen aller Abhängigkeiten)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/contents/Cargo.lock?ref=main" > /dev/null 2>&1; then
+            echo "Cargo.lock ist schon im Repository."
+            exit 0
+          fi
+          content=$(base64 -w0 dist/Cargo.lock)
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/Cargo.lock" \
+            -f message="Cargo.lock hinzufügen (feste Abhängigkeits-Versionen)" \
+            -f content="$content" -f branch=main > /dev/null
+          echo "Cargo.lock hinzugefügt."

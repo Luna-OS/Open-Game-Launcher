@@ -41,6 +41,8 @@ pub struct Session {
     pub user_id: String,
     pub email: String,
     pub provider: String,
+    /// Server, zu dem diese Anmeldung gehört. Tokens werden nie an einen anderen Server geschickt.
+    pub server: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Default)]
@@ -203,6 +205,7 @@ impl Backend {
             user_id: user.and_then(|u| u.get("id")).and_then(|x| x.as_str()).unwrap_or("").to_string(),
             email: user.and_then(|u| u.get("email")).and_then(|x| x.as_str()).unwrap_or("").to_string(),
             provider: provider.to_string(),
+            server: String::new(),
         })
     }
 
@@ -273,6 +276,11 @@ impl Backend {
                     let query = path.split_once('?').map(|(_, q)| q).unwrap_or("");
                     let code = util::query_param(query, "code");
                     let err = util::query_param(query, "error_description").or_else(|| util::query_param(query, "error"));
+                    // Aufrufe ohne Code und ohne Fehler (z. B. von fremden Webseiten) ignorieren
+                    if code.is_none() && err.is_none() {
+                        let _ = stream.write_all(b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                        continue;
+                    }
                     let ok = code.is_some();
                     let page = callback_page(ok, err.as_deref());
                     let resp = format!(

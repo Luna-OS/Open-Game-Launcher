@@ -11,6 +11,12 @@ fn main() {
         return;
     }
 
+    // SICHERHEIT: DLLs, die die EXE beim Start braucht, nur aus System32 laden – nie aus dem
+    // Ordner, in dem die EXE liegt (z. B. "Downloads", wo jemand eine falsche DLL ablegen könnte).
+    if std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
+        println!("cargo:rustc-link-arg-bins=/DEPENDENTLOADFLAG:0x800");
+    }
+
     let version = std::env::var("CARGO_PKG_VERSION").unwrap_or_else(|_| "1.0.0".into());
     let mut res = winresource::WindowsResource::new();
     // ID 1 = Icon im Explorer, 32512 = Fenster-/Taskleisten-Icon (wird von Dioxus genutzt)

@@ -36,6 +36,17 @@ create table if not exists public.friendships (
 create unique index if not exists friendships_pair
   on public.friendships (least(requester, addressee), greatest(requester, addressee));
 
+-- Protokoll aller Freundschaftsanfragen (für den Spam-Schutz – bleibt auch nach Löschen/Ablehnen)
+create table if not exists public.friend_request_log (
+  id bigint generated always as identity primary key,
+  requester uuid not null references public.profiles(id) on delete cascade,
+  addressee uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create index if not exists friend_request_log_req on public.friend_request_log (requester, created_at);
+alter table public.friend_request_log enable row level security;
+revoke all on public.friend_request_log from anon, authenticated;
+
 -- ---------- Nachrichten ----------
 create table if not exists public.messages (
   id bigint generated always as identity primary key,
@@ -79,7 +90,7 @@ begin
   values (
     new.id,
     candidate,
-    left(coalesce(nullif(trim(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name')), ''), candidate), 40),
+    left(coalesce(nullif(trim(regexp_replace(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''), '[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]', '', 'g')), ''), candidate), 40),
     -- Nur echte Profilbilder von Google/GitHub übernehmen (keine fremden Tracking-Links)
     case when new.raw_user_meta_data->>'avatar_url' ~ '^https://(lh[0-9]\.googleusercontent\.com|avatars\.githubusercontent\.com)/[^"<>\s]+$' and length(new.raw_user_meta_data->>'avatar_url') <= 500
          then new.raw_user_meta_data->>'avatar_url' end)
@@ -111,7 +122,7 @@ begin
   end if;
   update profiles
      set username = p_username,
-         display_name = nullif(left(trim(coalesce(p_display_name, '')), 40), '')
+         display_name = nullif(left(trim(regexp_replace(coalesce(p_display_name, ''), '[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]', '', 'g')), 40), '')
    where id = auth.uid();
   return 'ok';
 end $$;
@@ -143,7 +154,9 @@ language sql stable security definer set search_path = public as $$
     from profiles p
    where p.id <> auth.uid()
      and length(trim(coalesce(p_query, ''))) >= 2
-     and (p.username ilike '%' || trim(p_query) || '%' or p.display_name ilike '%' || trim(p_query) || '%')
+     -- % und _ sind Platzhalter bei ILIKE → maskieren, damit man nicht alle Nutzer auflisten kann
+     and (p.username ilike '%' || replace(replace(replace(trim(p_query), '\', '\\'), '%', '\%'), '_', '\_') || '%'
+       or p.display_name ilike '%' || replace(replace(replace(trim(p_query), '\', '\\'), '%', '\%'), '_', '\_') || '%')
    order by (lower(p.username) = lower(trim(p_query))) desc, p.username
    limit 20;
 $$;
@@ -186,10 +199,13 @@ begin
     end if;
     return 'exists';
   end if;
-  -- Schutz vor Spam: höchstens 30 neue Anfragen pro Stunde
-  if (select count(*) from friendships where requester = auth.uid() and created_at > now() - interval '1 hour') >= 30 then
+  -- Schutz vor Spam: höchstens 30 Anfragen pro Stunde und höchstens 3 Anfragen
+  -- an dieselbe Person pro Tag (zählt auch zurückgezogene/abgelehnte Anfragen)
+  if (select count(*) from friend_request_log where requester = auth.uid() and created_at > now() - interval '1 hour') >= 30
+     or (select count(*) from friend_request_log where requester = auth.uid() and addressee = p_user and created_at > now() - interval '1 day') >= 3 then
     raise exception 'rate limit';
   end if;
+  insert into friend_request_log (requester, addressee) values (auth.uid(), p_user);
   insert into friendships (requester, addressee) values (auth.uid(), p_user);
   return 'sent';
 end $$;
@@ -263,7 +279,7 @@ begin
   foreach f in array array[
     'my_profile()', 'update_profile(text, text)', 'heartbeat(text)', 'go_offline()',
     'search_users(text)', 'friends_overview()', 'send_friend_request(uuid)',
-    'respond_friend_request(bigint, boolean)', 'remove_friend(bigint)', 'are_friends(uuid, uuid)',
+    'respond_friend_request(bigint, boolean)', 'remove_friend(bigint)',
     'get_messages(uuid, bigint)', 'send_message(uuid, text)', 'mark_read(uuid)'
   ] loop
     execute format('revoke all on function public.%s from public, anon', f);
@@ -277,3 +293,9 @@ update public.profiles set avatar_url = null
  where avatar_url is not null
    and avatar_url !~ '^https://(lh[0-9]\.googleusercontent\.com|avatars\.githubusercontent\.com)/';
 create index if not exists messages_sender_time on public.messages (sender, created_at);
+
+-- are_friends nur intern (sonst könnte jeder prüfen, wer mit wem befreundet ist)
+revoke all on function public.are_friends(uuid, uuid) from public, anon, authenticated;
+-- Bestehende Anzeigenamen von unsichtbaren Steuerzeichen befreien
+update public.profiles set display_name = regexp_replace(display_name, '[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]', '', 'g')
+ where display_name ~ '[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]';

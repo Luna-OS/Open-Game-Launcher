@@ -58,8 +58,28 @@ pub fn drive_exists(path: &str) -> bool {
     }
 }
 
+/// Absoluter Pfad zu einem Windows-Programm. SICHERHEIT: Nie nur "cmd.exe" o. Ä. starten –
+/// Windows sucht sonst zuerst im Ordner der EXE (z. B. "Downloads"), wo eine untergeschobene
+/// Datei gleichen Namens liegen könnte.
+pub fn system_program(name: &str) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let sys32 = crate::winffi::system_dir().unwrap_or_else(|| PathBuf::from("C:\\Windows\\System32"));
+        let win = crate::winffi::windows_dir().unwrap_or_else(|| PathBuf::from("C:\\Windows"));
+        match name {
+            "explorer.exe" => win.join(name),
+            "powershell.exe" => sys32.join("WindowsPowerShell").join("v1.0").join(name),
+            _ => sys32.join(name),
+        }
+    }
+    #[cfg(not(windows))]
+    {
+        PathBuf::from(name)
+    }
+}
+
 /// Kommando ohne aufblitzendes Konsolenfenster.
-pub fn quiet_command(program: &str) -> Command {
+pub fn quiet_command(program: impl AsRef<std::ffi::OsStr>) -> Command {
     #[allow(unused_mut)]
     let mut c = Command::new(program);
     #[cfg(windows)]
@@ -79,7 +99,7 @@ pub fn open_folder(path: &str) {
     #[cfg(windows)]
     {
         let _ = crate::winffi::shell_execute(Some("open"), path, None, None)
-            .or_else(|_| Command::new("explorer.exe").arg(path).spawn().map(|_| ()).map_err(|_| 0));
+            .or_else(|_| Command::new(system_program("explorer.exe")).arg(path).spawn().map(|_| ()).map_err(|_| 0));
     }
     #[cfg(not(windows))]
     {
@@ -91,7 +111,7 @@ pub fn open_folder(path: &str) {
 pub fn reveal_file(path: &str) {
     #[cfg(windows)]
     {
-        let _ = Command::new("explorer.exe")
+        let _ = Command::new(system_program("explorer.exe"))
             .arg(format!("/select,{path}"))
             .spawn();
     }
@@ -349,7 +369,17 @@ pub fn decode_file_url(url_path: &str) -> Option<PathBuf> {
     for i in (0..hex.len()).step_by(2) {
         bytes.push(u8::from_str_radix(hex.get(i..i + 2)?, 16).ok()?);
     }
-    let path = PathBuf::from(String::from_utf8(bytes).ok()?);
+    let text = String::from_utf8(bytes).ok()?;
+    // SICHERHEIT: Keine Netzwerk- oder Gerätepfade (\\\\server\\… würde den Windows-Login-Hash senden)
+    let b = text.as_bytes();
+    let drive_path = b.len() > 3 && b[0].is_ascii_alphabetic() && b[1] == b':' && (b[2] == b'\\' || b[2] == b'/');
+    if !drive_path && !text.starts_with('/') {
+        return None;
+    }
+    if text.starts_with("//") || text.contains("..") {
+        return None;
+    }
+    let path = PathBuf::from(text);
     // SICHERHEIT: Nur Bilder ausliefern – nie Einstellungen, Tokens oder andere Dateien.
     let ext = path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).unwrap_or_default();
     matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "ico" | "avif").then_some(path)
@@ -368,6 +398,8 @@ mod safety_tests {
         assert!(!is_safe_url("javascript:alert(1)"));
         assert!(decode_file_url(&file_url(Path::new("C:\\a\\cover.png"))).is_some());
         assert!(decode_file_url(&file_url(Path::new("C:\\a\\config.json"))).is_none());
+        assert!(decode_file_url(&file_url(Path::new("\\\\evil\\share\\x.png"))).is_none());
+        assert!(decode_file_url(&file_url(Path::new("C:\\a\\..\\b.png"))).is_none());
     }
 }
 

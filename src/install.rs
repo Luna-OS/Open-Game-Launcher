@@ -167,18 +167,16 @@ fn register_uninstall(dir: &str, exe: &str) {
 
 /// Erstellt eine Windows-Verknüpfung (.lnk). Fallback: .url-Verknüpfung.
 pub fn create_shortcut(lnk: &Path, target: &Path) -> Result<(), String> {
-    let q = |p: &Path| p.to_string_lossy().replace('\'', "''");
-    let workdir = target.parent().map(q).unwrap_or_default();
-    let script = format!(
-        "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{}');$s.TargetPath='{}';$s.WorkingDirectory='{}';$s.IconLocation='{},0';$s.Description='{}';$s.Save()",
-        q(lnk),
-        q(target),
-        workdir,
-        q(target),
-        sys::APP_NAME
-    );
-    let ps = sys::quiet_command("powershell.exe")
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", &script])
+    // SICHERHEIT: Pfade nie in den Befehl einbauen (Anführungszeichen-Tricks), sondern als
+    // Umgebungsvariablen übergeben. PowerShell mit absolutem Pfad starten.
+    let workdir = target.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+    let script = "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:MAZ_LNK);$s.TargetPath=$env:MAZ_TARGET;$s.WorkingDirectory=$env:MAZ_WORKDIR;$s.IconLocation=($env:MAZ_TARGET + ',0');$s.Description=$env:MAZ_DESC;$s.Save()";
+    let ps = sys::quiet_command(sys::system_program("powershell.exe"))
+        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script])
+        .env("MAZ_LNK", lnk.as_os_str())
+        .env("MAZ_TARGET", target.as_os_str())
+        .env("MAZ_WORKDIR", &workdir)
+        .env("MAZ_DESC", sys::APP_NAME)
         .status();
     if matches!(ps, Ok(s) if s.success()) && lnk.exists() {
         return Ok(());
@@ -247,12 +245,16 @@ pub fn uninstall_interactive() {
             // Ordner danach nur löschen, wenn er leer ist (rmdir ohne /s schlägt sonst fehl).
             // Die laufende EXE kann sich nicht selbst löschen → kurz warten.
             let d = dir.to_string_lossy().to_string();
+            // Den (leeren) Ordner nur entfernen, wenn er wirklich "MAZ Launcher" heißt –
+            // nie z. B. einen leeren Downloads- oder Desktop-Ordner.
+            let own_dir = dir.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case(sys::APP_NAME)).unwrap_or(false);
+            let rmdir = if own_dir { format!(" & rmdir \"{d}\"") } else { String::new() };
             let cmd = format!(
-                "ping 127.0.0.1 -n 3 > nul & del /f /q \"{d}\\{exe}\" \"{d}\\{exe}.alt-*\" \"{d}\\portable.txt\" & rmdir \"{d}\"",
+                "ping 127.0.0.1 -n 3 > nul & del /f /q \"{d}\\{exe}\" \"{d}\\{exe}.alt-*\" \"{d}\\portable.txt\"{rmdir}",
                 exe = sys::EXE_NAME
             );
             use std::os::windows::process::CommandExt;
-            let _ = sys::quiet_command("cmd.exe").raw_arg(format!("/C {cmd}")).spawn();
+            let _ = sys::quiet_command(sys::system_program("cmd.exe")).raw_arg(format!("/C {cmd}")).current_dir(sys::system_program("cmd.exe").parent().unwrap_or(Path::new("C:\\"))).spawn();
         }
         MessageDialog::new()
             .set_level(MessageLevel::Info)

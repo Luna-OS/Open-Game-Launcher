@@ -442,6 +442,30 @@ pub fn start_help(app: App, id: String) {
     app.show_problem(p, Some(id));
 }
 
+/// Sicherheitsfrage vor dem Deinstallieren eines eigenen Spiels
+fn confirm_uninstall(game: &str, u: &launch::Uninstaller) -> bool {
+    #[cfg(windows)]
+    {
+        use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
+        let text = tf(
+            "uninstall.custom_confirm",
+            &[("game", game), ("name", if u.display_name.is_empty() { game } else { u.display_name.as_str() }), ("program", &u.program)],
+        );
+        MessageDialog::new()
+            .set_level(MessageLevel::Warning)
+            .set_title(t("act.uninstall"))
+            .set_description(text)
+            .set_buttons(MessageButtons::YesNo)
+            .show()
+            == MessageDialogResult::Yes
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (game, u);
+        false
+    }
+}
+
 /// Spiel deinstallieren
 pub fn uninstall(app: App, id: String) {
     let Some(game) = app.game(&id) else { return };
@@ -465,11 +489,15 @@ pub fn uninstall(app: App, id: String) {
             let Some(c) = app.settings.peek().custom(&id).cloned() else { return };
             let dir = std::path::Path::new(c.exe.trim().trim_matches('"')).parent().map(|p| p.to_string_lossy().to_string());
             match launch::find_uninstaller(&c) {
-                Some((prog, args)) => {
+                Some(u) => {
+                    // Vor dem Start genau zeigen, WAS deinstalliert wird
+                    if !confirm_uninstall(&c.name, &u) {
+                        return;
+                    }
                     #[cfg(windows)]
-                    let res = crate::winffi::shell_execute(Some("open"), &prog, Some(&args), None);
+                    let res = crate::winffi::shell_execute(Some("open"), &u.program, Some(&u.args), None);
                     #[cfg(not(windows))]
-                    let res: Result<(), i32> = { let _ = (&prog, &args); Err(0) };
+                    let res: Result<(), i32> = Err(0);
                     match res {
                         Ok(()) => {
                             app.close_modal();

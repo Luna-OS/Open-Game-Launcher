@@ -1,7 +1,16 @@
-## MAZ Launcher 1.3.1 🔒
+## MAZ Launcher 1.3.2 🔒
 
 **Download:** `MAZ-Launcher.exe` unten herunterladen → Doppelklick → „Installieren“ → „Jetzt öffnen“.
 (`MAZ-Launcher-mini.exe` ist dieselbe App, nur noch kleiner gepackt. Falls dein Virenscanner meckert, nimm die normale Version.)
+
+### Sicherheit in 1.3.2 (zweite, unabhängige Prüfung)
+- Die EXE lädt Windows-Programme und DLLs nur noch aus dem Windows-Systemordner – eine untergeschobene Datei im Downloads-Ordner kann nichts mehr ausrichten. Visual C++ ist fest eingebaut.
+- Anmeldung wird nie an einen anderen Server geschickt (beim Wechsel des Servers wirst du abgemeldet).
+- Eigene Spiele deinstallieren: Der Launcher zeigt vorher genau, welches Programm gestartet wird, und nimmt nur eindeutige Treffer.
+- Server: Spam-Schutz kann nicht mehr umgangen werden, Suche listet nicht mehr alle Nutzer, Freundeslisten anderer sind nicht abfragbar, unsichtbare Sonderzeichen in Namen werden entfernt.
+- Bilder nur noch über sichere Verbindungen, keine Netzwerkpfade.
+- Steam-API-Schlüssel wird verschlüsselt gespeichert.
+- Build-Sicherheit: automatische Prüfung aller Bibliotheken (cargo audit), feste Versionen, minimale Rechte, und zu jedem Release eine SHA256SUMS.txt zum Überprüfen der Downloads.
 
 ### Sicherheit in 1.3.1
 - **Wichtig:** „MAZ Launcher deinstallieren“ löscht jetzt nur noch die eigenen Dateien – nie mehr den ganzen Ordner (vorher hätte das z. B. den Downloads-Ordner mitlöschen können, wenn die EXE dort lag).

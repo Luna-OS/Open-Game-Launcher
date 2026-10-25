@@ -8,6 +8,10 @@ use dioxus::prelude::*;
 
 /// Bild mit Ersatzliste. Ändert sich die Liste (z. B. Cover nachträglich gefunden),
 /// wird die innere Komponente über den Schlüssel neu aufgebaut.
+pub fn safe_img(u: &str) -> bool {
+    (u.starts_with("https://") || u.starts_with("/maz/f/")) && !u.contains('"')
+}
+
 #[component]
 pub fn ArtImage(
     srcs: Vec<String>,
@@ -15,6 +19,8 @@ pub fn ArtImage(
     #[props(into, default)] alt: String,
     fallback: Element,
 ) -> Element {
+    // SICHERHEIT: Nur sichere Bildquellen (https:// oder lokale Bilder über /maz/f/)
+    let srcs: Vec<String> = srcs.into_iter().filter(|u| safe_img(u)).collect();
     let k = art_key(&srcs);
     rsx! {
         {std::iter::once(rsx! {

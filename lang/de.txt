@@ -702,3 +702,4 @@ epic.paste_ph = Kopierte Epic-Seite hier einfügen (Strg + V)
 epic.err_code = Der Code von Epic ist ungültig oder abgelaufen. Klick nochmal auf „Epic-Konto verbinden“ und kopiere die neue Seite gleich danach.
 epic.err_expired = Die Epic-Anmeldung ist abgelaufen. Deine Spieleliste bleibt erhalten – zum Aktualisieren einfach neu verbinden.
 epic.synced_toast = Epic-Bibliothek geladen: {n} Spiele
+uninstall.custom_confirm = Soll „{game}“ jetzt deinstalliert werden?\n\nWindows-Eintrag: {name}\nProgramm: {program}\n\nEs wird das Deinstallationsprogramm des Spiels gestartet. Stimmt der Name nicht, klick auf „Nein“.

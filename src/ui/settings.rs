@@ -1328,6 +1328,14 @@ fn AccountTab() -> Element {
                             app.toast(&t("acc.server_invalid"), "alert");
                             return;
                         }
+                        let changed = {
+                            let s = app.settings.peek();
+                            s.server_url.trim() != u || s.server_key.trim() != k
+                        };
+                        if changed {
+                            // Neuer Server: alte Anmeldung verwerfen (Tokens nie an fremde Server schicken)
+                            super::net::clear_session(app);
+                        }
                         app.update(|s| {
                             s.server_url = u;
                             s.server_key = k;

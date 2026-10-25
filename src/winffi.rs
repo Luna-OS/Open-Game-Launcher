@@ -541,3 +541,29 @@ pub fn dpapi_protect(data: &[u8]) -> Option<Vec<u8>> {
 pub fn dpapi_unprotect(data: &[u8]) -> Option<Vec<u8>> {
     dpapi(data, false)
 }
+
+// ----------------------------------------------------------------------
+// Windows-Systemordner (für absolute Pfade zu cmd.exe, PowerShell, explorer.exe)
+// ----------------------------------------------------------------------
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn GetSystemDirectoryW(buf: *mut u16, size: u32) -> u32;
+    fn GetWindowsDirectoryW(buf: *mut u16, size: u32) -> u32;
+}
+
+fn dir_from(f: unsafe extern "system" fn(*mut u16, u32) -> u32) -> Option<std::path::PathBuf> {
+    let mut buf = [0u16; 520];
+    let n = unsafe { f(buf.as_mut_ptr(), buf.len() as u32) } as usize;
+    (n > 0 && n < buf.len()).then(|| std::path::PathBuf::from(String::from_utf16_lossy(&buf[..n])))
+}
+
+/// z. B. C:\Windows\System32
+pub fn system_dir() -> Option<std::path::PathBuf> {
+    dir_from(GetSystemDirectoryW)
+}
+
+/// z. B. C:\Windows
+pub fn windows_dir() -> Option<std::path::PathBuf> {
+    dir_from(GetWindowsDirectoryW)
+}

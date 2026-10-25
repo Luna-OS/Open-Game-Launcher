@@ -7,7 +7,7 @@ $tw = Join-Path $tools "tailwindcss.exe"
 if (-not (Test-Path $tw)) {
     New-Item -ItemType Directory -Force $tools | Out-Null
     Write-Host "Lade Tailwind CSS (einmalig) ..."
-    Invoke-WebRequest -Uri "https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-windows-x64.exe" -OutFile $tw
+    Invoke-WebRequest -Uri "https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-windows-x64.exe" -OutFile $tw
 }
 Push-Location $root
 & $tw -i tailwind.css -o assets/maz.css --minify

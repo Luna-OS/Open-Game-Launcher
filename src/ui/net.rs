@@ -171,7 +171,16 @@ pub fn logged_in(app: App) -> bool {
 /// Gültige Sitzung holen (läuft sie bald ab, wird sie erneuert)
 async fn ensure_session(app: App) -> Option<(Backend, Session)> {
     let b = backend(app)?;
-    let s = app.settings.peek().session.clone()?;
+    let mut s = app.settings.peek().session.clone()?;
+    // SICHERHEIT: Anmeldung gehört zu einem anderen Server → Tokens nicht dorthin schicken
+    if s.server.is_empty() {
+        s.server = b.url.clone();
+        let bound = s.clone();
+        app.update(|st| st.session = Some(bound));
+    } else if s.server != b.url {
+        clear_session(app);
+        return None;
+    }
     if s.expires_at > sys::now_secs() + 90 {
         return Some((b, s));
     }
@@ -181,7 +190,8 @@ async fn ensure_session(app: App) -> Option<(Backend, Session)> {
 async fn refresh_session(app: App, b: Backend, s: Session) -> Option<(Backend, Session)> {
     let (b2, s2) = (b.clone(), s.clone());
     match tokio::task::spawn_blocking(move || b2.refresh(&s2)).await {
-        Ok(Ok(ns)) => {
+        Ok(Ok(mut ns)) => {
+            ns.server = b.url.clone();
             let saved = ns.clone();
             app.update(|st| st.session = Some(saved));
             Some((b, ns))
@@ -218,7 +228,7 @@ where
     r
 }
 
-fn clear_session(app: App) {
+pub fn clear_session(app: App) {
     app.update(|s| s.session = None);
     let (mut me, mut fr, mut chat, mut msgs) = (app.me, app.friends, app.chat_with, app.messages);
     me.set(None);
@@ -228,7 +238,10 @@ fn clear_session(app: App) {
     FRIENDS_LOADED.store(false, Ordering::Relaxed);
 }
 
-fn after_login(app: App, s: Session) {
+fn after_login(app: App, mut s: Session) {
+    if let Some(b) = backend(app) {
+        s.server = b.url;
+    }
     app.update(|st| st.session = Some(s));
     let mut busy = app.social_busy;
     busy.set(false);

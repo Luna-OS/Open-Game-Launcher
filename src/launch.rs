@@ -239,9 +239,29 @@ pub fn watch_store(_game: &Game) -> Option<Problem> {
     None
 }
 
+/// Ein gefundenes Deinstallationsprogramm
+pub struct Uninstaller {
+    pub display_name: String,
+    pub program: String,
+    pub args: String,
+}
+
+/// Ist das ein Ordner, der zu genau einem Programm gehört? ("C:\\Program Files" ist es nicht.)
+fn specific_dir(loc: &str) -> bool {
+    let parts: Vec<&str> = loc.split(['\\', '/']).filter(|p| !p.is_empty()).collect();
+    if parts.len() < 2 {
+        return false;
+    }
+    let last = parts[parts.len() - 1].to_lowercase();
+    const ROOTS: [&str; 12] = [
+        "program files", "program files (x86)", "programdata", "windows", "users", "games", "spiele",
+        "steamapps", "common", "appdata", "local", "programs",
+    ];
+    !ROOTS.contains(&last.as_str())
+}
+
 /// Deinstallationsprogramm eines eigenen Spiels aus der Windows-Registry suchen.
-/// Gibt (Programm, Argumente) zurück.
-pub fn find_uninstaller(c: &CustomGame) -> Option<(String, String)> {
+pub fn find_uninstaller(c: &CustomGame) -> Option<Uninstaller> {
     #[cfg(windows)]
     {
         use winreg::enums::*;
@@ -254,7 +274,7 @@ pub fn find_uninstaller(c: &CustomGame) -> Option<(String, String)> {
             (HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
             (HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
         ];
-        let mut by_name: Option<String> = None;
+        let mut by_name: Option<Uninstaller> = None;
         for (hive, path) in roots {
             let Ok(root) = RegKey::predef(hive).open_subkey(path) else { continue };
             for sub in root.enum_keys().flatten() {
@@ -266,18 +286,23 @@ pub fn find_uninstaller(c: &CustomGame) -> Option<(String, String)> {
                 }
                 let loc = get("InstallLocation").trim().trim_matches('"').trim_end_matches('\\').to_lowercase();
                 let icon = get("DisplayIcon").to_lowercase();
-                let matches_dir = !loc.is_empty() && loc.len() > 3 && (exe.starts_with(&format!("{loc}\\")) || exe_dir == loc);
+                let display_name = get("DisplayName");
+                // Nur eindeutige Treffer: genau diese EXE als Icon, oder ein Ordner, der wirklich
+                // nur zu diesem Programm gehört (nicht "C:\\Program Files" o. Ä.).
+                let matches_dir = specific_dir(&loc) && (exe.starts_with(&format!("{loc}\\")) || exe_dir == loc);
                 let matches_icon = !icon.is_empty() && icon.trim_matches('"').split(',').next().map(|i| i.trim_matches('"') == exe).unwrap_or(false);
                 if matches_dir || matches_icon {
-                    return Some(split_command(&uninstall));
+                    let (program, args) = split_command(&uninstall);
+                    return Some(Uninstaller { display_name, program, args });
                 }
-                let dn = crate::model::normalize_name(&get("DisplayName"));
-                if !name.is_empty() && dn == name && by_name.is_none() {
-                    by_name = Some(uninstall);
+                let dn = crate::model::normalize_name(&display_name);
+                if name.len() >= 4 && dn == name && by_name.is_none() {
+                    let (program, args) = split_command(&uninstall);
+                    by_name = Some(Uninstaller { display_name, program, args });
                 }
             }
         }
-        by_name.map(|u| split_command(&u))
+        by_name
     }
     #[cfg(not(windows))]
     {
@@ -316,5 +341,8 @@ mod tests {
         assert_eq!(split_command("C:\\Program Files\\G\\uninstall.exe"), ("C:\\Program Files\\G\\uninstall.exe".into(), "".into()));
         assert!(is_helper("C:\\G\\UnityCrashHandler64.exe"));
         assert!(!is_helper("C:\\G\\Game.exe"));
+        assert!(!specific_dir("c:\\program files"));
+        assert!(!specific_dir("c:\\"));
+        assert!(specific_dir("c:\\program files\\cool game"));
     }
 }

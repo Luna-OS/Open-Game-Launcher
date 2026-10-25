@@ -137,6 +137,7 @@ pub struct Settings {
     // Verbindungen
     pub steam_enabled: bool,
     pub epic_enabled: bool,
+    #[serde(with = "crate::util::secret")]
     pub steam_api_key: String,
     pub steam_id: String,
     pub steam_show_uninstalled: bool,

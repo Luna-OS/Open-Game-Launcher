@@ -1,6 +1,6 @@
 [package]
 name = "maz-launcher"
-version = "1.3.1"
+version = "1.3.2"
 edition = "2021"
 rust-version = "1.85"
 description = "MAZ Launcher – alle deine Steam-, Epic- und eigenen Spiele in einem schönen Launcher"

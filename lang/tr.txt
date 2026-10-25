@@ -696,3 +696,4 @@ epic.paste_ph = Kopyalanan Epic sayfasını buraya yapıştır (Ctrl + V)
 epic.err_code = Epic'ten gelen kod geçersiz veya süresi dolmuş. "Epic hesabını bağla"ya tekrar tıkla ve yeni sayfayı hemen kopyala.
 epic.err_expired = Epic girişinin süresi doldu. Oyun listen korunuyor – güncellemek için sadece yeniden bağlan.
 epic.synced_toast = Epic kütüphanesi yüklendi: {n} oyun
+uninstall.custom_confirm = "{game}" şimdi kaldırılsın mı?\n\nWindows kaydı: {name}\nProgram: {program}\n\nOyunun kendi kaldırma programı başlatılacak. İsim uyuşmuyorsa "Hayır"a tıkla.
