@@ -79,8 +79,10 @@ begin
   values (
     new.id,
     candidate,
-    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', candidate),
-    new.raw_user_meta_data->>'avatar_url')
+    left(coalesce(nullif(trim(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name')), ''), candidate), 40),
+    -- Nur echte Profilbilder von Google/GitHub übernehmen (keine fremden Tracking-Links)
+    case when new.raw_user_meta_data->>'avatar_url' ~ '^https://(lh[0-9]\.googleusercontent\.com|avatars\.githubusercontent\.com)/[^"<>\s]+$' and length(new.raw_user_meta_data->>'avatar_url') <= 500
+         then new.raw_user_meta_data->>'avatar_url' end)
   on conflict (id) do nothing;
   return new;
 end $$;
@@ -184,6 +186,10 @@ begin
     end if;
     return 'exists';
   end if;
+  -- Schutz vor Spam: höchstens 30 neue Anfragen pro Stunde
+  if (select count(*) from friendships where requester = auth.uid() and created_at > now() - interval '1 hour') >= 30 then
+    raise exception 'rate limit';
+  end if;
   insert into friendships (requester, addressee) values (auth.uid(), p_user);
   return 'sent';
 end $$;
@@ -236,6 +242,10 @@ begin
   if not are_friends(auth.uid(), p_friend) then
     raise exception 'not_friends';
   end if;
+  -- Schutz vor Spam: höchstens 10 Nachrichten in 10 Sekunden
+  if (select count(*) from messages where sender = auth.uid() and created_at > now() - interval '10 seconds') >= 10 then
+    raise exception 'rate limit';
+  end if;
   insert into messages (sender, receiver, body) values (auth.uid(), p_friend, b) returning id into new_id;
   return new_id;
 end $$;
@@ -261,3 +271,9 @@ begin
   end loop;
 end $$;
 revoke all on function public.handle_new_user() from public, anon, authenticated;
+
+-- Bereits gespeicherte, nicht vertrauenswürdige Profilbilder entfernen
+update public.profiles set avatar_url = null
+ where avatar_url is not null
+   and avatar_url !~ '^https://(lh[0-9]\.googleusercontent\.com|avatars\.githubusercontent\.com)/';
+create index if not exists messages_sender_time on public.messages (sender, created_at);

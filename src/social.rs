@@ -33,7 +33,9 @@ pub fn builtin_server() -> (String, String) {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Session {
+    #[serde(with = "crate::util::secret")]
     pub access_token: String,
+    #[serde(with = "crate::util::secret")]
     pub refresh_token: String,
     pub expires_at: u64,
     pub user_id: String,

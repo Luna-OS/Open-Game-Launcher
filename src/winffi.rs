@@ -114,6 +114,7 @@ extern "system" {
     fn GlobalLock(mem: HANDLE) -> *mut c_void;
     fn GlobalUnlock(mem: HANDLE) -> BOOL;
     fn GlobalFree(mem: HANDLE) -> HANDLE;
+    fn GlobalSize(mem: HANDLE) -> usize;
 }
 
 pub const SW_SHOWNORMAL: i32 = 1;
@@ -377,8 +378,10 @@ pub fn get_clipboard() -> Option<String> {
         if !mem.is_null() {
             let p = GlobalLock(mem) as *const u16;
             if !p.is_null() {
+                // Nie über das Ende des Speicherblocks hinaus lesen
+                let max = (GlobalSize(mem) / 2).min(65_536);
                 let mut len = 0usize;
-                while len < 65_536 && *p.add(len) != 0 {
+                while len < max && *p.add(len) != 0 {
                     len += 1;
                 }
                 out = Some(String::from_utf16_lossy(std::slice::from_raw_parts(p, len)));
@@ -465,4 +468,76 @@ pub fn process_ids() -> Vec<(u32, String)> {
         CloseHandle(snap);
     }
     out
+}
+
+// ----------------------------------------------------------------------
+// DPAPI: Anmelde-Tokens verschlüsselt speichern (nur dieser Windows-Benutzer kann sie lesen)
+// ----------------------------------------------------------------------
+
+#[repr(C)]
+struct DataBlob {
+    cb: u32,
+    pb: *mut u8,
+}
+
+#[link(name = "crypt32")]
+extern "system" {
+    fn CryptProtectData(
+        input: *const DataBlob,
+        descr: *const u16,
+        entropy: *const DataBlob,
+        reserved: *mut c_void,
+        prompt: *mut c_void,
+        flags: u32,
+        output: *mut DataBlob,
+    ) -> BOOL;
+    fn CryptUnprotectData(
+        input: *const DataBlob,
+        descr: *mut *mut u16,
+        entropy: *const DataBlob,
+        reserved: *mut c_void,
+        prompt: *mut c_void,
+        flags: u32,
+        output: *mut DataBlob,
+    ) -> BOOL;
+}
+
+#[link(name = "kernel32")]
+extern "system" {
+    fn LocalFree(mem: HANDLE) -> HANDLE;
+}
+
+const ENTROPY: &[u8] = b"MAZ-Launcher-Token";
+const CRYPTPROTECT_UI_FORBIDDEN: u32 = 0x1;
+
+fn dpapi(data: &[u8], protect: bool) -> Option<Vec<u8>> {
+    if data.is_empty() || data.len() > 1 << 20 {
+        return None;
+    }
+    let input = DataBlob { cb: data.len() as u32, pb: data.as_ptr() as *mut u8 };
+    let entropy = DataBlob { cb: ENTROPY.len() as u32, pb: ENTROPY.as_ptr() as *mut u8 };
+    let mut out = DataBlob { cb: 0, pb: null_mut() };
+    let ok = unsafe {
+        if protect {
+            CryptProtectData(&input, null(), &entropy, null_mut(), null_mut(), CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+        } else {
+            CryptUnprotectData(&input, null_mut(), &entropy, null_mut(), null_mut(), CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+        }
+    };
+    if ok == 0 || out.pb.is_null() {
+        return None;
+    }
+    let v = unsafe { std::slice::from_raw_parts(out.pb, out.cb as usize).to_vec() };
+    unsafe {
+        LocalFree(out.pb as HANDLE);
+    }
+    Some(v)
+}
+
+pub fn dpapi_protect(data: &[u8]) -> Option<Vec<u8>> {
+    dpapi(data, true)
+}
+
+pub fn dpapi_unprotect(data: &[u8]) -> Option<Vec<u8>> {
+    dpapi(data, false)
 }

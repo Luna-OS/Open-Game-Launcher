@@ -97,6 +97,55 @@ pub fn base64url(data: &[u8]) -> String {
     out
 }
 
+/// Geheimnisse (Anmelde-Tokens) für die Einstellungsdatei: unter Windows mit DPAPI
+/// verschlüsselt ("dpapi:…"), sodass andere Benutzer oder kopierte Dateien nichts nützen.
+/// Alte, unverschlüsselte Werte werden beim Lesen weiter akzeptiert.
+pub mod secret {
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn protect(plain: &str) -> String {
+        if plain.is_empty() {
+            return String::new();
+        }
+        #[cfg(windows)]
+        {
+            if let Some(enc) = crate::winffi::dpapi_protect(plain.as_bytes()) {
+                return format!("dpapi:{}", super::base64url(&enc));
+            }
+        }
+        plain.to_string()
+    }
+
+    pub fn reveal(stored: &str) -> String {
+        match stored.strip_prefix("dpapi:") {
+            Some(b64) => {
+                #[cfg(windows)]
+                {
+                    super::base64_decode(b64)
+                        .and_then(|enc| crate::winffi::dpapi_unprotect(&enc))
+                        .and_then(|plain| String::from_utf8(plain).ok())
+                        .unwrap_or_default()
+                }
+                #[cfg(not(windows))]
+                {
+                    let _ = b64;
+                    String::new()
+                }
+            }
+            None => stored.to_string(),
+        }
+    }
+
+    pub fn serialize<S: Serializer>(v: &str, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&protect(v))
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+        let raw = String::deserialize(d)?;
+        Ok(reveal(&raw))
+    }
+}
+
 /// Base64 dekodieren (Standard und URL-Variante, ignoriert Leerzeichen/Zeilenumbrüche)
 pub fn base64_decode(text: &str) -> Option<Vec<u8>> {
     let mut out = Vec::with_capacity(text.len() * 3 / 4);

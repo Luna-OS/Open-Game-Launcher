@@ -19,7 +19,9 @@ const CATALOG: &str = "https://catalog-public-service-prod06.ol.epicgames.com/ca
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct EpicAuth {
+    #[serde(with = "crate::util::secret")]
     pub access_token: String,
+    #[serde(with = "crate::util::secret")]
     pub refresh_token: String,
     pub expires_at: u64,
     pub refresh_expires_at: u64,

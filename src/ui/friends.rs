@@ -10,6 +10,17 @@ use crate::social::{Friend, Profile};
 use crate::sys;
 use dioxus::prelude::*;
 
+/// Profilbilder nur von Google und GitHub laden. Sonst könnte jemand über ein eigenes
+/// Bild herausfinden, wann und von welcher IP-Adresse sein Profil angesehen wird.
+fn trusted_avatar(url: &str) -> bool {
+    const HOSTS: [&str; 3] = [
+        "https://lh3.googleusercontent.com/",
+        "https://avatars.githubusercontent.com/",
+        "https://lh4.googleusercontent.com/",
+    ];
+    HOSTS.iter().any(|h| url.starts_with(h)) && !url.contains('"')
+}
+
 /// Rundes Profilbild (Bild oder Initialen) mit optionalem Online-Punkt
 #[component]
 pub fn Avatar(
@@ -29,7 +40,7 @@ pub fn Avatar(
     };
     rsx! {
         div { class: "relative shrink-0 {cls}",
-            {match url.filter(|u| !u.is_empty() && !broken()) {
+            {match url.filter(|u| trusted_avatar(u) && !broken()) {
                 Some(u) => rsx! {
                     img { src: "{u}", class: "size-full rounded-full object-cover", "draggable": "false", onerror: move |_| broken.set(true) }
                 },

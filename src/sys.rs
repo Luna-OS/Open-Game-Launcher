@@ -72,6 +72,10 @@ pub fn quiet_command(program: &str) -> Command {
 
 /// Ordner im Explorer öffnen.
 pub fn open_folder(path: &str) {
+    // SICHERHEIT: Nur echte Ordner öffnen – "open" auf eine Datei würde sie ausführen.
+    if !Path::new(path).is_dir() {
+        return;
+    }
     #[cfg(windows)]
     {
         let _ = crate::winffi::shell_execute(Some("open"), path, None, None)
@@ -99,8 +103,32 @@ pub fn reveal_file(path: &str) {
     }
 }
 
+/// Nur diese Arten von Links dürfen geöffnet werden. Verhindert, dass ein Link aus dem
+/// Internet (z. B. von einer Gratis-Spiele-Seite) eine Datei, ein Programm oder einen
+/// Netzwerkpfad (\\server\…) startet.
+pub fn is_safe_url(url: &str) -> bool {
+    let u = url.trim().to_ascii_lowercase();
+    if u.contains('\n') || u.contains('\r') || u.contains('"') {
+        return false;
+    }
+    const ALLOWED: [&str; 8] = [
+        "https://",
+        "http://",
+        "steam://",
+        "com.epicgames.launcher://",
+        "ms-settings:",
+        "windowsdefender://",
+        "mailto:",
+        "ms-windows-store:",
+    ];
+    ALLOWED.iter().any(|p| u.starts_with(p))
+}
+
 /// URL oder Protokoll-Link öffnen (https://, steam://, …).
 pub fn open_url(url: &str) -> Result<(), i32> {
+    if !is_safe_url(url) {
+        return Err(5);
+    }
     #[cfg(windows)]
     {
         crate::winffi::shell_execute(Some("open"), url, None, None)
@@ -321,7 +349,26 @@ pub fn decode_file_url(url_path: &str) -> Option<PathBuf> {
     for i in (0..hex.len()).step_by(2) {
         bytes.push(u8::from_str_radix(hex.get(i..i + 2)?, 16).ok()?);
     }
-    String::from_utf8(bytes).ok().map(PathBuf::from)
+    let path = PathBuf::from(String::from_utf8(bytes).ok()?);
+    // SICHERHEIT: Nur Bilder ausliefern – nie Einstellungen, Tokens oder andere Dateien.
+    let ext = path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).unwrap_or_default();
+    matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "ico" | "avif").then_some(path)
+}
+
+#[cfg(test)]
+mod safety_tests {
+    use super::*;
+    #[test]
+    fn only_safe_links_and_images() {
+        assert!(is_safe_url("https://store.epicgames.com/p/x"));
+        assert!(is_safe_url("steam://rungameid/1"));
+        assert!(!is_safe_url("C:\\Windows\\System32\\cmd.exe"));
+        assert!(!is_safe_url("\\\\evil\\share\\x.exe"));
+        assert!(!is_safe_url("file:///C:/x.exe"));
+        assert!(!is_safe_url("javascript:alert(1)"));
+        assert!(decode_file_url(&file_url(Path::new("C:\\a\\cover.png"))).is_some());
+        assert!(decode_file_url(&file_url(Path::new("C:\\a\\config.json"))).is_none());
+    }
 }
 
 pub fn mime_for(path: &Path) -> &'static str {

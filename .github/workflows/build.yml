@@ -50,7 +50,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Fehlerprotokoll in Branch "ci-log" speichern
-        if: failure()
+        if: failure() && github.event_name != 'pull_request'
         shell: pwsh
         run: |
           git config user.name "github-actions"

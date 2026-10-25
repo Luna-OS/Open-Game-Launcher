@@ -87,11 +87,20 @@ pub struct InstallReport {
 }
 
 pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
-    let dir = PathBuf::from(opts.dir.trim().trim_matches('"'));
-    let dir_s = dir.to_string_lossy().to_string();
-    if dir_s.is_empty() {
-        return Err(Problem::install_failed(&dir_s, "No folder selected."));
+    let mut dir = PathBuf::from(opts.dir.trim().trim_matches('"'));
+    if dir.as_os_str().is_empty() {
+        return Err(Problem::install_failed("", "No folder selected."));
     }
+    // Eigener Unterordner, wenn ein fremder, nicht leerer Ordner gewählt wurde (z. B. "D:\Spiele"),
+    // damit Programmdateien nicht zwischen anderen Dateien landen.
+    let own = dir.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case(sys::APP_NAME)).unwrap_or(false);
+    let has_other_files = fs::read_dir(&dir)
+        .map(|rd| rd.flatten().any(|e| !e.file_name().to_string_lossy().to_lowercase().starts_with(&sys::EXE_NAME.to_lowercase())))
+        .unwrap_or(false);
+    if !own && has_other_files {
+        dir = dir.join(sys::APP_NAME);
+    }
+    let dir_s = dir.to_string_lossy().to_string();
     fs::create_dir_all(&dir).map_err(|e| Problem::install_failed(&dir_s, &e.to_string()))?;
     let target = dir.join(sys::EXE_NAME);
     let src = current_exe().ok_or_else(|| Problem::install_failed(&dir_s, "Own EXE not found."))?;
@@ -233,10 +242,14 @@ pub fn uninstall_interactive() {
             let _ = fs::remove_dir_all(sys::roaming_dir());
         }
         if let Some(dir) = install_dir {
-            // Die laufende EXE kann sich nicht selbst löschen → kurz warten, dann Ordner entfernen.
+            // SICHERHEIT: Niemals den ganzen Ordner rekursiv löschen – der Launcher kann in
+            // "Downloads" oder "D:\Spiele" liegen! Nur die eigenen Dateien entfernen und den
+            // Ordner danach nur löschen, wenn er leer ist (rmdir ohne /s schlägt sonst fehl).
+            // Die laufende EXE kann sich nicht selbst löschen → kurz warten.
+            let d = dir.to_string_lossy().to_string();
             let cmd = format!(
-                "ping 127.0.0.1 -n 3 > nul & rmdir /s /q \"{}\"",
-                dir.to_string_lossy()
+                "ping 127.0.0.1 -n 3 > nul & del /f /q \"{d}\\{exe}\" \"{d}\\{exe}.alt-*\" \"{d}\\portable.txt\" & rmdir \"{d}\"",
+                exe = sys::EXE_NAME
             );
             use std::os::windows::process::CommandExt;
             let _ = sys::quiet_command("cmd.exe").raw_arg(format!("/C {cmd}")).spawn();
