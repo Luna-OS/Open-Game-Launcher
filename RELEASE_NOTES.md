@@ -1,4 +1,4 @@
-## MAZ Launcher 1.4.2 🐧🍎🧱
+## MAZ Launcher 1.4.3 🐧🍎🧱
 
 Jetzt für **Windows, macOS und Linux** – und alles läuft lokal.
 
@@ -11,7 +11,7 @@ Jetzt für **Windows, macOS und Linux** – und alles läuft lokal.
 
 Alle Prüfsummen stehen in `SHA256SUMS.txt`. Webseite: https://mikeadamrgb.github.io/MAZ-Lauchner/
 
-### Neu in 1.4.2
+### Neu in 1.4.3
 - Linux: jetzt auch als **Flatpak**.
 
 ### Neu in 1.4.0
