@@ -184,8 +184,8 @@ jobs:
             echo "Cargo.lock ist schon im Repository."
             exit 0
           fi
-          content=$(base64 -w0 dist/Cargo.lock)
-          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/Cargo.lock" \
-            -f message="Cargo.lock hinzufügen (feste Abhängigkeits-Versionen)" \
-            -f content="$content" -f branch=main > /dev/null
+          # Inhalt über eine Datei übergeben (als Argument wäre er zu lang)
+          base64 -w0 dist/Cargo.lock > lock.b64
+          jq -n --rawfile c lock.b64 '{message: "Cargo.lock hinzufügen (feste Abhängigkeits-Versionen)", content: $c, branch: "main"}' > body.json
+          gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/Cargo.lock" --input body.json > /dev/null
           echo "Cargo.lock hinzugefügt."
