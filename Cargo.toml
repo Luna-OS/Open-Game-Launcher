@@ -1,6 +1,6 @@
 [package]
 name = "maz-launcher"
-version = "1.3.2"
+version = "1.4.0"
 edition = "2021"
 rust-version = "1.85"
 description = "MAZ Launcher – alle deine Steam-, Epic-, Roblox- und eigenen Spiele in einem schönen Launcher (Windows, macOS, Linux)"
@@ -32,7 +32,8 @@ winreg = "0.56"
 rfd = { version = "0.17", default-features = false, features = ["common-controls-v6"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rfd = { version = "0.17", default-features = false, features = ["gtk3"] }
+# Dateidialoge über das XDG-Portal (das aktiviert Dioxus bereits; gtk3 + Portal gleichzeitig geht nicht)
+rfd = { version = "0.17", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 rfd = { version = "0.17", default-features = false }

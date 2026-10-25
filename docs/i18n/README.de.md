@@ -6,7 +6,7 @@
 
 **Alle deine Spiele. Ein Launcher.**
 
-Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und schönen Windows-App, geschrieben zu 100 % in Rust.
+Steam, Epic Games, Roblox und deine eigenen Spiele in einer schnellen, schlanken und schönen App für **Windows, macOS und Linux**, geschrieben zu 100 % in Rust. Alles läuft lokal – kein Konto.
 
 [![Neueste Version](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=Version&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
@@ -17,7 +17,7 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 
 [English](../../README.md) · **Deutsch** · [Français](README.fr.md) · [Español](README.es.md) · [Italiano](README.it.md) · [Português](README.pt-BR.md) · [Polski](README.pl.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh-CN.md)
 
-[**⬇️ Für Windows herunterladen**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+[**⬇️ Herunterladen**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) · [**🌐 Webseite**](https://mikeadamrgb.github.io/MAZ-Lauchner/)
 
 <br>
 
@@ -44,16 +44,19 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 | | |
 |---|---|
 | 🎮 **Steam** | Zeigt **alle** deine Steam-Spiele – installiert oder nicht – auf allen Festplatten, inklusive Spielzeit. Installieren und deinstallieren direkt im Launcher. |
-| 🟦 **Epic Games** | Findet alle installierten Epic-Spiele automatisch. Einmal das Epic-Konto verbinden und die **komplette** Epic-Bibliothek erscheint – installieren oder deinstallieren mit einem Klick. |
+| 🟦 **Epic Games** | Findet alle installierten Epic-Spiele automatisch. Einmal das Epic-Konto verbinden und die **komplette** Epic-Bibliothek erscheint – installieren oder deinstallieren mit einem Klick. Unter Linux über den [Heroic Games Launcher](https://heroicgameslauncher.com). |
+| 🧱 **Roblox** | Erkennt und startet Roblox. Füg Links deiner Lieblings-Roblox-Spiele ein – jedes wird eine eigene Kachel, die direkt ins Spiel startet. Unter Linux über [Sober](https://flathub.org/apps/org.vinegarhq.Sober). |
 | 🎁 **Gratis-Spiele** | Ein Tab mit allen Spielen, die es gerade bei Epic Games und Steam kostenlos gibt, mit Countdown, wie lange noch. „Zur Bibliothek hinzufügen“ öffnet den Store – ein Klick auf „Holen“ und das Spiel ist im MAZ Launcher. |
-| 👥 **Freunde & Chat** | Anmelden mit Google, GitHub oder E-Mail, Freunde per Benutzername hinzufügen, chatten und sehen, wer online ist und was er gerade spielt. |
 | 🚀 **Eigene Spiele** | Füge jedes Spiel hinzu: EXE, Verknüpfung oder Batch-Datei. Vor **jedem** Start fragt eine Checkliste: *„Hast du alles Wichtige deaktiviert?“* Bei **Nein** startet das Spiel nicht. |
 | 🖼️ **Original-Icons & Cover** | Echte Spiel-Icons (direkt aus der EXE bzw. aus Steam) und Original-Cover. Für jedes Spiel kannst du ein eigenes Cover setzen. |
 | 🎨 **3 Ansichten** | Sieht aus **wie die Steam-Bibliothek**, **wie Epic Games** oder im **eigenen MAZ-Stil**. |
 | 🌈 **16 Designs + eigene** | 16 fertige Farbschemata, ein Design-Editor für eigene Designs (als Code teilbar), eigene Akzentfarbe und eigenes Hintergrundbild. |
 | 🌍 **9 Sprachen** | Deutsch, English, Español, Français, Italiano, Português, Polski, Türkçe und Русский – inklusive aller Fehlererklärungen. |
 | 🛟 **Fehler einfach erklärt** | Startet ein Spiel nicht oder stürzt es direkt nach dem Start ab (Steam, Epic oder eigenes), erklärt der Launcher **Schritt für Schritt** in einfachen Worten, was los ist und wie man es behebt, mit Knöpfen, die direkt helfen (z. B. „Spieldateien überprüfen“, „Als Administrator starten“ oder „Visual C++ herunterladen“). Jedes Spiel hat außerdem einen Knopf „Startet nicht? Hilfe“. |
-| 📦 **Eingebauter Installer** | Eine einzige EXE: Doppelklick öffnet ein Installationsmenü mit Desktop-Verknüpfung, Startmenü-Eintrag, „Jetzt öffnen“ und „App-Ordner öffnen“. Keine Admin-Rechte nötig. |
+| 🔄 **Updates in der App** | Du bekommst Bescheid, wenn es eine neue Version gibt. „Jetzt updaten“ lädt sie, prüft die SHA256-Prüfsumme und installiert sie – ohne Umweg über GitHub. |
+| 🔒 **Alles lokal** | Kein MAZ-Konto, kein Server, kein Tracking. Passwörter bleiben bei Steam, Epic und Roblox. |
+| 🐧 **Alle Systeme** | Windows (x86_64, ARM64), macOS (Apple Silicon + Intel), Linux (x86_64, ARM64) als AppImage, .deb, .rpm, .pkg.tar.zst, Flatpak und Snap. |
+| 📦 **Eingebauter Installer (Windows)** | Eine einzige EXE: Doppelklick öffnet ein Installationsmenü mit Desktop-Verknüpfung, Startmenü-Eintrag, „Jetzt öffnen“ und „App-Ordner öffnen“. Keine Admin-Rechte nötig. |
 | 🪶 **Winzig** | Eine einzige, auf Größe optimierte EXE ohne Zusatzdateien. |
 
 ## Screenshots
@@ -95,8 +98,8 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
       <sub><b>Gratis-Spiele</b>: was es gerade bei Epic und Steam gratis gibt, mit Countdown</sub>
     </td>
     <td width="50%" align="center">
-      <img src="../screenshots/friends.webp" alt="Freunde"><br>
-      <sub><b>Freunde</b>: Freunde hinzufügen, chatten und sehen, was sie spielen</sub>
+      <img src="../screenshots/installed.webp" alt="Installiert"><br>
+      <sub><b>Installiert</b>: nur die Spiele, die auf deinem Computer sind</sub>
     </td>
   </tr>
   <tr>
@@ -113,23 +116,34 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 
 ## Installation
 
-**Voraussetzungen:** Windows 10 oder 11 (64 Bit) mit [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/), das bei aktuellen Windows-Versionen schon dabei ist.
+Alle Dateien gibt es unter [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest). In `SHA256SUMS.txt` steht zu jeder Datei eine Prüfsumme.
 
-1. Lade die neueste **`MAZ-Launcher.exe`** unter [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) herunter.
-2. **Doppelklick** auf die Datei.
-3. Im Installationsmenü auf **„Installieren“** klicken.
-4. Fertig! Klick auf **„Jetzt öffnen“**. Ab jetzt startest du den Launcher über die Desktop-Verknüpfung.
-
-> [!TIP]
-> **Windows zeigt „Der Computer wurde durch Windows geschützt“?**
-> Das passiert bei neuen Programmen ohne kostenpflichtiges Signatur-Zertifikat. Klick auf **„Weitere Informationen“** und dann auf **„Trotzdem ausführen“**.
+### Windows 10 / 11
+1. **`MAZ-Launcher.exe`** herunterladen (Windows auf ARM: **`MAZ-Launcher-arm64.exe`**).
+2. **Doppelklick** → **„Installieren“** → **„Jetzt öffnen“**.
 
 > [!TIP]
-> **Lieber ohne Installation?** Im Installationsmenü auf **„Ohne Installation starten“** klicken oder neben die EXE eine leere Datei namens `portable.txt` legen.
+> **„Der Computer wurde durch Windows geschützt“?** Das passiert bei neuen Programmen ohne bezahltes Zertifikat. Auf **„Weitere Informationen“** und dann **„Trotzdem ausführen“** klicken.
 
-**`MAZ-Launcher-mini.exe`** ist dieselbe App, mit UPX noch kleiner gepackt. Manche Virenscanner melden gepackte EXEs fälschlich; nimm dann die normale Version.
+### macOS 11 oder neuer (Apple Silicon + Intel)
+1. **`MAZ-Launcher-…-macOS.dmg`** herunterladen, öffnen und **MAZ Launcher** in **„Programme“** ziehen.
+2. Beim ersten Mal: **Rechtsklick** auf die App → **„Öffnen“** → **„Öffnen“**. macOS fragt einmal, weil die App nicht aus dem App Store kommt.
 
-**Deinstallieren:** Windows-Einstellungen → Apps → „MAZ Launcher“ → Deinstallieren, oder im Launcher unter **Einstellungen → Allgemein**. Deine Spiele bleiben dabei erhalten.
+### Linux (x86_64 und ARM64)
+
+| Distribution | Datei | Installieren |
+|---|---|---|
+| Alle | `MAZ-Launcher-…-x86_64.AppImage` / `-aarch64.AppImage` | `chmod +x MAZ-Launcher-*.AppImage` und starten |
+| Ubuntu, Debian, Mint, Pop!_OS | `maz-launcher_…_amd64.deb` / `_arm64.deb` | `sudo apt install ./maz-launcher_*.deb` |
+| Fedora, openSUSE, Nobara | `maz-launcher-…-1.x86_64.rpm` / `.aarch64.rpm` | `sudo dnf install ./maz-launcher-*.rpm` |
+| Arch, Manjaro, EndeavourOS, CachyOS | `maz-launcher-…-x86_64.pkg.tar.zst` | `sudo pacman -U maz-launcher-*.pkg.tar.zst` |
+| Alle (Sandbox) | `maz-launcher-…-x86_64.flatpak` | `flatpak install --user maz-launcher-*.flatpak` |
+| Ubuntu & Snap | `maz-launcher_…_amd64.snap` | `sudo snap install --dangerous --classic maz-launcher_*.snap` |
+
+Der Launcher nutzt **webkit2gtk-4.1** vom System (auf den meisten Desktops schon da). Epic-Spiele laufen über den [Heroic Games Launcher](https://heroicgameslauncher.com), Roblox über [Sober](https://flathub.org/apps/org.vinegarhq.Sober).
+
+### Updates
+Der MAZ Launcher schaut bei GitHub nach neuen Versionen (abschaltbar unter **Einstellungen → Allgemein**). **„Jetzt updaten“** lädt die passende Datei, prüft die Prüfsumme und installiert sie. Bei Linux-Paketen fragt er nach deinem Passwort und nutzt den Paketmanager. Neue Versionen erscheinen weiterhin auch auf GitHub.
 
 ## Benutzung
 
@@ -140,7 +154,7 @@ Steam, Epic Games und deine eigenen Spiele in einer schnellen, schlanken und sch
 - **Genauere Steam-Liste (optional):** **Einstellungen → Verbindungen** → kostenlosen Steam-Web-API-Schlüssel eintragen. Die Anleitung steht direkt daneben.
 - **Spiel deinstallieren:** Spiel öffnen → **Deinstallieren**.
 - **Spiel startet nicht?** Spiel öffnen → **Startet nicht? Hilfe**. Stürzt ein Spiel direkt nach dem Start ab, erscheint die Erklärung automatisch.
-- **Freunde & Chat:** Oben auf **Freunde** klicken und mit Google, GitHub oder E-Mail anmelden.
+- **Roblox:** **Einstellungen → Verbindungen → Roblox** → Link eines Roblox-Spiels einfügen (z. B. `https://www.roblox.com/games/920587237/…`).
 - **Sicherheitsfrage anpassen:** **Einstellungen → Eigene Spiele** → Punkte hinzufügen, ändern oder löschen. Pro Spiel kannst du zusätzliche Punkte festlegen.
 
 ### Diese Fehler erklärt der Launcher automatisch
@@ -171,11 +185,13 @@ Das fertige CSS (`assets/maz.css`) liegt schon im Repo und wird in die EXE einge
 
 | Teil | Womit |
 |---|---|
-| Oberfläche | [Dioxus 0.7](https://dioxuslabs.com) (Desktop, WebView2) |
+| Oberfläche | [Dioxus 0.7](https://dioxuslabs.com) (WebView2 / WKWebView / WebKitGTK) |
 | Komponenten | im Stil von [rust-ui](https://github.com/rust-ui/ui) (Button, Card, Badge, Input, Switch, Dialog … mit gleichen Varianten und Klassen) |
 | Styling | Tailwind CSS v4, Themes über CSS-Variablen |
 | Steam | Registry → `libraryfolders.vdf` → `appmanifest_*.acf` (eigener VDF-Parser), Bilder aus dem Steam-Cache, optional Steam-Web-API |
-| Epic Games | Registry → Launcher-Manifeste (`*.item`) |
+| Epic Games | Launcher-Manifeste (`*.item`), Katalog-Cache, optional Epic-Konto; Linux: Heroic |
+| Roblox | Roblox-Player bzw. Sober erkennen, offizielle `roblox://`-Links |
+| Updates | GitHub-Releases, SHA256-Prüfung, Austausch der Datei oder Paketmanager |
 | Icons | Original-Icons per Windows-API direkt aus der EXE (256 px) |
 | HTTP | `ureq` mit Windows-eigenem TLS (SChannel), keine große TLS-Bibliothek |
 
@@ -226,7 +242,7 @@ Epic gibt die Liste der gekauften Spiele nur nach einer Anmeldung heraus. Geh au
 Der Launcher braucht Microsoft WebView2 (bei Windows 10/11 normalerweise dabei). Fehlt es, erklärt der Launcher beim Start, wie man es installiert.
 
 **Werden meine Daten irgendwohin gesendet?**
-Keine Telemetrie. Ein Konto brauchst du nur für Freunde & Chat, und das ist komplett freiwillig – siehe [Datenschutzerklärung](../DATENSCHUTZ.md). Sonst wird Internet nur für Cover-Bilder, die Gratis-Spiele-Liste und – falls verbunden – Steam und Epic genutzt.
+Nein. Es gibt kein MAZ-Konto und keinen MAZ-Server. Internet wird nur für Cover-Bilder, die Gratis-Spiele-Liste, die Update-Prüfung und – falls verbunden – Steam und Epic genutzt. Siehe [Datenschutzerklärung](../DATENSCHUTZ.md).
 
 ## Mitmachen
 

@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAZ Launcher</title>
+<meta name="description" content="All your Steam, Epic, Roblox and own games in one launcher. Free, open source, runs locally. Windows, macOS and Linux.">
+<link rel="icon" href="img/favicon.png">
+<meta property="og:title" content="MAZ Launcher">
+<meta property="og:description" content="All your games. One launcher. Windows, macOS and Linux.">
+<meta property="og:image" content="img/library-maz.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14111f;
+    --ink-2: #1c1730;
+    --line: #2d2645;
+    --paper: #ece9f7;
+    --muted: #a29cc0;
+    --violet: #8b5cf6;
+    --cyan: #22d3ee;
+    --grad: linear-gradient(120deg, var(--violet), var(--cyan));
+    --display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+    --body: "Onest", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--paper);
+    font: 17px/1.6 var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  img { max-width: 100%; display: block; }
+  :focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; border-radius: 6px; }
+  .wrap { width: min(1180px, 100% - 32px); margin-inline: auto; }
+
+  /* Kopfzeile */
+  .top { display: flex; align-items: center; gap: 16px; padding: 18px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 17px var(--display); letter-spacing: -.01em; }
+  .brand img { width: 34px; height: 34px; border-radius: 9px; }
+  .top .spacer { flex: 1; }
+  .top a.gh { text-decoration: none; color: var(--muted); font-weight: 500; }
+  .top a.gh:hover { color: var(--paper); }
+  select {
+    background: var(--ink-2); color: var(--paper); border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 10px; font: 500 15px var(--body);
+  }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 56px; align-items: center; padding: 56px 0 72px; }
+  h1 {
+    font: 800 clamp(40px, 6.2vw, 78px)/1.02 var(--display);
+    letter-spacing: -.035em; margin: 0 0 22px;
+    text-wrap: balance;
+  }
+  .lead { font-size: 20px; color: var(--muted); max-width: 32em; margin: 0 0 30px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+    border-radius: 14px; padding: 15px 22px; font: 700 16px var(--body);
+    border: 1px solid var(--line); background: var(--ink-2); cursor: pointer;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--grad); color: #0d0a18; border: 0; box-shadow: 0 10px 40px -10px rgba(139, 92, 246, .7); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn svg { width: 20px; height: 20px; }
+  .meta { margin-top: 14px; color: var(--muted); font-size: 14px; }
+
+  /* Bildstapel: das Markenzeichen der Seite */
+  .stack { position: relative; aspect-ratio: 16 / 11; }
+  .stack img {
+    position: absolute; border-radius: 16px; border: 1px solid var(--line);
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .8);
+  }
+  .stack .back { width: 74%; right: 0; top: 0; transform: rotate(4deg); opacity: .55; }
+  .stack .mid { width: 74%; right: 8%; top: 7%; transform: rotate(-2deg); opacity: .8; }
+  .stack .front { width: 86%; left: 0; bottom: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .stack img { animation: deal .9s cubic-bezier(.2, .8, .2, 1) both; }
+    .stack .mid { animation-delay: .12s; }
+    .stack .front { animation-delay: .24s; }
+    @keyframes deal { from { opacity: 0; translate: 40px 30px; } }
+  }
+
+  /* Plattformen */
+  .stores { display: flex; flex-wrap: wrap; gap: 10px 28px; padding: 26px 0; border-block: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+  .stores strong { color: var(--paper); font-weight: 700; }
+
+  section { padding: 88px 0 0; }
+  h2 { font: 700 clamp(28px, 3.6vw, 42px)/1.1 var(--display); letter-spacing: -.025em; margin: 0 0 14px; }
+  .sub { color: var(--muted); max-width: 42em; margin: 0 0 40px; font-size: 18px; }
+
+  /* Funktionen */
+  .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px 56px; }
+  .feature { display: grid; grid-template-columns: 44px 1fr; gap: 16px; }
+  .feature .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--ink-2); border: 1px solid var(--line); display: grid; place-items: center; color: var(--cyan); }
+  .feature .ic svg { width: 22px; height: 22px; }
+  .feature h3 { margin: 2px 0 6px; font: 700 18px var(--body); }
+  .feature p { margin: 0; color: var(--muted); }
+
+  /* Galerie */
+  .gallery { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 0 20px; }
+  .gallery figure { margin: 0; flex: 0 0 min(560px, 85%); scroll-snap-align: start; }
+  .gallery img { border-radius: 14px; border: 1px solid var(--line); }
+  .gallery figcaption { margin-top: 10px; color: var(--muted); font-size: 15px; }
+
+  /* Downloads */
+  .os-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .os-tabs button {
+    font: 700 15px var(--body); color: var(--muted); background: transparent;
+    border: 1px solid var(--line); border-radius: 999px; padding: 10px 18px; cursor: pointer;
+  }
+  .os-tabs button[aria-selected="true"] { color: var(--ink); background: var(--paper); border-color: var(--paper); }
+  .panel { border: 1px solid var(--line); border-radius: 20px; background: var(--ink-2); padding: 28px; }
+  .panel[hidden] { display: none; }
+  .dl-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .dl-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--ink); border: 1px solid var(--line); }
+  .dl-list .name { font-weight: 700; }
+  .dl-list .hint { color: var(--muted); font-size: 14px; }
+  .dl-list a { text-decoration: none; font-weight: 700; color: var(--cyan); white-space: nowrap; }
+  .dl-list a:hover { text-decoration: underline; }
+  .arch { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; color: var(--muted); font-size: 15px; }
+  .arch label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .note { margin: 18px 0 0; color: var(--muted); font-size: 15px; }
+  code { font-family: ui-monospace, Consolas, monospace; background: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: .92em; }
+
+  /* Lokal */
+  .local { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+  .local ul { margin: 0; padding-left: 20px; color: var(--muted); }
+  .local li { margin-bottom: 8px; }
+
+  footer { margin-top: 110px; padding: 34px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 10px 28px; }
+
+  @media (max-width: 900px) {
+    .hero, .local { grid-template-columns: 1fr; }
+    .hero { padding-top: 28px; gap: 40px; }
+    .features { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 520px) {
+    body { font-size: 16px; }
+    .lead { font-size: 18px; }
+    .panel { padding: 18px; }
+    .top a.gh { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#"><img src="img/icon.png" alt="">MAZ Launcher</a>
+    <span class="spacer"></span>
+    <a class="gh" href="https://github.com/MikeAdamRGB/MAZ-Lauchner">GitHub</a>
+    <label class="sr" for="lang" style="position:absolute;left:-9999px" data-i18n="lang_label">Language</label>
+    <select id="lang" aria-label="Language">
+      <option value="de">Deutsch</option>
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="it">Italiano</option>
+      <option value="pt">Português</option>
+      <option value="pl">Polski</option>
+      <option value="tr">Türkçe</option>
+      <option value="ru">Русский</option>
+    </select>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <h1 data-i18n="hero_title">All your games. One launcher.</h1>
+        <p class="lead" data-i18n="hero_lead">Steam, Epic Games, Roblox and your own games in one fast, good-looking library. Free, open source and completely local – no account needed.</p>
+        <div class="cta">
+          <a class="btn primary" id="main-dl" href="#download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            <span id="main-dl-text" data-i18n="dl_generic">Download</span>
+          </a>
+          <a class="btn" href="#download" data-i18n="all_downloads">All downloads</a>
+        </div>
+        <p class="meta" id="version-line"></p>
+      </div>
+      <div class="stack" aria-hidden="true">
+        <img class="back" src="img/library-epic-style.webp" alt="">
+        <img class="mid" src="img/free-games.webp" alt="">
+        <img class="front" src="img/library-maz.webp" alt="">
+      </div>
+    </div>
+
+    <div class="stores">
+      <span><strong>Steam</strong></span>
+      <span><strong>Epic Games</strong></span>
+      <span><strong>Roblox</strong></span>
+      <span><strong data-i18n="own_games">Your own games</strong></span>
+      <span data-i18n="platforms_line">Windows, macOS and Linux · x86_64 and ARM64</span>
+    </div>
+
+    <section id="features">
+      <h2 data-i18n="features_title">Everything in one place</h2>
+      <p class="sub" data-i18n="features_sub">MAZ Launcher finds your games by itself. Starting, installing and uninstalling always happens through the official clients.</p>
+      <div class="features">
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg></div>
+          <div><h3 data-i18n="f1_t">Every game, installed or not</h3><p data-i18n="f1_d">Your whole Steam and Epic library – install a game with one click, uninstall it just as easily.</p></div></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg></div>
+          <div><h3 data-i18n="f2_t">Roblox with your favorites</h3><p data-i18n="f2_d">Paste a game link from roblox.com and it becomes its own tile that starts straight into the game.</p></div></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg></div>
+          <div><h3 data-i18n="f3_t">Free games with a countdown</h3><p data-i18n="f3_d">See what's free on Epic and Steam right now and how long the offer lasts. One click on "Get" and it's yours.</p></div></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+          <div><h3 data-i18n="f4_t">Errors explained in plain words</h3><p data-i18n="f4_d">If a game won't start or crashes, the launcher explains step by step what happened – with buttons that fix it.</p></div></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1a1.6 1.6 0 0 1 1.6-1.7h2c3 0 5.6-2.5 5.6-5.6C22 6 17.5 2 12 2z"/></svg></div>
+          <div><h3 data-i18n="f5_t">Your look</h3><p data-i18n="f5_d">Three layouts (MAZ, Steam, Epic), 16 designs, your own designs with a live editor and a background image.</p></div></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></div>
+          <div><h3 data-i18n="f6_t">Updates inside the app</h3><p data-i18n="f6_d">You get a message when a new version is out and update with one click – every download is checked first.</p></div></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          <div><h3 data-i18n="f7_t">9 languages</h3><p data-i18n="f7_d">German, English, Spanish, French, Italian, Portuguese, Polish, Turkish and Russian.</p></div></div>
+        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg></div>
+          <div><h3 data-i18n="f8_t">Your own games too</h3><p data-i18n="f8_d">Add any game or emulator. Before every start a short checklist asks if everything important is closed.</p></div></div>
+      </div>
+    </section>
+
+    <section id="screens">
+      <h2 data-i18n="screens_title">Take a look</h2>
+      <div class="gallery" tabindex="0">
+        <figure><img loading="lazy" src="img/library-maz.webp" alt=""><figcaption data-i18n="s1">MAZ style with "Continue playing"</figcaption></figure>
+        <figure><img loading="lazy" src="img/library-steam-style.webp" alt=""><figcaption data-i18n="s2">Steam style</figcaption></figure>
+        <figure><img loading="lazy" src="img/library-epic-style.webp" alt=""><figcaption data-i18n="s3">Epic Games style</figcaption></figure>
+        <figure><img loading="lazy" src="img/game-details.webp" alt=""><figcaption data-i18n="s4">Game details: install, help, uninstall</figcaption></figure>
+        <figure><img loading="lazy" src="img/free-games.webp" alt=""><figcaption data-i18n="s5">Free games with a countdown</figcaption></figure>
+        <figure><img loading="lazy" src="img/settings-design.webp" alt=""><figcaption data-i18n="s6">16 designs and your own</figcaption></figure>
+        <figure><img loading="lazy" src="img/installed.webp" alt=""><figcaption data-i18n="s7">Only installed games</figcaption></figure>
+        <figure><img loading="lazy" src="img/settings-language.webp" alt=""><figcaption data-i18n="s8">9 languages</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="download">
+      <h2 data-i18n="dl_title">Download</h2>
+      <p class="sub" data-i18n="dl_sub">Pick your system. Every file is listed with a checksum in SHA256SUMS.txt.</p>
+      <div class="os-tabs" role="tablist">
+        <button role="tab" id="tab-windows" aria-controls="p-windows" aria-selected="true">Windows</button>
+        <button role="tab" id="tab-macos" aria-controls="p-macos" aria-selected="false">macOS</button>
+        <button role="tab" id="tab-linux" aria-controls="p-linux" aria-selected="false">Linux</button>
+      </div>
+
+      <div class="panel" id="p-windows" role="tabpanel" aria-labelledby="tab-windows">
+        <ul class="dl-list">
+          <li><span><span class="name">MAZ-Launcher.exe</span><br><span class="hint" data-i18n="win_x64">Windows 10/11, 64-bit (most PCs)</span></span><a data-asset="win-x64" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">MAZ-Launcher-arm64.exe</span><br><span class="hint" data-i18n="win_arm">Windows on ARM (e.g. Snapdragon laptops)</span></span><a data-asset="win-arm64" href="#" data-i18n="get">Download</a></li>
+        </ul>
+        <p class="note" data-i18n="win_note">Double-click the file and choose "Install". If Windows shows "Windows protected your PC": click "More info", then "Run anyway".</p>
+      </div>
+
+      <div class="panel" id="p-macos" role="tabpanel" aria-labelledby="tab-macos" hidden>
+        <ul class="dl-list">
+          <li><span><span class="name">MAZ Launcher (.dmg)</span><br><span class="hint" data-i18n="mac_universal">Apple Silicon and Intel, macOS 11 or newer</span></span><a data-asset="mac-dmg" href="#" data-i18n="get">Download</a></li>
+        </ul>
+        <p class="note" data-i18n="mac_note">Open the .dmg and drag MAZ Launcher into "Applications". The first time, right-click the app and choose "Open" – macOS asks once because the app isn't from the App Store.</p>
+      </div>
+
+      <div class="panel" id="p-linux" role="tabpanel" aria-labelledby="tab-linux" hidden>
+        <div class="arch" role="radiogroup" aria-label="Architecture">
+          <label><input type="radio" name="arch" value="x86_64" checked> x86_64</label>
+          <label><input type="radio" name="arch" value="aarch64"> ARM64</label>
+        </div>
+        <ul class="dl-list">
+          <li><span><span class="name">AppImage</span><br><span class="hint" data-i18n="lx_appimage">Any distribution – make it executable and start</span></span><a data-asset="appimage" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">.deb</span><br><span class="hint">Ubuntu, Debian, Linux Mint, Pop!_OS</span></span><a data-asset="deb" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">.rpm</span><br><span class="hint">Fedora, openSUSE, Nobara</span></span><a data-asset="rpm" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">.pkg.tar.zst</span><br><span class="hint">Arch, Manjaro, EndeavourOS, CachyOS (Pacman)</span></span><a data-asset="pacman" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">Flatpak</span><br><span class="hint" data-i18n="lx_flatpak">Sandboxed, any distribution</span></span><a data-asset="flatpak" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">Snap</span><br><span class="hint">Ubuntu &amp; Snap</span></span><a data-asset="snap" href="#" data-i18n="get">Download</a></li>
+        </ul>
+        <p class="note" data-i18n="lx_note">Needs webkit2gtk-4.1 (already installed on most desktops). Epic games run through the Heroic Games Launcher, Roblox through Sober.</p>
+      </div>
+    </section>
+
+    <section id="local">
+      <div class="local">
+        <div>
+          <h2 data-i18n="local_title">Runs on your computer. Only there.</h2>
+          <p class="sub" style="margin-bottom:0" data-i18n="local_sub">No MAZ account, no tracking, no ads. Your library and settings stay on your computer.</p>
+        </div>
+        <ul>
+          <li data-i18n="local_1">Passwords stay with Steam, Epic and Roblox – the launcher never asks for them.</li>
+          <li data-i18n="local_2">Internet is only used for cover art, the free-games list and the update check.</li>
+          <li data-i18n="local_3">Open source under the MIT license – anyone can read the code.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© MikeAdamRGB · MIT</span>
+    <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner">GitHub</a>
+    <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner/issues" data-i18n="report">Report a problem</a>
+    <span data-i18n="trademarks">Steam, Epic Games and Roblox are trademarks of their owners. MAZ Launcher is not affiliated with them.</span>
+  </footer>
+</div>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
