@@ -135,7 +135,9 @@ RUN
 }
 
 build_flatpak() {
-  local d="$WORK/flatpak"
+  # Im Projektordner arbeiten: der Flatpak-Builder (selbst ein Flatpak) sieht /tmp nicht
+  local d="$ROOT/.flatpak-work"
+  rm -rf "$d"
   mkdir -p "$d/flatpak-src"
   cp "$BIN" "$d/flatpak-src/maz-launcher"
   cp "$ROOT/packaging/linux/$ID.desktop" "$ROOT/packaging/linux/$ID.metainfo.xml" "$d/flatpak-src/"
