@@ -216,7 +216,7 @@ fn FriendList() -> Element {
     let outgoing: Vec<Friend> = friends.iter().filter(|f| !f.accepted() && !f.incoming).cloned().collect();
     let accepted: Vec<Friend> = friends.iter().filter(|f| f.accepted()).cloned().collect();
     let online = accepted.iter().filter(|f| f.online).count();
-    let do_search = move || {
+    let mut do_search = move || {
         let q = query.peek().trim().to_string();
         if q.len() < 2 {
             results.set(Vec::new());
@@ -403,7 +403,7 @@ fn ChatPanel() -> Element {
         return rsx! { div { class: "flex-1" } };
     };
     let msgs = app.messages.read().clone();
-    let send = move || {
+    let mut send = move || {
         let body = draft.peek().clone();
         if !body.trim().is_empty() {
             net::send_message(app, body);

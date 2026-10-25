@@ -361,9 +361,11 @@ pub fn open_chat(app: App, friend_id: String) {
         let fid = friend_id.clone();
         let _ = call(app, move |b, s| b.mark_read(s, &fid)).await;
         let mut fr = app.friends;
-        if let Some(f) = fr.write().iter_mut().find(|f| f.id == friend_id) {
+        let mut list = fr.write();
+        if let Some(f) = list.iter_mut().find(|f| f.id == friend_id) {
             f.unread = 0;
         }
+        drop(list);
     });
 }
 
