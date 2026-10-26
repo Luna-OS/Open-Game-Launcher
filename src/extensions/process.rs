@@ -127,7 +127,19 @@ impl ExtProcess {
                 });
             }
         }
-        let mut child = cmd.spawn().map_err(|e| CallError::Spawn(e.to_string()))?;
+        // „Text file busy“ (ETXTBSY, Linux): Die Datei wurde gerade erst geschrieben und ein anderer
+        // Prozess hält sie noch kurz offen – dann kurz warten und erneut versuchen.
+        let mut tries = 0;
+        let mut child = loop {
+            match cmd.spawn() {
+                Ok(c) => break c,
+                Err(e) if e.raw_os_error() == Some(26) && tries < 10 => {
+                    tries += 1;
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                }
+                Err(e) => return Err(CallError::Spawn(e.to_string())),
+            }
+        };
         #[cfg(windows)]
         let job = crate::winffi::Job::kill_on_close().and_then(|j| j.assign(&child).then_some(j));
         let stdout = child.stdout.take().ok_or(CallError::Crashed)?;
