@@ -25,7 +25,7 @@ Nur für diese Dinge – und immer direkt zum jeweiligen Anbieter, nie über ein
 | Cover-Bilder | Steam-Store / Steam-CDN, Epic-CDN, Roblox-Bilder | nur die Bild-Adresse |
 | Spiel-Infos (abschaltbar mit „Bilder aus dem Internet“) | Steam-Store, Wikipedia, Wikidata | nur der Spielname bzw. die Steam-Nummer |
 | Bilder aus GOG/Amazon/itch.io-Bibliotheken | Bild-Server der Stores | nur die Bild-Adresse |
-| Minecraft-Inhalte (nur bei Suche/Installation) | Modrinth, CurseForge (mit deinem eigenen Schlüssel), Fabric-Meta (fabricmc.net) | Suchbegriff, Minecraft-Version, Loader; bei CurseForge dein Schlüssel |
+| Minecraft-Inhalte (nur bei Suche/Installation) | Modrinth, CurseForge (mit deinem eigenen Schlüssel), Fabric-Meta (fabricmc.net) | Suchbegriff, Minecraft-Version, Loader; bei CurseForge dein Schlüssel. Für die Anzeige „Installiert“: Prüfsummen der Dateien im gewählten Mod-/Texturen-Ordner (keine Dateien, keine Namen) |
 | Gratis-Spiele-Liste | Epic Games Store, Steam-Store, GamerPower | nichts Persönliches |
 | Roblox-Spiel hinzufügen | öffentliche Roblox-Schnittstellen (Name, Bild) | nur die Spiel-Nummer |
 | Update-Prüfung (abschaltbar) | GitHub | nichts Persönliches |

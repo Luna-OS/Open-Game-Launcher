@@ -24,12 +24,15 @@ Alles andere (kleine Fehler, Texte, Optik) kommt ins nächste Feature-Update.
 
 ## Test-Versionen
 
-- Neue Versionen erscheinen zuerst als **Test-Version** (auf GitHub „Pre-release“, im
-  Changelog mit „(Test)“ hinter dem Datum).
-- Sie werden nur angeboten, wer in den Einstellungen unter **Updates** „Test-Versionen erhalten“
-  eingeschaltet hat. Alle anderen bekommen erst die fertige Version.
-- Hat die fertige Version dieselbe Nummer wie die Test-Version, wird sie Test-Nutzern nicht
-  noch einmal angeboten – der Inhalt ist gleich.
+- Normalerweise gibt es **keine** Test-Versionen: Jede Version wird direkt als fertige Version
+  veröffentlicht und ist auf GitHub als „Latest“ markiert.
+- Nur wenn eine große, riskante Änderung erst ausprobiert werden muss, erscheint sie vorher als
+  **Test-Version** (auf GitHub „Pre-release“, im Changelog mit „(Test)“ hinter dem Datum).
+  Angeboten wird sie nur, wer in den Einstellungen unter **Updates** „Test-Versionen erhalten“
+  eingeschaltet hat.
+- Die nächste fertige Version enthält im Release-Text automatisch auch alles aus den
+  Test-Versionen davor.
+- Die Webseite zeigt immer die neueste Version zum Download – auch eine Test-Version.
 
 ## Für Entwickler
 

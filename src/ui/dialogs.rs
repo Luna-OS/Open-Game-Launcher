@@ -61,7 +61,7 @@ pub fn ModalHost() -> Element {
         Some(Modal::Info(title, text)) => rsx! {
             Dialog { on_close: move |_| app.close_modal(), class: "max-w-md",
                 div { class: "p-8 text-center",
-                    div { class: "mx-auto size-14 rounded-2xl maz-gradient-bg grid place-items-center text-white mb-5",
+                    div { class: "mx-auto size-14 rounded-2xl maz-gradient-bg grid place-items-center text-glow-fg mb-5",
                         Icon { name: "mail", class: "size-7" }
                     }
                     h2 { class: "text-xl font-bold", "{title}" }
@@ -100,7 +100,7 @@ fn UpdateDialog() -> Element {
         Dialog { on_close: move |_| if !busy { app.close_modal() }, class: "max-w-xl",
             div { class: "p-8",
                 div { class: "flex items-center gap-4",
-                    div { class: "size-14 shrink-0 rounded-2xl maz-gradient-bg grid place-items-center text-white",
+                    div { class: "size-14 shrink-0 rounded-2xl maz-gradient-bg grid place-items-center text-glow-fg",
                         Icon { name: "download", class: "size-7" }
                     }
                     div {
@@ -244,7 +244,7 @@ fn ConfirmDialog(id: String) -> Element {
     rsx! {
         Dialog { on_close: move |_| app.close_modal(), close_on_backdrop: false, class: "max-w-lg",
             div { class: "p-8 text-center",
-                div { class: "mx-auto size-16 rounded-2xl maz-gradient-bg grid place-items-center text-white shadow-xl mb-5",
+                div { class: "mx-auto size-16 rounded-2xl maz-gradient-bg grid place-items-center text-glow-fg shadow-xl mb-5",
                     Icon { name: "shield", class: "size-8" }
                 }
                 h2 { class: "text-2xl font-bold font-display", {t("confirm.title")} }
@@ -368,7 +368,7 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
                         let n = i + 1;
                         rsx! {
                             li { key: "{i}", class: "flex gap-4 items-start",
-                                span { class: "size-8 shrink-0 rounded-full maz-gradient-bg text-white font-bold grid place-items-center text-sm shadow", "{n}" }
+                                span { class: "size-8 shrink-0 rounded-full maz-gradient-bg text-glow-fg font-bold grid place-items-center text-sm shadow", "{n}" }
                                 p { class: "pt-1 text-[15px] leading-relaxed select-text", "{st}" }
                             }
                         }
@@ -528,7 +528,7 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
         Dialog { on_close: move |_| app.close_modal(), close_on_backdrop: false, class: "max-w-2xl",
             div { class: "p-8",
                 div { class: "flex items-center gap-3 mb-1",
-                    div { class: "size-10 rounded-xl maz-gradient-bg grid place-items-center text-white",
+                    div { class: "size-10 rounded-xl maz-gradient-bg grid place-items-center text-glow-fg",
                         Icon { name: head_icon, class: "size-5" }
                     }
                     h2 { class: "text-2xl font-bold font-display", "{title}" }

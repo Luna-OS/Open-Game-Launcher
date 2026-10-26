@@ -44,7 +44,7 @@ impl ButtonVariant {
             Self::Secondary => "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
             Self::Ghost => "hover:bg-accent hover:text-accent-foreground",
             Self::Link => "text-primary underline-offset-4 hover:underline",
-            Self::Glow => "maz-gradient-bg text-white shadow-lg shadow-black/30 hover:brightness-110",
+            Self::Glow => "maz-gradient-bg text-glow-fg shadow-lg shadow-black/30 hover:brightness-110",
         }
     }
 }

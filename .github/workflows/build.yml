@@ -324,9 +324,17 @@ jobs:
           VERSION: ${{ needs.windows.outputs.version }}
         run: |
           # Abschnitt "## [VERSION]" bis zum nächsten "## [" herausschneiden
+          # Dazu alle direkt darunter liegenden Test-Versionen – so steht bei einer fertigen Version
+          # alles drin, was seit der letzten fertigen Version neu ist.
           awk -v v="$VERSION" '
-            /^## \[/ { inside = index($0, "## [" v "]") == 1; if (inside) { print "## Open Game Launcher " v; next } }
-            inside { print }
+            /^## \[/ {
+              if (state == 0 && index($0, "## [" v "]") == 1) { state = 1; print "## Open Game Launcher " v; next }
+              if (state == 1) {
+                if ($0 ~ /\(Test\)/) { h = $0; sub(/^## \[/, "", h); sub(/\].*/, "", h); print "---\n## Ebenfalls enthalten: " h; next }
+                state = 2
+              }
+            }
+            state == 1 { print }
           ' CHANGELOG.md > RELEASE_BODY.md
           if [ ! -s RELEASE_BODY.md ]; then
             echo "::error::CHANGELOG.md hat keinen Abschnitt für $VERSION"

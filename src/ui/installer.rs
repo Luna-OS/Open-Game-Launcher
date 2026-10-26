@@ -54,13 +54,13 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
     rsx! {
         div { class: "h-full flex",
             // Linke Seite: Logo + Vorteile
-            div { class: "w-[340px] shrink-0 relative overflow-hidden maz-gradient-bg text-white p-9 flex flex-col",
+            div { class: "w-[340px] shrink-0 relative overflow-hidden maz-gradient-bg text-glow-fg p-9 flex flex-col",
                 div { class: "absolute -right-24 -top-24 size-72 rounded-full bg-white/10 blur-2xl" }
                 div { class: "absolute -left-16 bottom-0 size-60 rounded-full bg-black/20 blur-2xl" }
                 div { class: "relative",
                     MazLogo { class: "size-16 text-lg bg-white/15 ring-1 ring-white/30" }
                     h1 { class: "text-3xl font-black mt-6 leading-tight font-display", {sys::APP_NAME} }
-                    p { class: "text-white/80 mt-2 text-sm leading-relaxed", {t("inst.tagline")} }
+                    p { class: "text-glow-fg/85 mt-2 text-sm leading-relaxed", {t("inst.tagline")} }
                 }
                 div { class: "relative mt-10 space-y-4 text-sm",
                     Perk { icon: "gamepad", text: t("inst.perk1") }
@@ -70,7 +70,7 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                     Perk { icon: "globe", text: t("inst.perk5") }
                 }
                 div { class: "flex-1" }
-                div { class: "relative text-xs text-white/80", "{version} · 100 % Rust" }
+                div { class: "relative text-xs text-glow-fg/85", "{version} · 100 % Rust" }
             }
             // Rechte Seite
             div { class: "flex-1 min-w-0 p-10 flex flex-col overflow-y-auto",
@@ -216,7 +216,7 @@ fn Perk(icon: &'static str, #[props(into)] text: String) -> Element {
             div { class: "size-8 rounded-lg bg-white/15 grid place-items-center",
                 Icon { name: icon, class: "size-4" }
             }
-            span { class: "text-white/90", "{text}" }
+            span { class: "text-glow-fg", "{text}" }
         }
     }
 }

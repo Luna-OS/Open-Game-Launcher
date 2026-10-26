@@ -23,7 +23,7 @@ pub fn FreePage() -> Element {
         div { class: "h-full overflow-y-auto maz-ambient",
             div { class: "max-w-[1600px] mx-auto px-8 py-7",
                 div { class: "flex items-center gap-4 mb-2",
-                    div { class: "size-12 rounded-2xl maz-gradient-bg text-white grid place-items-center shadow-lg",
+                    div { class: "size-12 rounded-2xl maz-gradient-bg text-glow-fg grid place-items-center shadow-lg",
                         Icon { name: "gift", class: "size-6" }
                     }
                     div { class: "mr-auto",

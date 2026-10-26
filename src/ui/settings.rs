@@ -944,7 +944,7 @@ fn EpicStep(n: u8, state: u8, #[props(into)] title: String, children: Element) -
     // state: 0 = noch nicht, 1 = jetzt, 2 = erledigt
     let (dot, txt) = match state {
         2 => ("bg-success text-white", "text-muted-foreground"),
-        1 => ("maz-gradient-bg text-white ring-4 ring-primary/20", "text-foreground"),
+        1 => ("maz-gradient-bg text-glow-fg ring-4 ring-primary/20", "text-foreground"),
         _ => ("bg-muted text-muted-foreground", "text-muted-foreground"),
     };
     rsx! {

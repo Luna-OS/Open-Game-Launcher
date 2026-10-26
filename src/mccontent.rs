@@ -179,6 +179,20 @@ fn get_json(url: &str, cf_key: Option<&str>) -> Result<serde_json::Value, String
     serde_json::from_str(&text).map_err(|e| e.to_string())
 }
 
+fn post_json(url: &str, body: &serde_json::Value, cf_key: Option<&str>) -> Result<serde_json::Value, String> {
+    let mut req = agent().post(url).header("Accept", "application/json").header("Content-Type", "application/json");
+    if let Some(k) = cf_key {
+        req = req.header("x-api-key", k);
+    }
+    let mut resp = req.send(body.to_string()).map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
+    let status = resp.status().as_u16();
+    let text = resp.body_mut().with_config().limit(8 * 1024 * 1024).read_to_string().map_err(|e| e.to_string())?;
+    if status >= 400 {
+        return Err(format!("HTTP {status}"));
+    }
+    serde_json::from_str(&text).map_err(|e| e.to_string())
+}
+
 fn s(v: &serde_json::Value, k: &str) -> String {
     v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string()
 }
@@ -544,6 +558,132 @@ fn write_into(dir: &Path, name: &str, data: &[u8]) -> Result<PathBuf, String> {
 pub struct Installed {
     pub files: Vec<String>,
     pub skipped_deps: Vec<String>,
+    /// (Projekt-Schlüssel, Datei) – für die Anzeige „Installiert“
+    pub records: Vec<(String, String)>,
+}
+
+// ----------------------------------------------------------------------
+// Was ist schon installiert?
+// ----------------------------------------------------------------------
+
+/// Eindeutiger Schlüssel eines Projekts, z. B. "modrinth:AANobbMI" oder "curseforge:394468"
+pub fn project_key(provider: Provider, id: &str) -> String {
+    match provider {
+        Provider::Modrinth => format!("modrinth:{id}"),
+        Provider::CurseForge => format!("curseforge:{id}"),
+    }
+}
+
+fn records_path() -> PathBuf {
+    crate::sys::roaming_dir().join("minecraft-installed.json")
+}
+
+type Records = std::collections::BTreeMap<String, std::collections::BTreeMap<String, Vec<String>>>;
+
+fn load_records() -> Records {
+    std::fs::read_to_string(records_path()).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+}
+
+/// Über den Launcher installierte Dateien merken (pro Zielordner)
+pub fn remember(dest: &Path, records: &[(String, String)]) {
+    let mut all = load_records();
+    let entry = all.entry(dest.to_string_lossy().to_string()).or_default();
+    for (key, file) in records {
+        let files = entry.entry(key.clone()).or_default();
+        if !files.contains(file) {
+            files.push(file.clone());
+        }
+    }
+    if let Ok(text) = serde_json::to_string(&all) {
+        let _ = crate::sys::write_private(&records_path(), text.as_bytes());
+    }
+}
+
+/// CurseForge-Fingerabdruck: MurmurHash2 (Seed 1) über die Datei ohne Leerraum-Bytes
+pub fn cf_fingerprint(data: &[u8]) -> u32 {
+    let bytes: Vec<u8> = data.iter().copied().filter(|b| !matches!(b, 9 | 10 | 13 | 32)).collect();
+    const M: u32 = 0x5bd1_e995;
+    let len = bytes.len() as u32;
+    let mut h: u32 = 1 ^ len;
+    let mut chunks = bytes.chunks_exact(4);
+    for c in &mut chunks {
+        let mut k = u32::from_le_bytes([c[0], c[1], c[2], c[3]]);
+        k = k.wrapping_mul(M);
+        k ^= k >> 24;
+        k = k.wrapping_mul(M);
+        h = h.wrapping_mul(M) ^ k;
+    }
+    let rest = chunks.remainder();
+    if !rest.is_empty() {
+        for (i, b) in rest.iter().enumerate() {
+            h ^= (*b as u32) << (8 * i);
+        }
+        h = h.wrapping_mul(M);
+    }
+    h ^= h >> 13;
+    h = h.wrapping_mul(M);
+    h ^= h >> 15;
+    h
+}
+
+/// Projekte, die im Zielordner schon liegen. Erkennt auch Dateien, die nicht über den Launcher
+/// kamen: Modrinth über SHA-1, CurseForge (mit Schlüssel) über den Fingerabdruck.
+pub fn installed_projects(game_dir: &Path, kind: Kind, world: &str, cf_key: &str) -> std::collections::BTreeSet<String> {
+    let mut out = std::collections::BTreeSet::new();
+    let Some(dir) = dest_dir(game_dir, kind, world) else { return out };
+    let files: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_file() && p.extension().map(|x| x == "jar" || x == "zip").unwrap_or(false))
+        .take(400)
+        .collect();
+    let names: std::collections::BTreeSet<String> = files.iter().filter_map(|p| p.file_name().map(|n| n.to_string_lossy().to_string())).collect();
+    // 1. Eigene Liste (über den Launcher installiert und Datei noch da)
+    if let Some(entry) = load_records().get(&dir.to_string_lossy().to_string()) {
+        for (key, fs) in entry {
+            if fs.iter().any(|f| names.contains(f)) {
+                out.insert(key.clone());
+            }
+        }
+    }
+    if files.is_empty() {
+        return out;
+    }
+    // 2. Prüfsummen der Dateien (große Dateien überspringen)
+    let mut sha1s = Vec::new();
+    let mut fps = Vec::new();
+    for p in &files {
+        if std::fs::metadata(p).map(|m| m.len() > MAX_FILE).unwrap_or(true) {
+            continue;
+        }
+        let Ok(data) = std::fs::read(p) else { continue };
+        sha1s.push(crate::util::hex(&crate::util::sha1(&data)));
+        if !cf_key.trim().is_empty() {
+            fps.push(cf_fingerprint(&data));
+        }
+    }
+    if let Ok(v) = post_json(&format!("{MODRINTH}/version_files"), &serde_json::json!({ "hashes": sha1s, "algorithm": "sha1" }), None) {
+        if let Some(map) = v.as_object() {
+            for ver in map.values() {
+                let id = s(ver, "project_id");
+                if !id.is_empty() {
+                    out.insert(project_key(Provider::Modrinth, &id));
+                }
+            }
+        }
+    }
+    if !fps.is_empty() {
+        if let Ok(v) = post_json(&format!("{CURSEFORGE}/fingerprints/{MC_GAME_ID}"), &serde_json::json!({ "fingerprints": fps }), Some(cf_key.trim())) {
+            for m in v.pointer("/data/exactMatches").and_then(|x| x.as_array()).into_iter().flatten() {
+                if let Some(id) = m.get("id").and_then(|x| x.as_u64()) {
+                    out.insert(project_key(Provider::CurseForge, &id.to_string()));
+                }
+            }
+        }
+    }
+    out
 }
 
 pub struct InstallRequest<'a> {
@@ -604,12 +744,18 @@ pub fn install(r: &InstallRequest) -> Result<Installed, String> {
             };
             write_into(&target, &name, &data)?;
         }
+        if kind == r.kind {
+            done.records.push((project_key(r.provider, &project), name.clone()));
+        } else {
+            remember(&target, &[(project_key(r.provider, &project), name.clone())]);
+        }
         done.files.push(name);
         // Abhängigkeiten sind immer Mods
         for d in f.deps {
             queue.push((d, Kind::Mod));
         }
     }
+    remember(&dir, &done.records);
     Ok(done)
 }
 
@@ -710,6 +856,16 @@ pub fn clean_cf_key(raw: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn curseforge_fingerprint() {
+        // Leerraum zählt nicht mit
+        assert_eq!(cf_fingerprint(b"a b\r\nc\td"), cf_fingerprint(b"abcd"));
+        assert_ne!(cf_fingerprint(b"abcd"), cf_fingerprint(b"abce"));
+        // Reste (nicht durch 4 teilbar) werden berücksichtigt
+        assert_ne!(cf_fingerprint(b"abcde"), cf_fingerprint(b"abcdf"));
+        assert_eq!(project_key(Provider::CurseForge, "1"), "curseforge:1");
+    }
 
     #[test]
     fn cf_key_cleaning() {

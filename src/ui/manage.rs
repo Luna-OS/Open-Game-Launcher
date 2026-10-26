@@ -133,7 +133,7 @@ pub fn EditMetaDialog(id: String) -> Element {
         Dialog { on_close: move |_| app.close_modal(), close_on_backdrop: false, class: "max-w-2xl",
             div { class: "p-8",
                 div { class: "flex items-center gap-3 mb-1",
-                    div { class: "size-10 rounded-xl maz-gradient-bg grid place-items-center text-white",
+                    div { class: "size-10 rounded-xl maz-gradient-bg grid place-items-center text-glow-fg",
                         Icon { name: "pencil", class: "size-5" }
                     }
                     h2 { class: "text-2xl font-bold font-display", {t("meta.title")} }
@@ -263,7 +263,7 @@ pub fn FolderScanDialog() -> Element {
         Dialog { on_close: move |_| app.close_modal(), class: "max-w-2xl",
             div { class: "p-8",
                 div { class: "flex items-center gap-3 mb-1",
-                    div { class: "size-10 rounded-xl maz-gradient-bg grid place-items-center text-white",
+                    div { class: "size-10 rounded-xl maz-gradient-bg grid place-items-center text-glow-fg",
                         Icon { name: "folder-search", class: "size-5" }
                     }
                     h2 { class: "text-2xl font-bold font-display", {t("scan.title")} }

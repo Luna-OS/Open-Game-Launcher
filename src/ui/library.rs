@@ -447,7 +447,7 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
                 }
                 div { class: "absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                     button {
-                        class: "size-14 rounded-full maz-gradient-bg text-white grid place-items-center shadow-2xl shadow-black/50 scale-75 group-hover:scale-100 transition-transform duration-300 cursor-pointer hover:brightness-110",
+                        class: "size-14 rounded-full maz-gradient-bg text-glow-fg grid place-items-center shadow-2xl shadow-black/50 scale-75 group-hover:scale-100 transition-transform duration-300 cursor-pointer hover:brightness-110",
                         title: "{play_title}",
                         onclick: move |e| {
                             e.stop_propagation();

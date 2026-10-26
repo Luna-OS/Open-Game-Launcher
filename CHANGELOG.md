@@ -7,6 +7,22 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [1.8.1] – 2026-10-26
+
+Die erste fertige Version als **Open Game Launcher (OG)** – früher MAZ Launcher. Sie enthält
+alles aus den Test-Versionen 1.7.0, 1.7.1 und 1.8.0 (siehe unten).
+
+### Neu
+- **Minecraft:** Mods, Texturenpakete, Shader und Datenpakete, die schon im gewählten Ordner liegen, werden als „Installiert“ angezeigt – auch wenn sie nicht über den Launcher kamen (Modrinth über die Prüfsumme, CurseForge mit Schlüssel über den Fingerabdruck).
+
+### Verbessert
+- **Knöpfe besser lesbar:** Farbige Knöpfe wie „Installieren“ oder „Spiel hinzufügen“ bekommen automatisch Schwarz oder Weiß als Schrift – je nachdem, was besser lesbar ist. Kein Weiß auf Hellgrau mehr (z. B. im OLED-Design).
+- **Suche:** Der Suchtext wird geleert, sobald du zu einer anderen Seite, einem Store oder einer Sammlung wechselst.
+- **Keine Test-Versionen mehr als Standard:** Neue Versionen erscheinen direkt als fertige Version und stehen auf GitHub als „Latest“. Die Webseite zeigt immer die neueste Version.
+
+### Behoben
+- **Taskleiste (Windows):** Statt des Logos war manchmal nur ein leeres Symbol zu sehen. Das Logo wird jetzt direkt am Fenster gesetzt, und nach einem Update werden Verknüpfungen und Symbole einmal aufgefrischt.
+
 ## [1.8.0] – 2026-10-26 (Test)
 
 ### Neu

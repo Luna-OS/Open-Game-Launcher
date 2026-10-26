@@ -53,8 +53,8 @@ fn is_own_file_name(name: &str) -> bool {
     n.starts_with(&sys::EXE_NAME.to_lowercase()) || n.starts_with(&sys::OLD_EXE_NAME.to_lowercase()) || n == "portable.txt"
 }
 
-/// Nach der Umbenennung (1.8): bestehende Installation auf den neuen Namen bringen –
-/// Eintrag in „Apps & Features“ und Verknüpfungen. Die EXE bleibt, wo sie ist.
+/// Nach einem Update (und nach der Umbenennung in 1.8): Eintrag in „Apps & Features“,
+/// Verknüpfungen und Symbole auffrischen. Die EXE bleibt, wo sie ist.
 pub fn migrate_names() {
     #[cfg(windows)]
     {
@@ -63,8 +63,9 @@ pub fn migrate_names() {
         if !exe.parent().map(|d| same_dir(d, &loc)).unwrap_or(false) {
             return;
         }
-        let name = sys::reg_str(sys::Hive::CurrentUser, UNINSTALL_KEY, "DisplayName").unwrap_or_default();
-        if name == sys::APP_NAME {
+        // Einmal pro neuer Version: Eintrag, Verknüpfungen und Symbole auffrischen
+        let marker = sys::local_dir().join(format!("shell-{}.done", sys::VERSION));
+        if marker.exists() {
             return;
         }
         register_uninstall(&loc.to_string_lossy(), &exe.to_string_lossy());
@@ -76,7 +77,15 @@ pub fn migrate_names() {
                     let _ = fs::rename(&old, &new);
                 }
             }
+            // Verknüpfung neu schreiben → zeigt wieder auf das Logo in der EXE
+            let lnk = folder.join(format!("{}.lnk", sys::APP_NAME));
+            if lnk.exists() {
+                let _ = create_shortcut(&lnk, &exe);
+            }
         }
+        crate::winffi::refresh_shell_icons();
+        let _ = fs::create_dir_all(sys::local_dir());
+        let _ = fs::write(marker, sys::VERSION);
     }
 }
 

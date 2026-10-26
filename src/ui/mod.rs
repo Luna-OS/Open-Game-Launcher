@@ -167,6 +167,14 @@ fn apply_controller(on: bool) {
 #[component]
 fn LauncherShell() -> Element {
     let app = use_app();
+    // Suche leeren, sobald man zu einer anderen Seite oder Ansicht (Store, Sammlung …) wechselt
+    use_effect(move || {
+        let _ = (app.page.read().clone(), app.filter.read().clone(), app.filter_arg.read().clone());
+        let mut s = app.search;
+        if !s.peek().is_empty() {
+            s.set(String::new());
+        }
+    });
     use_effect(move || {
         let on = app.settings.read().controller_mode;
         apply_controller(on);
@@ -260,7 +268,7 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
             div { class: "flex-1" }
             if let Some(v) = app.update_avail.read().as_ref().map(|r| r.version.clone()) {
                 button {
-                    class: "mr-2 h-7 px-3 rounded-full text-[12px] font-semibold maz-gradient-bg text-white flex items-center gap-1.5 shadow cursor-pointer animate-pop-in",
+                    class: "mr-2 h-7 px-3 rounded-full text-[12px] font-semibold maz-gradient-bg text-glow-fg flex items-center gap-1.5 shadow cursor-pointer animate-pop-in",
                     onmousedown: move |e| e.stop_propagation(),
                     onclick: move |_| app.open(Modal::Update),
                     Icon { name: "download", class: "size-3.5" }
@@ -308,7 +316,7 @@ fn Toasts() -> Element {
                 let icon = t.icon;
                 rsx! {
                     div { key: "{id}", class: "pointer-events-auto relative overflow-hidden flex items-center gap-3 rounded-xl border border-border bg-popover/95 backdrop-blur pl-4 pr-2 py-3 text-sm shadow-2xl shadow-black/40 animate-slide-up max-w-sm",
-                        div { class: "size-8 rounded-lg maz-gradient-bg text-white grid place-items-center shrink-0",
+                        div { class: "size-8 rounded-lg maz-gradient-bg text-glow-fg grid place-items-center shrink-0",
                             Icon { name: icon, class: "size-4" }
                         }
                         span { class: "flex-1", "{text}" }

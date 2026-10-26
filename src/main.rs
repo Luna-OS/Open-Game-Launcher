@@ -79,6 +79,14 @@ fn main() {
         // Titelleiste – die eigene Leiste darunter lässt links Platz dafür.
         .with_decorations(cfg!(target_os = "macos"))
         .with_resizable(true);
+    // Logo für Fenster und Taskleiste direkt am Fenster setzen (zusätzlich zum EXE-Icon),
+    // sonst zeigt Windows in der Taskleiste manchmal nur ein leeres Symbol.
+    let window = window.with_window_icon(window_icon());
+    #[cfg(windows)]
+    let window = {
+        use dioxus::desktop::tao::platform::windows::WindowBuilderExtWindows;
+        window.with_taskbar_icon(window_icon())
+    };
     #[cfg(target_os = "macos")]
     let window = {
         use dioxus::desktop::tao::platform::macos::WindowBuilderExtMacOS;

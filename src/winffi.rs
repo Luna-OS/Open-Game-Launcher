@@ -60,6 +60,7 @@ struct BitmapInfo {
 
 #[link(name = "shell32")]
 extern "system" {
+    fn SHChangeNotify(event: i32, flags: u32, item1: *const c_void, item2: *const c_void);
     fn ShellExecuteW(
         hwnd: HANDLE,
         op: *const u16,
@@ -122,6 +123,14 @@ pub const SW_SHOWNORMAL: i32 = 1;
 /// Öffnet eine Datei, URL oder ein Protokoll (steam://…) über Windows.
 /// `verb` = None → Standardaktion, Some("runas") → als Administrator.
 /// Fehler: der ShellExecute-Code (≤ 32).
+/// Windows bitten, Symbole neu zu laden (z. B. nach einem Update mit neuem Logo),
+/// damit Taskleiste und Verknüpfungen nicht das alte oder ein leeres Symbol zeigen.
+pub fn refresh_shell_icons() {
+    const SHCNE_ASSOCCHANGED: i32 = 0x0800_0000;
+    const SHCNF_IDLIST: u32 = 0;
+    unsafe { SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, null(), null()) }
+}
+
 pub fn shell_execute(
     verb: Option<&str>,
     file: &str,

@@ -55,6 +55,18 @@ pub fn MinecraftPage() -> Element {
     let mut fabric_busy = use_signal(|| false);
     let mut show_guide = use_signal(|| false);
     let mut key_input = use_signal(String::new);
+    // Schon installierte Projekte im aktuellen Zielordner ("modrinth:…", "curseforge:…")
+    let mut installed = use_signal(std::collections::BTreeSet::<String>::new);
+    let mut refresh_installed = move || {
+        let Some(tgt) = targets.peek().iter().find(|x| x.id == *target_id.peek()).cloned() else { return };
+        let k = *kind.peek();
+        let w = if world.peek().is_empty() { mc::worlds(&tgt.dir).into_iter().next().unwrap_or_default() } else { world.peek().clone() };
+        let key = app.settings.peek().curseforge_key.clone();
+        spawn(async move {
+            let set = tokio::task::spawn_blocking(move || mc::installed_projects(&tgt.dir, k, &w, &key)).await.unwrap_or_default();
+            installed.set(set);
+        });
+    };
 
     // Ziele (offizieller Launcher + NoRisk-Profile) und Minecraft-Versionen laden
     use_hook(move || {
@@ -100,6 +112,9 @@ pub fn MinecraftPage() -> Element {
         let key = app.settings.peek().curseforge_key.clone();
         loading.set(true);
         error.set(None);
+        if reset {
+            refresh_installed();
+        }
         spawn(async move {
             let res = tokio::task::spawn_blocking(move || {
                 let q = mc::Query { text: &q, kind: k, game_version: &gv, loader: &lo, offset: off };
@@ -155,6 +170,7 @@ pub fn MinecraftPage() -> Element {
             match res {
                 Ok(done) => {
                     let n = done.files.len();
+                    installed.write().insert(mc::project_key(prov, &pid));
                     states.write().insert(pid, InstallState::Done(done.files.join(", ")));
                     app.toast(&tf("mc.installed_toast", &[("name", &title), ("n", &n.to_string())]), "check-circle");
                 }
@@ -169,6 +185,7 @@ pub fn MinecraftPage() -> Element {
     let vlist = versions.read().clone();
     let list = results.read().clone();
     let st = states.read().clone();
+    let inst = installed.read().clone();
     let busy = loading();
     let err = error.read().clone();
     let need_key = provider() == Provider::CurseForge && cf_key.trim().is_empty();
@@ -291,7 +308,7 @@ pub fn MinecraftPage() -> Element {
                             select {
                                 class: "h-9 rounded-md border border-input bg-background/60 px-3 text-sm outline-none cursor-pointer",
                                 title: t("mc.world"),
-                                onchange: move |e| world.set(e.value()),
+                                onchange: move |e| { world.set(e.value()); refresh_installed(); },
                                 if worlds.is_empty() {
                                     option { value: "", {t("mc.no_worlds")} }
                                 }
@@ -384,6 +401,7 @@ pub fn MinecraftPage() -> Element {
                         div { class: "grid gap-4", style: "grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));",
                             {list.into_iter().map(|p| {
                                 let state = st.get(&p.id).cloned();
+                                let already = inst.contains(&mc::project_key(p.provider.unwrap_or(Provider::Modrinth), &p.id));
                                 let key = format!("{:?}-{}", p.provider, p.id);
                                 let p2 = p.clone();
                                 let page = p.page.clone();
@@ -410,6 +428,11 @@ pub fn MinecraftPage() -> Element {
                                                     Some(InstallState::Busy) => rsx! { Button { size: ButtonSize::Sm, disabled: true, Spinner {} {t("mc.installing")} } },
                                                     Some(InstallState::Done(files)) => rsx! {
                                                         span { class: "inline-flex items-center gap-1 text-xs text-success font-medium", title: "{files}",
+                                                            Icon { name: "check-circle", class: "size-4" } {t("mc.installed")}
+                                                        }
+                                                    },
+                                                    None if already => rsx! {
+                                                        span { class: "inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold bg-success/15 text-success ring-1 ring-success/40",
                                                             Icon { name: "check-circle", class: "size-4" } {t("mc.installed")}
                                                         }
                                                     },
@@ -493,7 +516,7 @@ pub fn CurseForgeKeyBox(
                         let n = i + 1;
                         rsx! {
                             li { key: "{i}", class: "flex gap-3 items-start text-sm",
-                                span { class: "size-6 shrink-0 rounded-full maz-gradient-bg text-white text-xs font-bold grid place-items-center", "{n}" }
+                                span { class: "size-6 shrink-0 rounded-full maz-gradient-bg text-glow-fg text-xs font-bold grid place-items-center", "{n}" }
                                 span { class: "pt-0.5 leading-relaxed", "{st}" }
                             }
                         }

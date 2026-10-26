@@ -224,9 +224,25 @@
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
-  fetch("https://api.github.com/repos/" + REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
+  // Immer die neueste Version – auch wenn sie (noch) als Test-Version markiert ist
+  function ver(t) {
+    var m = String(t || "").replace(/^v/i, "").match(/^(\d+)\.(\d+)\.(\d+)/);
+    return m ? [+m[1], +m[2], +m[3]] : null;
+  }
+  function newer(a, b) {
+    for (var i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
+    return false;
+  }
+  fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=20", { headers: { Accept: "application/vnd.github+json" } })
     .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (j) {
+    .then(function (list) {
+      if (!Array.isArray(list)) return;
+      var j = null, best = null;
+      list.forEach(function (r) {
+        var v = ver(r.tag_name);
+        if (r.draft || !v || !(r.assets || []).length) return;
+        if (!best || newer(v, best) || (!newer(best, v) && j && j.prerelease && !r.prerelease)) { best = v; j = r; }
+      });
       if (!j) return;
       version = String(j.tag_name || "").replace(/^v/i, "");
       assets = (j.assets || []).filter(function (a) {

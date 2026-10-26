@@ -87,7 +87,7 @@ pub const PRESETS: &[(&str, [&str; 8])] = &[
     ("dracula", ["#1e1f29", "#282a36", "#21222c", "#f8f8f2", "#9ea3c2", "#bd93f9", "#ff79c6", "#44475a"]),
     ("nord", ["#2e3440", "#3b4252", "#2b303b", "#eceff4", "#a3acbd", "#88c0d0", "#b48ead", "#4c566a"]),
     ("coffee", ["#16110d", "#221a14", "#1b1410", "#f3e9df", "#b09a86", "#c08457", "#e0b084", "#3d2f24"]),
-    ("oled", ["#000000", "#0b0b0b", "#000000", "#f5f5f5", "#8f8f8f", "#f5f5f5", "#8f8f8f", "#1f1f1f"]),
+    ("oled", ["#000000", "#0b0b0b", "#000000", "#f5f5f5", "#8f8f8f", "#ffffff", "#d4d4d4", "#1f1f1f"]),
     ("light", ["#f4f5fa", "#ffffff", "#ffffff", "#14142b", "#34364a", "#6d28d9", "#0ea5e9", "#dfe1ee"]),
     ("mint", ["#f3fbf7", "#ffffff", "#ffffff", "#0f2a1f", "#2f4a3e", "#10b981", "#06b6d4", "#d6ebe1"]),
 ];
@@ -172,6 +172,18 @@ pub fn readable(fg: &str, bg: &str, strong: &str) -> String {
         c = mix(fg, strong, i as f32 / 10.0);
     }
     c
+}
+
+/// Schrift auf einem Farbverlauf (z. B. „Installieren“-Knopf): Schwarz oder Weiß – je nachdem,
+/// was an *beiden* Enden des Verlaufs besser lesbar ist. Nie Weiß auf Hellgrau.
+pub fn gradient_text(a: &str, b: &str) -> &'static str {
+    let w = contrast("#ffffff", a).min(contrast("#ffffff", b));
+    let k = contrast("#0b0b10", a).min(contrast("#0b0b10", b));
+    if w >= k {
+        "#ffffff"
+    } else {
+        "#0b0b10"
+    }
 }
 
 pub fn is_light(c: &str) -> bool {
@@ -261,7 +273,7 @@ impl CustomTheme {
             "--background:{bg};--foreground:{fg};--card:{card};--card-foreground:{fg};--popover:{pop};--popover-foreground:{fg};\
 --primary:{acc};--primary-foreground:{accfg};--secondary:{sec};--secondary-foreground:{fg};--muted:{mut};--muted-foreground:{mfg};\
 --accent:{abg};--accent-foreground:{fg};--border:{border};--input:{input};--ring:{acc};--sidenav:{side};--sidenav-foreground:{sfg};\
---sidenav-accent:{sacc};--glow:{acc};--glow-2:{acc2};--radius:{r}px;",
+--sidenav-accent:{sacc};--glow:{acc};--glow-2:{acc2};--glow-fg:{gfg};--radius:{r}px;",
             bg = t.bg,
             fg = t.text,
             card = t.card,
@@ -278,6 +290,7 @@ impl CustomTheme {
             sfg = sidenav_fg,
             sacc = sidenav_accent,
             acc2 = t.accent2,
+            gfg = gradient_text(&t.accent, &t.accent2),
             r = t.radius,
         )
     }
@@ -319,6 +332,9 @@ mod tests {
         let fixed = readable("#9a9a9a", "#ffffff", "#111111");
         assert!(contrast(&fixed, "#ffffff") >= 7.0, "{fixed}");
         assert!(contrast("#000000", "#ffffff") > 20.0);
+        // Weiß auf Hellgrau wird nie gewählt
+        assert_eq!(gradient_text("#ffffff", "#d4d4d4"), "#0b0b10");
+        assert_eq!(gradient_text("#1e1b4b", "#312e81"), "#ffffff");
         // Alle mitgelieferten Designs: Nebentext gut lesbar
         for (id, c) in PRESETS.iter() {
             let need = if is_light(c[0]) { 7.0 } else { 4.5 };
