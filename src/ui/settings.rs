@@ -1832,6 +1832,7 @@ fn AboutTab() -> Element {
 fn UpdateSection() -> Element {
     let app = use_app();
     let auto = app.settings.read().update_check;
+    let test = app.settings.read().update_test;
     let checking = matches!(*app.update_state.read(), UpdateState::Checking);
     let avail = app.update_avail.read().as_ref().map(|r| r.version.clone());
     let failed = match &*app.update_state.read() {
@@ -1847,6 +1848,18 @@ fn UpdateSection() -> Element {
                 description: t("update.auto_text"),
                 checked: auto,
                 onchange: move |v: bool| app.update(|s| s.update_check = v),
+            }
+            SwitchRow {
+                title: t("update.test"),
+                description: t("update.test_text"),
+                checked: test,
+                onchange: move |v: bool| {
+                    app.update(|s| s.update_test = v);
+                    // Neu prüfen, damit die passende Version angeboten wird
+                    let mut upd = app.update_avail;
+                    upd.set(None);
+                    super::net::check_update(app, false);
+                },
             }
             if !kind_label.is_empty() {
                 p { class: "text-xs text-muted-foreground mt-1", {tf("update.how", &[("kind", kind_label)])} }

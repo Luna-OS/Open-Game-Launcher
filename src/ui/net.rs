@@ -221,7 +221,8 @@ pub fn check_update(app: App, manual: bool) {
     let mut st = app.update_state;
     st.set(UpdateState::Checking);
     spawn_forever(async move {
-        let res = tokio::task::spawn_blocking(crate::updater::check).await;
+        let test = app.settings.peek().update_test;
+        let res = tokio::task::spawn_blocking(move || crate::updater::check(test)).await;
         let mut st = app.update_state;
         let mut upd = app.update_avail;
         match res {

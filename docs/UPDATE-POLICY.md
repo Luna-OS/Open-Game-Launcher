@@ -22,6 +22,15 @@ Ein Update mit nur einer Änderung gibt es **nur**, wenn es dringend ist:
 
 Alles andere (kleine Fehler, Texte, Optik) kommt ins nächste Feature-Update.
 
+## Test-Versionen
+
+- Neue Versionen erscheinen zuerst als **Test-Version** (auf GitHub „Pre-release“, im
+  Changelog mit „(Test)“ hinter dem Datum).
+- Sie werden nur angeboten, wer in den Einstellungen unter **Updates** „Test-Versionen erhalten“
+  eingeschaltet hat. Alle anderen bekommen erst die fertige Version.
+- Hat die fertige Version dieselbe Nummer wie die Test-Version, wird sie Test-Nutzern nicht
+  noch einmal angeboten – der Inhalt ist gleich.
+
 ## Für Entwickler
 
 - Auf `main` darf jederzeit gearbeitet werden. Ein Release entsteht **nur**, wenn die Version

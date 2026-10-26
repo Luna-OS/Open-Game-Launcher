@@ -7,6 +7,13 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [1.7.1] – 2026-10-26 (Test)
+
+### Neu
+- **Test-Versionen erhalten** (Einstellungen → Updates): Wer das einschaltet, bekommt neue Versionen schon als Test-Version direkt im Launcher als Update angeboten. Standardmäßig aus – dann kommen wie bisher nur fertige Versionen. Im Update-Fenster steht bei Test-Versionen ein Hinweis.
+
+Enthält außerdem alles aus 1.7.0 (Test):
+
 ## [1.7.0] – 2026-10-26 (Test)
 
 ### Neu

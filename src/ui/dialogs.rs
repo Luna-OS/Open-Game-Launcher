@@ -105,6 +105,9 @@ fn UpdateDialog() -> Element {
                     }
                     div {
                         h2 { class: "text-2xl font-bold font-display", {tf("update.title", &[("version", &version)])} }
+                        if r.prerelease {
+                            span { class: "inline-block mt-1 rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500", {t("update.test_badge")} }
+                        }
                         p { class: "text-sm text-muted-foreground", {tf("update.current", &[("version", current)])} }
                     }
                 }

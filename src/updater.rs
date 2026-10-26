@@ -15,6 +15,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 const API: &str = "https://api.github.com/repos/MikeAdamRGB/MAZ-Lauchner/releases/latest";
+/// Liste der letzten Releases (inkl. Test-Versionen)
+const API_ALL: &str = "https://api.github.com/repos/MikeAdamRGB/MAZ-Lauchner/releases?per_page=15";
 const DOWNLOAD_PREFIX: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/";
 const MAX_SIZE: u64 = 400 * 1024 * 1024;
 
@@ -31,6 +33,8 @@ pub struct Release {
     pub notes: String,
     pub page: String,
     pub assets: Vec<Asset>,
+    /// Test-Version (auf GitHub als „Pre-release“ markiert)
+    pub prerelease: bool,
 }
 
 /// Wie ist der Launcher installiert?
@@ -167,18 +171,22 @@ fn agent(timeout: u64) -> ureq::Agent {
         .into()
 }
 
-/// Neuestes Release von GitHub lesen
-pub fn latest() -> Result<Release, String> {
+fn get_json(url: &str) -> Result<serde_json::Value, String> {
     let mut resp = agent(15)
-        .get(API)
+        .get(url)
         .header("Accept", "application/vnd.github+json")
         .call()
         .map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
-    let v: serde_json::Value = resp.body_mut().read_json().map_err(|e| e.to_string())?;
-    let tag = v.get("tag_name").and_then(|t| t.as_str()).unwrap_or("").to_string();
-    if parse_version(&tag).is_none() {
-        return Err("GitHub: no valid release".into());
+    resp.body_mut().read_json().map_err(|e| e.to_string())
+}
+
+/// Ein Release aus der GitHub-Antwort lesen (None = Entwurf oder ungültige Version)
+pub fn parse_release(v: &serde_json::Value) -> Option<Release> {
+    if v.get("draft").and_then(|d| d.as_bool()).unwrap_or(false) {
+        return None;
     }
+    let tag = v.get("tag_name").and_then(|t| t.as_str()).unwrap_or("").to_string();
+    parse_version(&tag)?;
     let assets = v
         .get("assets")
         .and_then(|a| a.as_array())
@@ -199,7 +207,7 @@ pub fn latest() -> Result<Release, String> {
                 .collect()
         })
         .unwrap_or_default();
-    Ok(Release {
+    Some(Release {
         version: tag.trim_start_matches(['v', 'V']).to_string(),
         notes: v.get("body").and_then(|b| b.as_str()).unwrap_or("").chars().take(6000).collect(),
         page: v
@@ -209,12 +217,27 @@ pub fn latest() -> Result<Release, String> {
             .unwrap_or(sys::GITHUB_URL)
             .to_string(),
         assets,
+        prerelease: v.get("prerelease").and_then(|p| p.as_bool()).unwrap_or(false),
     })
 }
 
+/// Höchste Version aus einer Release-Liste. Bei gleicher Nummer gewinnt die fertige Version.
+pub fn newest(list: &serde_json::Value) -> Option<Release> {
+    list.as_array()?
+        .iter()
+        .filter_map(parse_release)
+        .max_by_key(|r| (parse_version(&r.version), !r.prerelease))
+}
+
+/// Neuestes Release von GitHub lesen. `test` = auch Test-Versionen berücksichtigen.
+pub fn latest(test: bool) -> Result<Release, String> {
+    let r = if test { newest(&get_json(API_ALL)?) } else { parse_release(&get_json(API)?) };
+    r.ok_or_else(|| "GitHub: no valid release".into())
+}
+
 /// Gibt es eine neuere Version? (None = aktuell)
-pub fn check() -> Result<Option<Release>, String> {
-    let r = latest()?;
+pub fn check(test: bool) -> Result<Option<Release>, String> {
+    let r = latest(test)?;
     Ok(is_newer(&r.version, sys::VERSION).then_some(r))
 }
 
@@ -442,5 +465,22 @@ mod tests {
         let sums = "ab12  other.exe\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  MAZ-Launcher.exe\n";
         assert_eq!(expected_hash(sums, "MAZ-Launcher.exe").unwrap().len(), 64);
         assert!(expected_hash(sums, "other.exe").is_none());
+    }
+
+    #[test]
+    fn test_versions() {
+        let rel = |tag: &str, pre: bool, draft: bool| {
+            serde_json::json!({"tag_name": tag, "prerelease": pre, "draft": draft, "body": "", "assets": []})
+        };
+        let list = serde_json::json!([rel("v1.8.0", false, true), rel("v1.7.0", true, false), rel("v1.6.0", false, false)]);
+        let r = newest(&list).unwrap();
+        assert_eq!(r.version, "1.7.0");
+        assert!(r.prerelease);
+        // Fertige Version mit gleicher Nummer hat Vorrang
+        let list = serde_json::json!([rel("v1.7.0", true, false), rel("v1.7.0", false, false)]);
+        assert!(!newest(&list).unwrap().prerelease);
+        assert!(parse_release(&rel("v2.0.0", false, true)).is_none());
+        assert!(parse_release(&rel("kaputt", false, false)).is_none());
+        assert!(newest(&serde_json::json!({})).is_none());
     }
 }

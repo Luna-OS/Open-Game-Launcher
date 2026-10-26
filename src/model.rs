@@ -312,6 +312,8 @@ pub struct Settings {
     pub roblox_games: Vec<RobloxGame>,
     /// Automatisch nach Updates suchen
     pub update_check: bool,
+    /// Auch Test-Versionen (Pre-releases) als Update anbieten
+    pub update_test: bool,
     /// Diese Version nicht mehr anbieten
     pub update_skip: String,
     pub online_art: bool,
@@ -394,6 +396,7 @@ impl Default for Settings {
             roblox_enabled: true,
             roblox_games: Vec::new(),
             update_check: true,
+            update_test: false,
             update_skip: String::new(),
             stores_off: Vec::new(),
             merge_duplicates: true,
