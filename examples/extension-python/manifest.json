@@ -2,7 +2,7 @@
   "id": "python-example",
   "name": "Python Example",
   "version": "1.0.0",
-  "author": "MAZ Launcher",
+  "author": "Open Game Launcher",
   "description": "Zeigt, dass Erweiterungen in jeder Sprache geschrieben werden können.",
   "run": {
     "windows": "run.cmd",

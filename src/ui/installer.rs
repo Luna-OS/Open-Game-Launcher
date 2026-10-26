@@ -59,7 +59,7 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                 div { class: "absolute -left-16 bottom-0 size-60 rounded-full bg-black/20 blur-2xl" }
                 div { class: "relative",
                     MazLogo { class: "size-16 text-lg bg-white/15 ring-1 ring-white/30" }
-                    h1 { class: "text-3xl font-black mt-6 leading-tight font-display", "MAZ Launcher" }
+                    h1 { class: "text-3xl font-black mt-6 leading-tight font-display", {sys::APP_NAME} }
                     p { class: "text-white/80 mt-2 text-sm leading-relaxed", {t("inst.tagline")} }
                 }
                 div { class: "relative mt-10 space-y-4 text-sm",
@@ -70,7 +70,7 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                     Perk { icon: "globe", text: t("inst.perk5") }
                 }
                 div { class: "flex-1" }
-                div { class: "relative text-xs text-white/60", "{version} · 100 % Rust" }
+                div { class: "relative text-xs text-white/80", "{version} · 100 % Rust" }
             }
             // Rechte Seite
             div { class: "flex-1 min-w-0 p-10 flex flex-col overflow-y-auto",
@@ -92,7 +92,8 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
                                 div { class: "mt-3",
                                     Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm,
                                         onclick: move |_| {
-                                            let exe = std::path::Path::new(&ex2).join(sys::EXE_NAME);
+                                            let dir = std::path::Path::new(&ex2);
+                                            let exe = if dir.join(sys::EXE_NAME).exists() { dir.join(sys::EXE_NAME) } else { dir.join(sys::OLD_EXE_NAME) };
                                             if std::process::Command::new(&exe).spawn().is_ok() {
                                                 std::process::exit(0);
                                             }

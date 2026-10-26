@@ -47,7 +47,7 @@ Section: games
 Priority: optional
 Homepage: $URL
 Description: $DESC
- MAZ Launcher shows your Steam, Epic (via Heroic), Roblox and own games
+ Open Game Launcher (OG) shows your Steam, Epic (via Heroic), Roblox and own games
  in one library. Everything runs locally.
 CTL
   dpkg-deb --root-owner-group --build "$d" "$OUT/${PKG}_${VERSION}_${DEB_ARCH}.deb"
@@ -70,7 +70,7 @@ Requires: libwebkit2gtk-4.1.so.0()(64bit)
 Requires: libgtk-3.so.0()(64bit)
 
 %description
-MAZ Launcher shows your Steam, Epic (via Heroic), Roblox and own games in one library.
+Open Game Launcher (OG) shows your Steam, Epic (via Heroic), Roblox and own games in one library.
 
 %install
 mkdir -p %{buildroot}
@@ -131,7 +131,7 @@ RUN
   local tool="$WORK/appimagetool"
   curl -fsSL -o "$tool" "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$ARCH.AppImage"
   chmod +x "$tool"
-  ARCH="$ARCH" APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream "$d" "$OUT/MAZ-Launcher-$VERSION-$ARCH.AppImage"
+  ARCH="$ARCH" APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream "$d" "$OUT/Open-Game-Launcher-$VERSION-$ARCH.AppImage"
 }
 
 build_flatpak() {

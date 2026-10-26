@@ -84,13 +84,13 @@ pub fn Icon(name: &'static str, #[props(into, default)] class: String, #[props(d
     }
 }
 
-/// Das MAZ-Logo (eigene Wortmarke)
+/// Das OG-Logo (Open Game Launcher, eigene Wortmarke)
 #[component]
 pub fn MazLogo(#[props(into, default)] class: String) -> Element {
     let cls = if class.is_empty() { "size-8 text-[11px]".to_string() } else { class };
     rsx! {
         div { class: "relative grid place-items-center rounded-xl bg-black text-white font-black ring-1 ring-white/15 shadow-lg shadow-black/30 {cls}",
-            span { class: "tracking-tighter leading-none", "MAZ" }
+            span { class: "tracking-tighter leading-none", {crate::sys::SHORT_NAME} }
         }
     }
 }

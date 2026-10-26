@@ -1,6 +1,6 @@
 //! Eingebauter Installer: Die EXE installiert sich selbst.
 //!
-//! - kopiert sich nach %LOCALAPPDATA%\Programs\MAZ Launcher (kein Admin nötig)
+//! - kopiert sich nach %LOCALAPPDATA%\Programs\Open Game Launcher (kein Admin nötig)
 //! - Desktop-Verknüpfung + Startmenü-Eintrag
 //! - Eintrag unter "Apps & Features" inkl. Deinstallation
 
@@ -35,7 +35,49 @@ fn same_dir(a: &Path, b: &Path) -> bool {
 pub fn installed_location() -> Option<PathBuf> {
     sys::reg_str(sys::Hive::CurrentUser, UNINSTALL_KEY, "InstallLocation")
         .map(PathBuf::from)
-        .filter(|p| p.join(sys::EXE_NAME).exists())
+        .filter(|p| p.join(sys::EXE_NAME).exists() || p.join(sys::OLD_EXE_NAME).exists())
+}
+
+/// Ordnername gehört dem Launcher (neuer oder alter Name)?
+fn is_own_dir_name(dir: &Path) -> bool {
+    dir.file_name()
+        .map(|n| {
+            let n = n.to_string_lossy();
+            n.eq_ignore_ascii_case(sys::APP_NAME) || n.eq_ignore_ascii_case(sys::OLD_APP_NAME)
+        })
+        .unwrap_or(false)
+}
+
+fn is_own_file_name(name: &str) -> bool {
+    let n = name.to_lowercase();
+    n.starts_with(&sys::EXE_NAME.to_lowercase()) || n.starts_with(&sys::OLD_EXE_NAME.to_lowercase()) || n == "portable.txt"
+}
+
+/// Nach der Umbenennung (1.8): bestehende Installation auf den neuen Namen bringen –
+/// Eintrag in „Apps & Features“ und Verknüpfungen. Die EXE bleibt, wo sie ist.
+pub fn migrate_names() {
+    #[cfg(windows)]
+    {
+        let Some(loc) = installed_location() else { return };
+        let Some(exe) = current_exe() else { return };
+        if !exe.parent().map(|d| same_dir(d, &loc)).unwrap_or(false) {
+            return;
+        }
+        let name = sys::reg_str(sys::Hive::CurrentUser, UNINSTALL_KEY, "DisplayName").unwrap_or_default();
+        if name == sys::APP_NAME {
+            return;
+        }
+        register_uninstall(&loc.to_string_lossy(), &exe.to_string_lossy());
+        for folder in [sys::desktop_dir(), sys::start_menu_dir()] {
+            for ext in ["lnk", "url"] {
+                let old = folder.join(format!("{}.{ext}", sys::OLD_APP_NAME));
+                let new = folder.join(format!("{}.{ext}", sys::APP_NAME));
+                if old.exists() && !new.exists() {
+                    let _ = fs::rename(&old, &new);
+                }
+            }
+        }
+    }
 }
 
 /// Entscheidet beim Start: Installer zeigen oder direkt den Launcher?
@@ -93,9 +135,9 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
     }
     // Eigener Unterordner, wenn ein fremder, nicht leerer Ordner gewählt wurde (z. B. "D:\Spiele"),
     // damit Programmdateien nicht zwischen anderen Dateien landen.
-    let own = dir.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case(sys::APP_NAME)).unwrap_or(false);
+    let own = is_own_dir_name(&dir);
     let has_other_files = fs::read_dir(&dir)
-        .map(|rd| rd.flatten().any(|e| !e.file_name().to_string_lossy().to_lowercase().starts_with(&sys::EXE_NAME.to_lowercase())))
+        .map(|rd| rd.flatten().any(|e| !is_own_file_name(&e.file_name().to_string_lossy())))
         .unwrap_or(false);
     if !own && has_other_files {
         dir = dir.join(sys::APP_NAME);
@@ -117,6 +159,13 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
             let _ = fs::rename(&target, old);
         }
         fs::copy(&src, &target).map_err(|e| Problem::install_failed(&dir_s, &e.to_string()))?;
+        // Alte EXE (bis 1.7 „MAZ-Launcher.exe“) aufräumen
+        if sys::OLD_EXE_NAME != sys::EXE_NAME {
+            let old_exe = dir.join(sys::OLD_EXE_NAME);
+            if old_exe.exists() && fs::remove_file(&old_exe).is_err() {
+                let _ = fs::rename(&old_exe, dir.join(format!("{}.alt-{}", sys::OLD_EXE_NAME, sys::now_secs())));
+            }
+        }
     }
     let exe_s = target.to_string_lossy().to_string();
     let mut warnings = Vec::new();
@@ -124,6 +173,7 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
     register_uninstall(&dir_s, &exe_s);
 
     if opts.desktop {
+        let _ = fs::remove_file(sys::desktop_dir().join(format!("{}.lnk", sys::OLD_APP_NAME)));
         let lnk = sys::desktop_dir().join(format!("{}.lnk", sys::APP_NAME));
         if let Err(e) = create_shortcut(&lnk, &target) {
             warnings.push(Problem::shortcut_failed(&exe_s, &e));
@@ -132,6 +182,7 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
     if opts.start_menu {
         let folder = sys::start_menu_dir();
         let _ = fs::create_dir_all(&folder);
+        let _ = fs::remove_file(folder.join(format!("{}.lnk", sys::OLD_APP_NAME)));
         let lnk = folder.join(format!("{}.lnk", sys::APP_NAME));
         if let Err(e) = create_shortcut(&lnk, &target) {
             warnings.push(Problem::shortcut_failed(&exe_s, &e));
@@ -221,13 +272,15 @@ pub fn uninstall_interactive() {
             .set_buttons(MessageButtons::YesNo)
             .show();
 
-        for p in [
-            sys::desktop_dir().join(format!("{}.lnk", sys::APP_NAME)),
-            sys::desktop_dir().join(format!("{}.url", sys::APP_NAME)),
-            sys::start_menu_dir().join(format!("{}.lnk", sys::APP_NAME)),
-            sys::start_menu_dir().join(format!("{}.url", sys::APP_NAME)),
-        ] {
-            let _ = fs::remove_file(p);
+        for name in [sys::APP_NAME, sys::OLD_APP_NAME] {
+            for p in [
+                sys::desktop_dir().join(format!("{name}.lnk")),
+                sys::desktop_dir().join(format!("{name}.url")),
+                sys::start_menu_dir().join(format!("{name}.lnk")),
+                sys::start_menu_dir().join(format!("{name}.url")),
+            ] {
+                let _ = fs::remove_file(p);
+            }
         }
         let install_dir = installed_location()
             .or_else(|| current_exe().and_then(|e| e.parent().map(|p| p.to_path_buf())));
@@ -245,13 +298,14 @@ pub fn uninstall_interactive() {
             // Ordner danach nur löschen, wenn er leer ist (rmdir ohne /s schlägt sonst fehl).
             // Die laufende EXE kann sich nicht selbst löschen → kurz warten.
             let d = dir.to_string_lossy().to_string();
-            // Den (leeren) Ordner nur entfernen, wenn er wirklich "MAZ Launcher" heißt –
+            // Den (leeren) Ordner nur entfernen, wenn er wirklich wie der Launcher heißt –
             // nie z. B. einen leeren Downloads- oder Desktop-Ordner.
-            let own_dir = dir.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case(sys::APP_NAME)).unwrap_or(false);
+            let own_dir = is_own_dir_name(&dir);
             let rmdir = if own_dir { format!(" & rmdir \"{d}\"") } else { String::new() };
             let cmd = format!(
-                "ping 127.0.0.1 -n 3 > nul & del /f /q \"{d}\\{exe}\" \"{d}\\{exe}.alt-*\" \"{d}\\portable.txt\"{rmdir}",
-                exe = sys::EXE_NAME
+                "ping 127.0.0.1 -n 3 > nul & del /f /q \"{d}\\{exe}\" \"{d}\\{exe}.alt-*\" \"{d}\\{old}\" \"{d}\\{old}.alt-*\" \"{d}\\portable.txt\"{rmdir}",
+                exe = sys::EXE_NAME,
+                old = sys::OLD_EXE_NAME
             );
             use std::os::windows::process::CommandExt;
             let _ = sys::quiet_command(sys::system_program("cmd.exe")).raw_arg(format!("/C {cmd}")).current_dir(sys::system_program("cmd.exe").parent().unwrap_or(Path::new("C:\\"))).spawn();

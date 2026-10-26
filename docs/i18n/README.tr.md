@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../../assets/icon-256.png" width="128" alt="MAZ Launcher logosu">
+<img src="../../assets/icon-256.png" width="128" alt="Open Game Launcher logosu">
 
-# MAZ Launcher
+# Open Game Launcher
 
 **Tüm oyunların. Tek bir launcher.**
 
@@ -21,7 +21,7 @@ Steam, Epic Games ve kendi oyunların; tamamen Rust ile yazılmış hızlı, haf
 
 <br>
 
-<img src="../screenshots/library-epic-style.webp" alt="Epic Games tarzında MAZ Launcher kütüphanesi" width="900">
+<img src="../screenshots/library-epic-style.webp" alt="Epic Games tarzında Open Game Launcher kütüphanesi" width="900">
 
 </div>
 
@@ -38,8 +38,8 @@ Steam, Epic Games ve kendi oyunların; tamamen Rust ile yazılmış hızlı, haf
 | 🟦 **Epic Games** | Yüklü tüm Epic oyunlarını otomatik olarak bulur. |
 | 🚀 **Kendi oyunların** | Her oyunu ekleyebilirsin: `.exe`, kısayol veya batch dosyası. **Her** başlatmadan önce bir kontrol listesi sorar: *“Önemli olan her şeyi kapattın mı?”*. **Hayır** dersen oyun başlamaz. |
 | 🖼️ **Orijinal simgeler ve kapaklar** | Gerçek oyun simgeleri (doğrudan EXE'den veya Steam'den) ve orijinal kapak görselleri. Her oyuna özel kapak atayabilirsin. |
-| 🎨 **3 kütüphane görünümü** | **Steam kütüphanesi gibi**, **Epic Games gibi** ya da launcher'ın kendi **MAZ tarzında**. |
-| 🌈 **8 renk teması** | MAZ Mor, Gece Yarısı, Neon, Kor, Orman, Sakura, OLED Siyah ve Açık, ayrıca özel vurgu rengi. |
+| 🎨 **3 kütüphane görünümü** | **Steam kütüphanesi gibi**, **Epic Games gibi** ya da launcher'ın kendi **OG tarzında**. |
+| 🌈 **8 renk teması** | OG Mor, Gece Yarısı, Neon, Kor, Orman, Sakura, OLED Siyah ve Açık, ayrıca özel vurgu rengi. |
 | 🛟 **Hatalar sade bir dille** | Bir şey açılmazsa launcher ne olduğunu ve nasıl düzeltileceğini **adım adım** anlatır; doğrudan yardımcı olan düğmelerle (örneğin *Yönetici olarak çalıştır* veya *Visual C++ indir*). |
 | 📦 **Dahili kurulum** | Tek bir EXE: çift tıklayınca masaüstü kısayolu, Başlat menüsü girişi, *Şimdi aç* ve *Uygulama klasörünü aç* seçenekleriyle kurulum menüsü açılır. Yönetici yetkisi gerekmez. |
 | 🪶 **Çok küçük** | Boyut için optimize edilmiş tek bir EXE, ek dosya yok. |
@@ -73,7 +73,7 @@ Steam, Epic Games ve kendi oyunların; tamamen Rust ile yazılmış hızlı, haf
 
 **Gereksinimler:** [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) yüklü Windows 10 veya 11 (64 bit). WebView2 güncel Windows sürümlerinde hazır gelir.
 
-1. En son **`MAZ-Launcher.exe`** dosyasını [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) sayfasından indir.
+1. En son **`Open-Game-Launcher.exe`** dosyasını [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) sayfasından indir.
 2. Dosyaya **çift tıkla**.
 3. Kurulum menüsünde **„Installieren“** (*Yükle*) düğmesine tıkla.
 4. Bitti! **„Jetzt öffnen“** (*Şimdi aç*) düğmesine tıkla. Bundan sonra launcher'ı masaüstü kısayolundan aç.
@@ -85,15 +85,15 @@ Steam, Epic Games ve kendi oyunların; tamamen Rust ile yazılmış hızlı, haf
 > [!TIP]
 > **Taşınabilir sürüm mü istiyorsun?** Kurulum menüsünde **„Ohne Installation starten“** (*Kurmadan başlat*) düğmesine tıkla ya da EXE'nin yanına `portable.txt` adlı boş bir dosya koy.
 
-**`MAZ-Launcher-mini.exe`**, UPX ile sıkıştırılmış aynı uygulamadır. Bazı antivirüs programları sıkıştırılmış EXE'leri yanlışlıkla işaretleyebilir; bu durumda normal sürümü kullan.
+**`Open-Game-Launcher-mini.exe`**, UPX ile sıkıştırılmış aynı uygulamadır. Bazı antivirüs programları sıkıştırılmış EXE'leri yanlışlıkla işaretleyebilir; bu durumda normal sürümü kullan.
 
-**Kaldırma:** Windows Ayarları → Uygulamalar → “MAZ Launcher” → Kaldır, veya launcher'da **Einstellungen → Allgemein** (*Ayarlar → Genel*). Oyunlarına dokunulmaz.
+**Kaldırma:** Windows Ayarları → Uygulamalar → “Open Game Launcher” → Kaldır, veya launcher'da **Einstellungen → Allgemein** (*Ayarlar → Genel*). Oyunlarına dokunulmaz.
 
 ## Kullanım
 
 - **Oynamak:** farenle bir oyunun üzerine gel ve ▶ simgesine tıkla. Kapağa tıklamak ayrıntıları açar.
 - **Kendi oyununu eklemek:** soldaki **„Spiel hinzufügen“** (*Oyun ekle*) → “Programm” yanındaki **„Durchsuchen…“** (*Gözat…*) → oyunun çalıştırılabilir dosyasını seç → **„Hinzufügen“** (*Ekle*).
-- **Görünümü değiştirmek:** **Einstellungen → Design** → bir görünüm (MAZ / Steam / Epic) ve renk teması seç.
+- **Görünümü değiştirmek:** **Einstellungen → Design** → bir görünüm (OG / Steam / Epic) ve renk teması seç.
 - **Yüklü olmayanlar dahil tüm Steam oyunlarını görmek:** **Einstellungen → Verbindungen** (*Bağlantılar*) → ücretsiz bir Steam Web API anahtarı gir. Talimatlar hemen yanında.
 - **Kontrol listesini özelleştirmek:** **Einstellungen → Eigene Spiele** (*Kendi oyunlar*) → maddeleri genel olarak veya oyun bazında ekle, düzenle ya da sil.
 
@@ -109,7 +109,7 @@ Oyun dosyası eksik · sürücü veya USB disk takılı değil · yönetici yetk
 git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
 cd MAZ-Lauchner
 cargo run                 # geliştirme
-cargo build --release     # son EXE: target\release\MAZ-Launcher.exe
+cargo build --release     # son EXE: target\release\Open-Game-Launcher.exe
 .\scripts\build.ps1 -Mini # EXE'yi dist\ klasörüne kopyalar ve UPX ile sıkıştırılmış mini sürüm oluşturur
 ```
 
@@ -123,7 +123,7 @@ Teknik ayrıntılar (teknoloji yığını, proje yapısı, boyut optimizasyonu) 
 Hayır. Steam ve Epic oyunları her zaman resmi launcher'ları üzerinden başlatılır. Hiçbir zaman şifre istenmez.
 
 **Neden tüm Epic oyunlarımı göremiyorum?**
-Epic, satın alınan oyunların listesini yalnızca giriş yaptıktan sonra verir. MAZ Launcher tüm **yüklü** Epic oyunlarını gösterir.
+Epic, satın alınan oyunların listesini yalnızca giriş yaptıktan sonra verir. Open Game Launcher tüm **yüklü** Epic oyunlarını gösterir.
 
 **Pencere beyaz kalıyor veya açılmıyor.**
 Launcher, Microsoft WebView2'ye ihtiyaç duyar (Windows 10 ve 11'de normalde bulunur). Eksikse launcher açılışta nasıl kurulacağını anlatır.

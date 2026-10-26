@@ -1,4 +1,4 @@
-//! MAZ Launcher – alle deine Steam-, Epic- und eigenen Spiele in einem Launcher.
+//! Open Game Launcher (OG) – alle deine Steam-, Epic- und eigenen Spiele in einem Launcher.
 //! 100 % Rust · Dioxus · Komponenten im Stil von rust-ui.
 
 // Kein schwarzes Konsolenfenster im Release-Build
@@ -65,6 +65,7 @@ fn main() {
     }
 
     updater::cleanup_old();
+    install::migrate_names();
     let mode = install::decide(&args);
     let installer = matches!(mode, install::StartMode::Installer { .. });
     let _ = START.set(mode);
@@ -120,7 +121,7 @@ fn show_startup_problem(p: &problem::Problem) {
         use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
         let res = MessageDialog::new()
             .set_level(MessageLevel::Error)
-            .set_title(format!("MAZ Launcher – {}", p.title))
+            .set_title(format!("{} – {}", sys::APP_NAME, p.title))
             .set_description(text)
             .set_buttons(MessageButtons::OkCancel)
             .show();
@@ -141,7 +142,7 @@ fn install_panic_hook() {
         let msg = info.to_string();
         let log = sys::local_dir().join("absturz.log");
         let _ = std::fs::create_dir_all(sys::local_dir());
-        let _ = std::fs::write(&log, format!("MAZ Launcher {}\n{}\n", sys::VERSION, msg));
+        let _ = std::fs::write(&log, format!("{} {}\n{}\n", sys::APP_NAME, sys::VERSION, msg));
         let p = problem::Problem::app_crashed(
             &log.display().to_string(),
             &msg,

@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../../assets/icon-256.png" width="128" alt="MAZ Launcher 图标">
+<img src="../../assets/icon-256.png" width="128" alt="Open Game Launcher 图标">
 
-# MAZ Launcher
+# Open Game Launcher
 
 **你的所有游戏,一个启动器搞定。**
 
@@ -21,7 +21,7 @@
 
 <br>
 
-<img src="../screenshots/library-epic-style.webp" alt="Epic Games 风格的 MAZ Launcher 游戏库" width="900">
+<img src="../screenshots/library-epic-style.webp" alt="Epic Games 风格的 Open Game Launcher 游戏库" width="900">
 
 </div>
 
@@ -38,8 +38,8 @@
 | 🟦 **Epic Games** | 自动识别所有已安装的 Epic 游戏。 |
 | 🚀 **自定义游戏** | 可添加任何游戏:`.exe`、快捷方式或批处理文件。**每次**启动前,检查清单都会询问 *“重要的东西都关掉了吗?”*,选择**否**则不会启动游戏。 |
 | 🖼️ **原版图标与封面** | 直接从 EXE 或 Steam 获取真实图标和官方封面,也可以为任意游戏设置自定义封面。 |
-| 🎨 **3 种布局** | 可以像 **Steam 库**、像 **Epic Games**,或使用启动器自己的 **MAZ 风格**。 |
-| 🌈 **8 种配色** | MAZ 紫、午夜、霓虹、余烬、森林、樱花、OLED 黑和浅色,另可自定义强调色。 |
+| 🎨 **3 种布局** | 可以像 **Steam 库**、像 **Epic Games**,或使用启动器自己的 **OG 风格**。 |
+| 🌈 **8 种配色** | OG 紫、午夜、霓虹、余烬、森林、樱花、OLED 黑和浅色,另可自定义强调色。 |
 | 🛟 **通俗易懂的错误说明** | 无法启动时,启动器会**一步一步**说明发生了什么以及如何解决,并提供可直接处理问题的按钮(例如 *以管理员身份运行* 或 *下载 Visual C++*)。 |
 | 📦 **内置安装程序** | 只有一个 EXE:双击即可打开安装菜单,包含桌面快捷方式、开始菜单项、*立即打开* 和 *打开应用文件夹*。无需管理员权限。 |
 | 🪶 **极致小巧** | 单个经过体积优化的 EXE,没有额外文件。 |
@@ -73,7 +73,7 @@
 
 **系统要求:** Windows 10 或 11(64 位),并安装 [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)(新版 Windows 已预装)。
 
-1. 从 [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) 下载最新的 **`MAZ-Launcher.exe`**。
+1. 从 [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) 下载最新的 **`Open-Game-Launcher.exe`**。
 2. **双击**该文件。
 3. 在安装菜单中点击 **“Installieren”**(*安装*)。
 4. 完成!点击 **“Jetzt öffnen”**(*立即打开*)。之后通过桌面快捷方式启动即可。
@@ -85,15 +85,15 @@
 > [!TIP]
 > **想用便携版?** 在安装菜单中点击 **“Ohne Installation starten”**(*免安装启动*),或在 EXE 旁边放一个名为 `portable.txt` 的空文件。
 
-**`MAZ-Launcher-mini.exe`** 是用 UPX 压缩的同一应用。部分杀毒软件可能误报压缩过的 EXE,此时请使用普通版本。
+**`Open-Game-Launcher-mini.exe`** 是用 UPX 压缩的同一应用。部分杀毒软件可能误报压缩过的 EXE,此时请使用普通版本。
 
-**卸载:** Windows 设置 → 应用 → “MAZ Launcher” → 卸载,或在启动器的 **Einstellungen → Allgemein**(*设置 → 常规*)中卸载。你的游戏不会受到影响。
+**卸载:** Windows 设置 → 应用 → “Open Game Launcher” → 卸载,或在启动器的 **Einstellungen → Allgemein**(*设置 → 常规*)中卸载。你的游戏不会受到影响。
 
 ## 使用方法
 
 - **开始游戏:** 将鼠标悬停在游戏上并点击 ▶。点击封面可打开详情。
 - **添加自定义游戏:** 点击左侧 **“Spiel hinzufügen”**(*添加游戏*)→ 在“Programm”处点击 **“Durchsuchen…”**(*浏览…*)→ 选择游戏的可执行文件 → **“Hinzufügen”**(*添加*)。
-- **更改外观:** **Einstellungen → Design** → 选择布局(MAZ / Steam / Epic)和配色。
+- **更改外观:** **Einstellungen → Design** → 选择布局(OG / Steam / Epic)和配色。
 - **显示所有 Steam 游戏(包括未安装的):** **Einstellungen → Verbindungen**(*连接*)→ 填写免费的 Steam Web API 密钥,说明就在旁边。
 - **自定义检查清单:** **Einstellungen → Eigene Spiele**(*自定义游戏*)→ 添加、修改或删除条目,也可以按游戏单独设置。
 
@@ -109,7 +109,7 @@
 git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
 cd MAZ-Lauchner
 cargo run                 # 开发
-cargo build --release     # 发布版 EXE:target\release\MAZ-Launcher.exe
+cargo build --release     # 发布版 EXE:target\release\Open-Game-Launcher.exe
 .\scripts\build.ps1 -Mini # 将 EXE 复制到 dist\,并额外生成 UPX 压缩的 mini 版本
 ```
 
@@ -123,7 +123,7 @@ cargo build --release     # 发布版 EXE:target\release\MAZ-Launcher.exe
 不会。Steam 和 Epic 游戏始终通过官方启动器启动,也从不索要密码。
 
 **为什么看不到我所有的 Epic 游戏?**
-Epic 只有在登录后才提供已购游戏列表。MAZ Launcher 会显示所有**已安装**的 Epic 游戏。
+Epic 只有在登录后才提供已购游戏列表。Open Game Launcher 会显示所有**已安装**的 Epic 游戏。
 
 **窗口一直是白色或无法打开。**
 启动器需要 Microsoft WebView2(Windows 10/11 通常自带)。如果缺失,启动器会在启动时说明如何安装。

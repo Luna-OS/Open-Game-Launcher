@@ -125,10 +125,11 @@ pub fn pick_asset<'a>(kind: &InstallKind, assets: &'a [Asset]) -> Option<&'a Ass
     let find = |f: &dyn Fn(&str) -> bool| assets.iter().find(|x| f(&x.name));
     match kind {
         InstallKind::WindowsExe(_) => {
+            // Neuer Name zuerst, alter Name (bis 1.7) als Ausweich
             if cfg!(target_arch = "aarch64") {
-                find(&|n| n == "MAZ-Launcher-arm64.exe")
+                find(&|n| n == "Open-Game-Launcher-arm64.exe").or_else(|| find(&|n| n == "MAZ-Launcher-arm64.exe"))
             } else {
-                find(&|n| n == "MAZ-Launcher.exe")
+                find(&|n| n == "Open-Game-Launcher.exe").or_else(|| find(&|n| n == "MAZ-Launcher.exe"))
             }
         }
         InstallKind::AppImage(_) => find(&|n| n.ends_with(&format!("-{a}.AppImage"))),
@@ -166,7 +167,7 @@ fn agent(timeout: u64) -> ureq::Agent {
     ureq::Agent::config_builder()
         .tls_config(tls)
         .timeout_global(Some(Duration::from_secs(timeout)))
-        .user_agent(format!("MAZ-Launcher/{}", sys::VERSION))
+        .user_agent(format!("Open-Game-Launcher/{}", sys::VERSION))
         .build()
         .into()
 }
@@ -464,6 +465,12 @@ mod tests {
         assert!(pick_asset(&InstallKind::Manual, &list).is_none());
         let sums = "ab12  other.exe\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  MAZ-Launcher.exe\n";
         assert_eq!(expected_hash(sums, "MAZ-Launcher.exe").unwrap().len(), 64);
+        // Neuer Name hat Vorrang vor dem alten
+        if cfg!(target_arch = "x86_64") {
+            let mut both = list.clone();
+            both.push(a("Open-Game-Launcher.exe"));
+            assert_eq!(pick_asset(&InstallKind::WindowsExe(PathBuf::new()), &both).unwrap().name, "Open-Game-Launcher.exe");
+        }
         assert!(expected_hash(sums, "other.exe").is_none());
     }
 

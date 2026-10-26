@@ -411,7 +411,7 @@ fn ColorRow(#[props(into)] label: String, value: String, onchange: EventHandler<
 
 /// Design aus einer .maztheme.json-Datei laden
 fn import_theme_file(app: App) {
-    let Some(path) = rfd::FileDialog::new().set_title(t("theme.import_file")).add_filter("MAZ Theme", &["json", "maztheme"]).pick_file() else {
+    let Some(path) = rfd::FileDialog::new().set_title(t("theme.import_file")).add_filter("OG Theme", &["json", "ogtheme", "maztheme"]).pick_file() else {
         return;
     };
     // Design-Dateien sind klein – alles über 256 KB ist sicher keine
@@ -544,7 +544,7 @@ fn ThemeEditor(id: String, on_done: EventHandler<()>) -> Element {
                     Segmented {
                         options: vec![
                             ("".to_string(), t("theme.layout_keep")),
-                            ("maz".to_string(), "MAZ".to_string()),
+                            ("maz".to_string(), "OG".to_string()),
                             ("steam".to_string(), "Steam".to_string()),
                             ("epic".to_string(), "Epic".to_string()),
                         ],
@@ -578,8 +578,8 @@ fn ThemeEditor(id: String, on_done: EventHandler<()>) -> Element {
                         onclick: move |_| {
                             let th = app.settings.peek().custom_themes.iter().find(|c| c.id == id_file).cloned();
                             if let Some(th) = th {
-                                let file = format!("{}.maztheme.json", sys::safe_file_name(if th.name.is_empty() { "design" } else { &th.name }));
-                                if let Some(path) = rfd::FileDialog::new().set_title(t("theme.export")).set_file_name(&file).add_filter("MAZ Theme", &["json"]).save_file() {
+                                let file = format!("{}.ogtheme.json", sys::safe_file_name(if th.name.is_empty() { "design" } else { &th.name }));
+                                if let Some(path) = rfd::FileDialog::new().set_title(t("theme.export")).set_file_name(&file).add_filter("OG Theme", &["json"]).save_file() {
                                     match std::fs::write(&path, th.to_file()) {
                                         Ok(()) => app.toast(&t("theme.exported"), "check-circle"),
                                         Err(e) => app.toast(&tf("toast.save_failed", &[("error", &e.to_string())]), "alert"),
@@ -1352,8 +1352,7 @@ fn MinecraftSection() -> Element {
                     super::minecraft::CurseForgeKeyBox { show_guide: show_guide(), on_toggle: move |_| show_guide.set(!show_guide()), key_input: key_input(),
                         on_input: move |v: String| key_input.set(v),
                         on_save: move |_| {
-                            let k = key_input.peek().trim().to_string();
-                            if k.len() >= 20 && k.len() < 200 && k.chars().all(|c| c.is_ascii_graphic()) {
+                            if let Some(k) = crate::mccontent::clean_cf_key(&key_input.peek()) {
                                 app.update(|s| s.curseforge_key = k);
                                 key_input.set(String::new());
                                 app.toast(&t("mc.key_saved"), "check-circle");

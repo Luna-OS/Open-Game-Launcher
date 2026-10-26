@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../../assets/icon-256.png" width="128" alt="Logo MAZ Launcher">
+<img src="../../assets/icon-256.png" width="128" alt="Logo Open Game Launcher">
 
-# MAZ Launcher
+# Open Game Launcher
 
 **Wszystkie Twoje gry. Jeden launcher.**
 
@@ -21,7 +21,7 @@ Steam, Epic Games i Twoje własne gry w jednej szybkiej, lekkiej i ładnej aplik
 
 <br>
 
-<img src="../screenshots/library-epic-style.webp" alt="Biblioteka MAZ Launcher w stylu Epic Games" width="900">
+<img src="../screenshots/library-epic-style.webp" alt="Biblioteka Open Game Launcher w stylu Epic Games" width="900">
 
 </div>
 
@@ -38,8 +38,8 @@ Steam, Epic Games i Twoje własne gry w jednej szybkiej, lekkiej i ładnej aplik
 | 🟦 **Epic Games** | Automatycznie wykrywa wszystkie zainstalowane gry Epic. |
 | 🚀 **Własne gry** | Dodaj dowolną grę: plik `.exe`, skrót lub plik wsadowy. Przed **każdym** uruchomieniem lista kontrolna pyta *„Czy wyłączyłeś wszystko, co ważne?”*. Jeśli odpowiesz **Nie**, gra się nie uruchomi. |
 | 🖼️ **Oryginalne ikony i okładki** | Prawdziwe ikony gier (pobrane bezpośrednio z pliku EXE lub ze Steam) i oryginalne okładki. Każdej grze możesz ustawić własną okładkę. |
-| 🎨 **3 układy biblioteki** | Wygląda **jak biblioteka Steam**, **jak Epic Games** albo w **stylu MAZ**. |
-| 🌈 **8 motywów kolorystycznych** | MAZ Fiolet, Północ, Neon, Żar, Las, Sakura, OLED Czerń i Jasny, a do tego własny kolor akcentu. |
+| 🎨 **3 układy biblioteki** | Wygląda **jak biblioteka Steam**, **jak Epic Games** albo w **stylu OG**. |
+| 🌈 **8 motywów kolorystycznych** | OG Fiolet, Północ, Neon, Żar, Las, Sakura, OLED Czerń i Jasny, a do tego własny kolor akcentu. |
 | 🛟 **Błędy wyjaśnione prostym językiem** | Gdy coś się nie uruchamia, launcher **krok po kroku** wyjaśnia, co się stało i jak to naprawić, z przyciskami, które od razu pomagają (np. *Uruchom jako administrator* lub *Pobierz Visual C++*). |
 | 📦 **Wbudowany instalator** | Jeden plik EXE: dwukrotne kliknięcie otwiera menu instalacji ze skrótem na pulpicie, wpisem w menu Start, *Otwórz teraz* i *Otwórz folder aplikacji*. Bez uprawnień administratora. |
 | 🪶 **Bardzo mały** | Jeden zoptymalizowany pod kątem rozmiaru plik EXE, bez dodatkowych plików. |
@@ -73,7 +73,7 @@ Steam, Epic Games i Twoje własne gry w jednej szybkiej, lekkiej i ładnej aplik
 
 **Wymagania:** Windows 10 lub 11 (64-bit) z [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/), który jest preinstalowany w aktualnych wersjach Windows.
 
-1. Pobierz najnowszy **`MAZ-Launcher.exe`** z [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest).
+1. Pobierz najnowszy **`Open-Game-Launcher.exe`** z [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest).
 2. Kliknij plik **dwukrotnie**.
 3. W menu instalacji kliknij **„Installieren”** (*Zainstaluj*).
 4. Gotowe! Kliknij **„Jetzt öffnen”** (*Otwórz teraz*). Od tej pory uruchamiaj launcher skrótem z pulpitu.
@@ -85,15 +85,15 @@ Steam, Epic Games i Twoje własne gry w jednej szybkiej, lekkiej i ładnej aplik
 > [!TIP]
 > **Wolisz wersję przenośną?** W menu instalacji kliknij **„Ohne Installation starten”** (*Uruchom bez instalacji*) albo umieść obok pliku EXE pusty plik o nazwie `portable.txt`.
 
-**`MAZ-Launcher-mini.exe`** to ta sama aplikacja spakowana UPX. Niektóre antywirusy błędnie zgłaszają spakowane pliki EXE; wtedy użyj zwykłej wersji.
+**`Open-Game-Launcher-mini.exe`** to ta sama aplikacja spakowana UPX. Niektóre antywirusy błędnie zgłaszają spakowane pliki EXE; wtedy użyj zwykłej wersji.
 
-**Odinstalowanie:** Ustawienia Windows → Aplikacje → „MAZ Launcher” → Odinstaluj, albo w launcherze w **Einstellungen → Allgemein** (*Ustawienia → Ogólne*). Twoje gry pozostają nienaruszone.
+**Odinstalowanie:** Ustawienia Windows → Aplikacje → „Open Game Launcher” → Odinstaluj, albo w launcherze w **Einstellungen → Allgemein** (*Ustawienia → Ogólne*). Twoje gry pozostają nienaruszone.
 
 ## Jak używać
 
 - **Granie:** najedź myszą na grę i kliknij ▶. Kliknięcie okładki otwiera szczegóły.
 - **Dodawanie własnej gry:** kliknij **„Spiel hinzufügen”** (*Dodaj grę*) po lewej → **„Durchsuchen…”** (*Przeglądaj…*) przy „Programm” → wybierz plik startowy gry → **„Hinzufügen”** (*Dodaj*).
-- **Zmiana wyglądu:** **Einstellungen → Design** → wybierz układ (MAZ / Steam / Epic) i motyw kolorystyczny.
+- **Zmiana wyglądu:** **Einstellungen → Design** → wybierz układ (OG / Steam / Epic) i motyw kolorystyczny.
 - **Wszystkie gry Steam, także niezainstalowane:** **Einstellungen → Verbindungen** (*Połączenia*) → wpisz darmowy klucz Steam Web API. Instrukcja jest tuż obok.
 - **Własna lista kontrolna:** **Einstellungen → Eigene Spiele** (*Własne gry*) → dodawaj, edytuj lub usuwaj punkty, ogólnie lub dla konkretnej gry.
 
@@ -109,7 +109,7 @@ Brak pliku gry · dysk lub pendrive niepodłączony · wymagane uprawnienia admi
 git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
 cd MAZ-Lauchner
 cargo run                 # tryb deweloperski
-cargo build --release     # gotowy EXE: target\release\MAZ-Launcher.exe
+cargo build --release     # gotowy EXE: target\release\Open-Game-Launcher.exe
 .\scripts\build.ps1 -Mini # kopiuje EXE do dist\ i tworzy wersję mini spakowaną UPX
 ```
 
@@ -123,7 +123,7 @@ Szczegóły techniczne (stack, struktura projektu, optymalizacja rozmiaru): zoba
 Nie. Gry ze Steam i Epic są zawsze uruchamiane przez oficjalne launchery. Launcher nigdy nie pyta o hasła.
 
 **Dlaczego nie widzę wszystkich moich gier z Epic?**
-Epic udostępnia listę kupionych gier dopiero po zalogowaniu. MAZ Launcher pokazuje wszystkie **zainstalowane** gry Epic.
+Epic udostępnia listę kupionych gier dopiero po zalogowaniu. Open Game Launcher pokazuje wszystkie **zainstalowane** gry Epic.
 
 **Okno pozostaje białe albo się nie otwiera.**
 Launcher wymaga Microsoft WebView2 (zwykle dołączony do Windows 10 i 11). Jeśli go brakuje, launcher przy starcie wyjaśnia, jak go zainstalować.

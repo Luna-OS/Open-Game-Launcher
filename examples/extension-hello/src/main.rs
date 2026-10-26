@@ -1,4 +1,4 @@
-//! Beispiel-Erweiterung für den MAZ Launcher: zwei Test-Spiele, Infos und eine Aktion.
+//! Beispiel-Erweiterung für den Open Game Launcher: zwei Test-Spiele, Infos und eine Aktion.
 use maz_extension_sdk::*;
 
 struct Hello {
@@ -37,7 +37,7 @@ impl Extension for Hello {
         Ok(Some(Metadata {
             description: format!("{name} ist ein Test-Spiel aus der Beispiel-Erweiterung."),
             genres: vec!["Demo".into()],
-            developer: "MAZ".into(),
+            developer: "OG".into(),
             ..Default::default()
         }))
     }

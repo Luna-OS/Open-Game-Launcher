@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=MAZ Launcher
+Name=Open Game Launcher
 GenericName=Game Launcher
 GenericName[de]=Spiele-Launcher
 Comment=All your Steam, Epic, Roblox and own games in one launcher
@@ -10,4 +10,4 @@ Icon=io.github.mikeadamrgb.MAZLauncher
 Terminal=false
 Categories=Game;
 Keywords=games;launcher;steam;epic;roblox;library;
-StartupWMClass=MAZ Launcher
+StartupWMClass=Open Game Launcher

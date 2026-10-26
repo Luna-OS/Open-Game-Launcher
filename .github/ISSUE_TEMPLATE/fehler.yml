@@ -13,7 +13,7 @@ body:
     id: details
     attributes:
       label: Technische Details
-      description: Im Fehlerfenster auf „Alles kopieren“ klicken und hier einfügen. Bei einem Absturz bitte die Datei %LOCALAPPDATA%\MAZ Launcher\absturz.log anhängen.
+      description: Im Fehlerfenster auf „Alles kopieren“ klicken und hier einfügen. Bei einem Absturz bitte die Datei %LOCALAPPDATA%\Open Game Launcher\absturz.log (bis Version 1.7: %LOCALAPPDATA%\MAZ Launcher\absturz.log) anhängen.
       render: text
   - type: input
     id: version

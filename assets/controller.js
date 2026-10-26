@@ -1,4 +1,4 @@
-// MAZ Launcher – Controller-Modus.
+// Open Game Launcher – Controller-Modus.
 // Steuerkreuz / linker Stick = Fokus bewegen, A = auswählen, B = zurück/schließen,
 // LB / RB = Seite blättern. Läuft nur im Fenster, liest nur den Controller aus.
 (function () {

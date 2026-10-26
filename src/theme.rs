@@ -88,8 +88,8 @@ pub const PRESETS: &[(&str, [&str; 8])] = &[
     ("nord", ["#2e3440", "#3b4252", "#2b303b", "#eceff4", "#a3acbd", "#88c0d0", "#b48ead", "#4c566a"]),
     ("coffee", ["#16110d", "#221a14", "#1b1410", "#f3e9df", "#b09a86", "#c08457", "#e0b084", "#3d2f24"]),
     ("oled", ["#000000", "#0b0b0b", "#000000", "#f5f5f5", "#8f8f8f", "#f5f5f5", "#8f8f8f", "#1f1f1f"]),
-    ("light", ["#f4f5fa", "#ffffff", "#ffffff", "#14142b", "#62647d", "#6d28d9", "#0ea5e9", "#dfe1ee"]),
-    ("mint", ["#f3fbf7", "#ffffff", "#ffffff", "#0f2a1f", "#5b7a6c", "#10b981", "#06b6d4", "#d6ebe1"]),
+    ("light", ["#f4f5fa", "#ffffff", "#ffffff", "#14142b", "#34364a", "#6d28d9", "#0ea5e9", "#dfe1ee"]),
+    ("mint", ["#f3fbf7", "#ffffff", "#ffffff", "#0f2a1f", "#2f4a3e", "#10b981", "#06b6d4", "#d6ebe1"]),
 ];
 
 pub fn preset(id: &str) -> Option<CustomTheme> {
@@ -141,6 +141,37 @@ pub fn mix(a: &str, b: &str, t: f32) -> String {
 fn luminance(c: &str) -> f32 {
     let Some((r, g, b)) = parse_hex(c) else { return 0.0 };
     (0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32) / 255.0
+}
+
+/// Relative Helligkeit nach WCAG
+fn rel_lum(c: &str) -> f32 {
+    let Some((r, g, b)) = parse_hex(c) else { return 0.0 };
+    let ch = |v: u8| {
+        let v = v as f32 / 255.0;
+        if v <= 0.03928 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    };
+    0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+}
+
+/// Kontrast-Verhältnis (1 … 21) zwischen zwei Farben
+pub fn contrast(a: &str, b: &str) -> f32 {
+    let (x, y) = (rel_lum(a), rel_lum(b));
+    let (hi, lo) = if x > y { (x, y) } else { (y, x) };
+    (hi + 0.05) / (lo + 0.05)
+}
+
+/// Schriftfarbe so lange Richtung `strong` schieben, bis sie auf `bg` gut lesbar ist.
+/// Helle Hintergründe brauchen mehr Kontrast (graue Schrift auf Weiß ist schwer zu lesen).
+pub fn readable(fg: &str, bg: &str, strong: &str) -> String {
+    let min = if is_light(bg) { 7.0 } else { 4.5 };
+    let mut c = fg.to_string();
+    for i in 1..=10 {
+        if contrast(&c, bg) >= min {
+            return c;
+        }
+        c = mix(fg, strong, i as f32 / 10.0);
+    }
+    c
 }
 
 pub fn is_light(c: &str) -> bool {
@@ -225,7 +256,7 @@ impl CustomTheme {
         let accent_bg = mix(&t.card, &t.text, 0.11);
         let input = mix(&t.border, &t.text, 0.08);
         let sidenav_accent = mix(&t.sidebar, &t.text, 0.09);
-        let sidenav_fg = mix(&t.text, &t.sidebar, 0.15);
+        let sidenav_fg = readable(&mix(&t.text, &t.sidebar, 0.15), &t.sidebar, &t.text);
         format!(
             "--background:{bg};--foreground:{fg};--card:{card};--card-foreground:{fg};--popover:{pop};--popover-foreground:{fg};\
 --primary:{acc};--primary-foreground:{accfg};--secondary:{sec};--secondary-foreground:{fg};--muted:{mut};--muted-foreground:{mfg};\
@@ -239,7 +270,7 @@ impl CustomTheme {
             accfg = contrast_text(&t.accent),
             sec = secondary,
             mut = muted_bg,
-            mfg = t.muted,
+            mfg = readable(&t.muted, &t.bg, &t.text),
             abg = accent_bg,
             border = t.border,
             input = input,
@@ -255,11 +286,13 @@ impl CustomTheme {
     pub fn to_code(&self) -> String {
         let mut t = self.sanitized();
         t.id = String::new();
-        format!("MAZTHEME:{}", serde_json::to_string(&t).unwrap_or_default())
+        format!("OGTHEME:{}", serde_json::to_string(&t).unwrap_or_default())
     }
 
     pub fn from_code(code: &str) -> Option<CustomTheme> {
-        let json = code.trim().strip_prefix("MAZTHEME:").unwrap_or(code.trim());
+        // Alte Codes (bis 1.7: „MAZTHEME:“) funktionieren weiter
+        let c = code.trim();
+        let json = c.strip_prefix("OGTHEME:").or_else(|| c.strip_prefix("MAZTHEME:")).unwrap_or(c);
         let t: CustomTheme = serde_json::from_str(json).ok()?;
         Some(t.sanitized())
     }
@@ -282,6 +315,15 @@ mod tests {
         assert_eq!(parse_hex("#fff"), Some((255, 255, 255)));
         assert_eq!(mix("#000000", "#ffffff", 0.5), "#808080");
         assert!(is_light("#f4f5fa"));
+        // Grau auf Weiß wird automatisch dunkler gemacht
+        let fixed = readable("#9a9a9a", "#ffffff", "#111111");
+        assert!(contrast(&fixed, "#ffffff") >= 7.0, "{fixed}");
+        assert!(contrast("#000000", "#ffffff") > 20.0);
+        // Alle mitgelieferten Designs: Nebentext gut lesbar
+        for (id, c) in PRESETS.iter() {
+            let need = if is_light(c[0]) { 7.0 } else { 4.5 };
+            assert!(contrast(c[4], c[0]) >= need, "{id}: {} auf {}", c[4], c[0]);
+        }
         assert!(!is_light("#0a0a12"));
         assert_eq!(contrast_text("#ffffff"), "#0b0b10");
     }

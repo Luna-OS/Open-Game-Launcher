@@ -1,4 +1,4 @@
-# Erweiterungen für den MAZ Launcher – Entwickler-Doku
+# Erweiterungen für den Open Game Launcher – Entwickler-Doku
 
 Erweiterungen sind **eigene Programme**, die über eine sehr einfache Schnittstelle mit dem
 Launcher reden: Der Launcher schreibt pro Zeile eine Anfrage (JSON) auf **stdin**, die
@@ -44,11 +44,12 @@ geprüft – sie sind aber **keine echte Sperre** im Betriebssystem. Deshalb:
 
 | System | Ordner |
 |---|---|
-| Windows | `%APPDATA%\MAZ Launcher\extensions\<id>\` |
-| macOS | `~/Library/Application Support/MAZ Launcher/extensions/<id>/` |
-| Linux | `~/.config/maz-launcher/extensions/<id>/` |
+| Windows | `%APPDATA%\Open Game Launcher\extensions\<id>\` |
+| macOS | `~/Library/Application Support/Open Game Launcher/extensions/<id>/` |
+| Linux | `~/.config/open-game-launcher/extensions/<id>/` |
 
-Der Ordnername muss genau der `id` aus dem Manifest entsprechen.
+Der Ordnername muss genau der `id` aus dem Manifest entsprechen. Bis Version 1.7 hieß der Ordner
+„MAZ Launcher“ bzw. `maz-launcher` – er wird beim ersten Start automatisch umbenannt.
 
 ## manifest.json
 
@@ -144,7 +145,7 @@ Eigene Änderungen des Nutzers haben immer Vorrang.
 
 ```json
 → {"id":3,"call":"metadata","name":"Hello Game One","id":"ext:hello-example:hello-1"}
-← {"id":3,"result":{"description":"…","genres":["Demo"],"developer":"MAZ","release":"2026","cover":"https://…/c.png"}}
+← {"id":3,"result":{"description":"…","genres":["Demo"],"developer":"OG","release":"2026","cover":"https://…/c.png"}}
 ```
 
 Leeres Objekt `{}` = nichts gefunden.
@@ -190,13 +191,14 @@ Prozesse enden mit dem Launcher: unter Windows über ein Job-Objekt, unter Linux
 
 `unsupported`, `not_found`, `bad_request`, `internal`. Der Launcher zeigt `code` und `message` an.
 
-## Paketieren als .mazext
+## Paketieren als .ogext
 
-Eine `.mazext`-Datei ist ein ZIP mit `manifest.json` **im Hauptordner** und allen Dateien:
+Eine `.ogext`-Datei ist ein ZIP mit `manifest.json` **im Hauptordner** und allen Dateien.
+Ältere Pakete mit der Endung `.mazext` funktionieren weiter.
 
 ```sh
 cd my-extension
-zip -r ../my-extension.mazext manifest.json hello hello.exe lang icons
+zip -r ../my-extension.ogext manifest.json hello hello.exe lang icons
 ```
 
 Beim Entpacken prüft der Launcher: keine Pfade mit `..`, keine absoluten Pfade oder Laufwerke,

@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src https://api.github.com; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>MAZ Launcher – free game launcher for Steam, Epic, GOG, Xbox &amp; more</title>
-<meta name="description" content="MAZ Launcher puts all your Steam, Epic Games, GOG, EA, Ubisoft, Battle.net, Amazon, itch.io, Xbox and Roblox games in one fast library. Free, open source, no account – for Windows, macOS and Linux.">
-<meta name="keywords" content="game launcher, Steam, Epic Games, GOG, Xbox, Roblox, emulator, Steam Deck, Linux, Proton, Windows, macOS, open source">
+<title>Open Game Launcher (OG) – free game launcher for Steam, Epic, GOG, Xbox &amp; more</title>
+<meta name="description" content="Open Game Launcher (OG) puts all your Steam, Epic Games, GOG, EA, Ubisoft, Battle.net, Amazon, itch.io, Xbox, Minecraft and Roblox games in one fast library. Free, open source, no account – for Windows, macOS and Linux.">
+<meta name="keywords" content="Open Game Launcher, OG launcher, game launcher, Steam, Epic Games, GOG, Xbox, Minecraft, Roblox, emulator, Steam Deck, Linux, Proton, Windows, macOS, open source, MAZ Launcher">
 <meta name="author" content="MikeAdamRGB">
 <meta name="robots" content="index, follow, max-image-preview:large">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#0b0b0c">
 <meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://mikeadamrgb.github.io/MAZ-Lauchner/">
 <link rel="alternate" hreflang="x-default" href="https://mikeadamrgb.github.io/MAZ-Lauchner/">
@@ -26,26 +26,27 @@
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/icon.png">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="MAZ Launcher">
-<meta property="og:title" content="MAZ Launcher – all your games, one launcher">
-<meta property="og:description" content="Steam, Epic, GOG, Xbox, Roblox, emulators and your own games in one library. Free, open source, local. Windows, macOS, Linux.">
+<meta property="og:site_name" content="Open Game Launcher">
+<meta property="og:title" content="Open Game Launcher – all your games, one launcher">
+<meta property="og:description" content="Steam, Epic, GOG, Xbox, Minecraft, Roblox, emulators and your own games in one library. Free, open source, local. Windows, macOS, Linux.">
 <meta property="og:url" content="https://mikeadamrgb.github.io/MAZ-Lauchner/">
 <meta property="og:image" content="https://mikeadamrgb.github.io/MAZ-Lauchner/img/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="MAZ Launcher logo with the text: all your games in one launcher">
+<meta property="og:image:alt" content="Open Game Launcher – all your games in one launcher">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="MAZ Launcher – all your games, one launcher">
+<meta name="twitter:title" content="Open Game Launcher – all your games, one launcher">
 <meta name="twitter:description" content="Free, open-source game launcher for Windows, macOS and Linux.">
 <meta name="twitter:image" content="https://mikeadamrgb.github.io/MAZ-Lauchner/img/og.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "MAZ Launcher",
+  "name": "Open Game Launcher",
+  "alternateName": ["OG Launcher", "MAZ Launcher"],
   "applicationCategory": "GameApplication",
   "operatingSystem": "Windows 10, Windows 11, macOS 11+, Linux",
-  "description": "Free, open-source game launcher that puts Steam, Epic Games, GOG, EA app, Ubisoft Connect, Battle.net, Amazon Games, itch.io, Xbox, Roblox, emulators and your own games in one library.",
+  "description": "Free, open-source game launcher that puts Steam, Epic Games, GOG, EA app, Ubisoft Connect, Battle.net, Amazon Games, itch.io, Xbox, Minecraft, Roblox, emulators and your own games in one library.",
   "url": "https://mikeadamrgb.github.io/MAZ-Lauchner/",
   "downloadUrl": "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest",
   "image": "https://mikeadamrgb.github.io/MAZ-Lauchner/img/og.png",
@@ -56,171 +57,246 @@
   "author": { "@type": "Person", "name": "MikeAdamRGB", "url": "https://github.com/MikeAdamRGB" }
 }
 </script>
+<script src="i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&family=Unbounded:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  /* OLED: echtes Schwarz, weiße Schrift, sehr dezente Linien */
+  /* Fast schwarz, helle Schrift. Nebentext bleibt hell genug zum Lesen (kein Grau auf Grau). */
   :root {
-    --ink: #000;
-    --ink-2: #0b0b0b;
-    --ink-3: #141414;
-    --line: #222;
-    --paper: #fff;
-    --muted: #9b9b9b;
-    --accent: #fff;
+    --bg: #0b0b0c;
+    --bg-2: #121214;
+    --bg-3: #19191c;
+    --line: rgba(255,255,255,.10);
+    --line-2: rgba(255,255,255,.18);
+    --fg: #f6f6f4;
+    --fg-2: #dcdcd8;
+    --fg-3: #bcbcb7;
+    --green: #22c55e; --blue: #3b82f6; --violet: #a855f7; --red: #ef4444;
     --display: "Unbounded", "Segoe UI", system-ui, sans-serif;
-    --body: "Onest", "Segoe UI", system-ui, sans-serif;
+    --body: "Inter", "Segoe UI", system-ui, sans-serif;
+    --serif: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; background: #000; }
-  body {
-    margin: 0;
-    background: var(--ink);
-    color: var(--paper);
-    font: 17px/1.6 var(--body);
-    -webkit-font-smoothing: antialiased;
-  }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.6 var(--body); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   a { color: inherit; }
   img { max-width: 100%; display: block; height: auto; }
-  :focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 6px; }
-  .wrap { width: min(1180px, 100% - 32px); margin-inline: auto; }
-  .sr { position: absolute; left: -9999px; }
+  :focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .wrap { width: min(1200px, 100% - 32px); margin-inline: auto; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mono { font-family: var(--mono); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 700; }
 
-  /* Kopfzeile */
-  .top { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px; padding: 14px 0; background: rgba(0,0,0,.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid transparent; }
-  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 17px var(--display); letter-spacing: -.01em; }
-  .brand img { width: 34px; height: 34px; border-radius: 9px; }
-  .top .spacer { flex: 1; }
-  .top a.gh { text-decoration: none; color: var(--muted); font-weight: 500; }
-  .top a.gh:hover { color: var(--paper); }
-  select {
-    background: var(--ink-2); color: var(--paper); border: 1px solid var(--line);
-    border-radius: 10px; padding: 8px 10px; font: 500 15px var(--body);
-  }
+  /* ---------- Kopfzeile ---------- */
+  .top { position: fixed; inset: 0 0 auto; z-index: 30; transition: background .3s, border-color .3s; border-bottom: 1px solid transparent; }
+  .top.solid { background: rgba(11,11,12,.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-color: var(--line); }
+  .top .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 15px var(--display); letter-spacing: -.01em; white-space: nowrap; }
+  .brand img { width: 32px; height: 32px; border-radius: 8px; }
+  .links { display: flex; gap: 22px; margin-left: 12px; }
+  .links a { text-decoration: none; color: var(--fg-2); font-weight: 500; font-size: 15px; }
+  .links a:hover { color: #fff; }
+  .spacer { flex: 1; }
+  select { background: var(--bg-2); color: var(--fg); border: 1px solid var(--line-2); border-radius: 0; padding: 8px 10px; font: 500 14px var(--body); }
+  .top .gh { color: var(--fg-2); text-decoration: none; font-weight: 500; font-size: 15px; }
+  .top .gh:hover { color: #fff; }
 
-  /* Hero */
-  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 56px; align-items: center; padding: 64px 0 80px; }
-  h1 {
-    font: 800 clamp(40px, 6.2vw, 78px)/1.02 var(--display);
-    letter-spacing: -.035em; margin: 0 0 22px;
-    text-wrap: balance;
-  }
-  .lead { font-size: 20px; color: var(--muted); max-width: 32em; margin: 0 0 30px; }
-  .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .btn {
-    display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
-    border-radius: 999px; padding: 14px 24px; font: 700 16px var(--body);
-    border: 1px solid var(--line); background: var(--ink-2); cursor: pointer;
-    transition: border-color .2s, transform .2s;
-  }
-  .btn:hover { border-color: #555; }
-  .btn.primary { background: #fff; color: #000; border: 0; }
-  .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 40px -12px rgba(255,255,255,.45); }
-  .btn svg { width: 20px; height: 20px; }
-  .meta { margin-top: 14px; color: var(--muted); font-size: 14px; }
+  /* ---------- Knöpfe (wie ArtCraft: eckig, Monospace) ---------- */
+  .btn { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; padding: 16px 26px; font: 700 13px var(--mono); text-transform: uppercase; letter-spacing: .14em; border: 1px solid var(--line-2); color: var(--fg); background: rgba(11,11,12,.6); cursor: pointer; transition: background .2s, color .2s, transform .2s, border-color .2s; }
+  .btn:hover { border-color: #fff; }
+  .btn.white { background: #fff; color: #000; border-color: #fff; }
+  .btn.white:hover { transform: translateY(-2px); box-shadow: 0 14px 40px -14px rgba(255,255,255,.5); }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .btn.small { padding: 10px 16px; font-size: 11px; }
 
-  /* Fenster im macOS-Stil: Titelleiste mit den drei Ampel-Punkten */
-  .win {
-    position: relative; border-radius: 12px; overflow: hidden; background: #0d0d0d;
-    border: 1px solid #262626;
-    box-shadow: 0 0 0 1px rgba(255,255,255,.03), 0 40px 90px -30px rgba(0,0,0,1), 0 20px 60px -30px rgba(255,255,255,.08);
-  }
-  .win .bar { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #161616; border-bottom: 1px solid #222; }
-  .win .bar i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
-  .win .bar i:nth-child(2) { background: #febc2e; }
-  .win .bar i:nth-child(3) { background: #28c840; }
-  .win .bar b { flex: 1; text-align: center; font: 500 12px var(--body); color: #777; margin-right: 52px; }
-  .win img { width: 100%; }
-
-  /* Bildstapel */
-  .stack { position: relative; aspect-ratio: 16 / 11; }
-  .stack .win { position: absolute; }
-  .stack .back { width: 72%; right: 0; top: 0; transform: rotate(4deg); opacity: .45; }
-  .stack .mid { width: 72%; right: 9%; top: 8%; transform: rotate(-2deg); opacity: .7; }
-  .stack .front { width: 86%; left: 0; bottom: 0; }
+  /* ---------- Hero ---------- */
+  .hero { position: relative; min-height: 100vh; min-height: 100svh; display: grid; place-items: center; overflow: hidden; isolation: isolate; padding: 110px 16px 90px; }
+  .rings { position: absolute; left: 50%; top: 50%; width: 1700px; height: 1700px; translate: -50% -50%; z-index: -2; pointer-events: none; }
+  .rings circle { fill: none; }
+  .rings .r { stroke: rgba(255,255,255,.07); stroke-width: 1; }
+  .rings .t { stroke: rgba(255,255,255,.16); stroke-width: 1; }
+  .rings .arc { stroke-width: 2.5; stroke-linecap: round; transform-origin: 850px 850px; }
   @media (prefers-reduced-motion: no-preference) {
-    .stack .win { animation: deal .9s cubic-bezier(.2, .8, .2, 1) both; }
-    .stack .mid { animation-delay: .12s; }
-    .stack .front { animation-delay: .24s; }
-    @keyframes deal { from { opacity: 0; translate: 40px 30px; } }
+    .rings .spin { animation: spin 90s linear infinite; transform-origin: 850px 850px; }
+    .rings .spin-r { animation: spin 140s linear infinite reverse; transform-origin: 850px 850px; }
+    .rings .spin-f { animation: spin 60s linear infinite; transform-origin: 850px 850px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  }
+  .glow { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(closest-side at 50% 52%, rgba(11,11,12,.92), rgba(11,11,12,.55) 45%, transparent 75%); }
+
+  /* Schwebende Spielbilder */
+  .floaters { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .shot { position: absolute; left: var(--x); top: var(--y); width: var(--w); translate: -50% -50%; }
+  .shot .in { border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); box-shadow: 0 30px 60px -20px rgba(0,0,0,.9); background: var(--bg-3); transform: translate(var(--px, 0), var(--py, 0)) rotate(var(--rot, 0deg)); transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+  .shot img { width: 100%; aspect-ratio: var(--ar, 16/10); object-fit: cover; }
+  @media (prefers-reduced-motion: no-preference) {
+    .js .shot { animation: burst 1.4s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(.35s + var(--i) * 70ms); }
+    .js .shot .in { animation: bob 7s ease-in-out infinite; animation-delay: calc(var(--i) * -0.9s); }
+    @keyframes burst {
+      from { left: 50%; top: 50%; opacity: 0; scale: .25; filter: blur(8px); }
+      60% { opacity: 1; filter: blur(0); }
+    }
+    @keyframes bob { 50% { translate: 0 -10px; } }
   }
 
-  /* Plattformen */
-  .stores { display: flex; flex-wrap: wrap; gap: 10px 26px; padding: 24px 0; border-block: 1px solid var(--line); color: var(--muted); font-weight: 500; }
-  .stores strong { color: var(--paper); font-weight: 700; }
+  .hero-inner { text-align: center; max-width: 980px; }
+  .wordmark { margin: 0; font: 900 clamp(36px, 8vw, 118px)/.9 var(--display); letter-spacing: -.045em; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; text-shadow: 0 6px 40px rgba(0,0,0,.6); }
+  .wordmark .line { display: block; white-space: nowrap; }
+  .wordmark .ch { display: inline-block; }
+  .js .wordmark:not(.ready) { opacity: 0; }
+  .wordmark .line2 { font-size: .5em; letter-spacing: .08em; margin-top: .2em; color: #fff; }
+  @media (prefers-reduced-motion: no-preference) {
+    /* Der Name kommt aus der Mitte und geht auseinander */
+    .js .wordmark .ch { animation: spread 1.3s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--d, 0) * 1ms); }
+    @keyframes spread {
+      from { transform: translateX(var(--dx, 0)) scale(.55); opacity: 0; filter: blur(14px); }
+      55% { opacity: 1; }
+      to { transform: none; opacity: 1; filter: blur(0); }
+    }
+    .js .fade { animation: fade 1s ease both; animation-delay: var(--delay, 1s); }
+    @keyframes fade { from { opacity: 0; translate: 0 14px; } }
+  }
+  .tagline { margin: 34px 0 14px; font: 700 clamp(26px, 3.4vw, 40px)/1.15 var(--body); letter-spacing: -.02em; }
+  .tagline em { font: italic 400 1.12em var(--serif); letter-spacing: 0; color: var(--fg-2); }
+  .lead { margin: 0 auto 34px; max-width: 36em; color: var(--fg-2); font-size: 18px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+  .badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 28px; margin-top: 30px; color: var(--fg-3); }
+  .badges a { text-decoration: none; display: inline-flex; gap: 8px; align-items: center; }
+  .badges a:hover { color: #fff; }
+  .badges svg { width: 15px; height: 15px; }
+  .version { margin-top: 14px; color: var(--fg-3); font-size: 14px; min-height: 1.4em; }
+  .formerly { color: var(--fg-3); font-size: 14px; margin-top: 6px; }
 
-  section { padding: 96px 0 0; }
-  h2 { font: 700 clamp(28px, 3.6vw, 42px)/1.1 var(--display); letter-spacing: -.025em; margin: 0 0 14px; }
-  .sub { color: var(--muted); max-width: 42em; margin: 0 0 40px; font-size: 18px; }
+  /* Laufband mit Stores */
+  .ticker { position: relative; border-block: 1px solid var(--line); overflow: hidden; padding: 18px 0; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .ticker .row { display: flex; gap: 46px; width: max-content; }
+  .ticker span { white-space: nowrap; color: var(--fg-2); }
+  .ticker span::before { content: "✦"; margin-right: 46px; color: var(--fg-3); }
+  @media (prefers-reduced-motion: no-preference) {
+    .ticker .row { animation: tick 45s linear infinite; }
+    @keyframes tick { to { transform: translateX(-50%); } }
+  }
 
-  /* Funktionen */
-  .features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-  .feature { display: grid; grid-template-columns: 44px 1fr; gap: 16px; padding: 22px; border-radius: 18px; background: var(--ink-2); border: 1px solid #1a1a1a; transition: border-color .2s; }
-  .feature:hover { border-color: #333; }
-  .feature .ic { width: 44px; height: 44px; border-radius: 12px; background: #000; border: 1px solid #262626; display: grid; place-items: center; color: #fff; }
-  .feature .ic svg { width: 22px; height: 22px; }
-  .feature h3 { margin: 2px 0 6px; font: 700 18px var(--body); }
-  .feature p { margin: 0; color: var(--muted); }
+  /* ---------- Abschnitte ---------- */
+  section { padding: 130px 0 0; scroll-margin-top: 70px; }
+  .eyebrow { display: flex; gap: 14px; align-items: center; color: var(--fg-3); margin-bottom: 22px; }
+  .eyebrow b { color: #fff; }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h2 { font: 800 clamp(32px, 5vw, 64px)/1.02 var(--display); letter-spacing: -.035em; margin: 0 0 20px; max-width: 16em; text-wrap: balance; }
+  h2 em { font: italic 400 1.08em var(--serif); letter-spacing: 0; }
+  .sub { color: var(--fg-2); max-width: 40em; margin: 0 0 54px; font-size: 19px; }
+
+  /* Funktionen: nummerierte Karten */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .card { position: relative; padding: 30px 28px 34px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); transition: background .25s; }
+  .card:hover { background: var(--bg-2); }
+  .card .n { color: var(--fg-3); margin-bottom: 40px; display: flex; justify-content: space-between; }
+  .card .n i { width: 9px; height: 9px; border-radius: 50%; background: var(--c, #fff); box-shadow: 0 0 18px var(--c, #fff); }
+  .card h3 { margin: 0 0 10px; font: 700 21px/1.25 var(--body); letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--fg-2); }
 
   /* Galerie */
-  .gallery { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 2px 24px; scrollbar-color: #333 transparent; }
-  .gallery figure { margin: 0; flex: 0 0 min(640px, 88%); scroll-snap-align: start; }
-  .gallery button { all: unset; display: block; width: 100%; cursor: zoom-in; border-radius: 12px; }
+  .gallery { display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 26px; scrollbar-color: #444 transparent; }
+  .gallery figure { margin: 0; flex: 0 0 min(680px, 88%); scroll-snap-align: start; }
+  .gallery button { all: unset; display: block; width: 100%; cursor: zoom-in; }
   .gallery button:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-  .gallery .win { transition: transform .25s; }
-  .gallery button:hover .win { transform: translateY(-3px); }
-  .gallery figcaption { margin-top: 12px; color: var(--muted); font-size: 15px; }
+  .gallery figcaption { margin-top: 12px; color: var(--fg-2); font-size: 15px; display: flex; gap: 12px; }
+  .gallery figcaption .mono { color: var(--fg-3); }
+  .win { position: relative; overflow: hidden; background: #0d0d0d; border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 40px 90px -40px rgba(0,0,0,1); transition: transform .25s; }
+  .gallery button:hover .win { transform: translateY(-4px); }
+  .win .bar { height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #151517; border-bottom: 1px solid var(--line); }
+  .win .bar i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
+  .win .bar i:nth-child(2) { background: #febc2e; }
+  .win .bar i:nth-child(3) { background: #28c840; }
+  .win .bar b { flex: 1; text-align: center; font: 600 12px var(--body); color: var(--fg-3); margin-right: 50px; }
   dialog.lightbox { border: 0; padding: 0; background: transparent; max-width: min(1400px, 94vw); width: 100%; }
   dialog.lightbox::backdrop { background: rgba(0,0,0,.92); }
   dialog.lightbox .win { cursor: zoom-out; }
 
   /* Downloads */
-  .os-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-  .os-tabs button {
-    font: 700 15px var(--body); color: var(--muted); background: transparent;
-    border: 1px solid var(--line); border-radius: 999px; padding: 10px 18px; cursor: pointer;
-  }
+  .os-tabs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 0; }
+  .os-tabs button { font: 700 12px var(--mono); text-transform: uppercase; letter-spacing: .14em; color: var(--fg-2); background: transparent; border: 1px solid var(--line-2); border-right: 0; padding: 14px 24px; cursor: pointer; }
+  .os-tabs button:last-child { border-right: 1px solid var(--line-2); }
   .os-tabs button[aria-selected="true"] { color: #000; background: #fff; border-color: #fff; }
-  .panel { border: 1px solid var(--line); border-radius: 20px; background: var(--ink-2); padding: 28px; }
+  .panel { border: 1px solid var(--line-2); background: var(--bg-2); padding: 28px; }
   .panel[hidden] { display: none; }
-  .dl-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-  .dl-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 12px; background: #000; border: 1px solid var(--line); }
+  .dl-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+  .dl-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 4px; border-bottom: 1px solid var(--line); }
   .dl-list .name { font-weight: 700; }
-  .dl-list .hint { color: var(--muted); font-size: 14px; }
-  .dl-list a { text-decoration: none; font-weight: 700; color: #000; background: #fff; border-radius: 999px; padding: 7px 16px; white-space: nowrap; }
-  .dl-list a:hover { filter: brightness(.88); }
-  .arch { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; color: var(--muted); font-size: 15px; }
+  .dl-list .hint { color: var(--fg-2); font-size: 15px; }
+  .dl-list a { text-decoration: none; font: 700 11px var(--mono); text-transform: uppercase; letter-spacing: .14em; color: #000; background: #fff; padding: 10px 16px; white-space: nowrap; }
+  .dl-list a:hover { filter: brightness(.85); }
+  .arch { display: flex; gap: 16px; margin-bottom: 16px; align-items: center; color: var(--fg-2); font-size: 15px; }
   .arch label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
-  .note { margin: 18px 0 0; color: var(--muted); font-size: 15px; }
-  code { font-family: ui-monospace, Consolas, monospace; background: #000; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: .92em; }
+  .note { margin: 18px 0 0; color: var(--fg-2); font-size: 15px; }
+  code { font-family: var(--mono); background: #000; border: 1px solid var(--line); padding: 1px 6px; font-size: .9em; }
 
-  /* Lokal */
-  .local { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
-  .local ul { margin: 0; padding-left: 20px; color: var(--muted); }
-  .local li { margin-bottom: 8px; }
+  /* Lokal: A, B, C */
+  .abc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .abc div { padding: 30px 28px 10px 0; }
+  .abc div + div { padding-left: 28px; border-left: 1px solid var(--line); }
+  .abc .mono { color: var(--fg-3); display: block; margin-bottom: 26px; }
+  .abc h3 { margin: 0 0 10px; font: 700 22px var(--body); }
+  .abc p { margin: 0; color: var(--fg-2); }
 
-  footer { margin-top: 110px; padding: 34px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 10px 28px; }
+  /* Schluss */
+  .final { text-align: center; padding: 170px 0 40px; }
+  .final h2 { margin-inline: auto; font-size: clamp(42px, 8vw, 110px); }
+  .final .eyebrow { justify-content: center; }
+  .final .eyebrow::after { display: none; }
 
+  footer { margin-top: 120px; border-top: 1px solid var(--line); padding: 46px 0 60px; color: var(--fg-2); font-size: 15px; }
+  footer .cols { display: flex; flex-wrap: wrap; gap: 28px 60px; justify-content: space-between; }
+  footer .brand { margin-bottom: 10px; }
+  footer nav { display: flex; flex-direction: column; gap: 8px; }
+  footer nav a { text-decoration: none; }
+  footer nav a:hover { color: #fff; text-decoration: underline; }
+  footer .legal { margin-top: 36px; color: var(--fg-3); font-size: 14px; display: grid; gap: 10px; }
+  footer details summary { cursor: pointer; color: var(--fg-2); }
+  footer details ul { margin: 10px 0 0; padding-left: 18px; columns: 2 320px; }
+  footer details li { margin-bottom: 6px; break-inside: avoid; }
+
+  /* Lineal rechts + Abschnitts-Navigation unten rechts */
+  .ruler { position: fixed; right: 0; top: 0; bottom: 0; width: 34px; z-index: 20; pointer-events: none; border-left: 1px solid var(--line); }
+  .ruler span { position: absolute; right: 6px; font: 600 9px var(--mono); color: var(--fg-3); translate: 0 -50%; }
+  .ruler span::after { content: ""; position: absolute; right: -6px; top: 50%; width: 8px; height: 1px; background: var(--fg-3); }
+  .ruler .mark { position: absolute; right: 0; width: 18px; height: 2px; background: #fff; top: 0; transition: top .1s linear; box-shadow: 0 0 12px #fff; }
+  .secnav { position: fixed; right: 54px; bottom: 26px; z-index: 20; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .secnav a { text-decoration: none; font: 800 14px/1.25 var(--display); text-transform: uppercase; letter-spacing: .02em; color: rgba(255,255,255,.55); transition: color .2s; }
+  .secnav a:hover, .secnav a.on { color: #fff; }
+
+  @media (max-width: 1100px) { .secnav { display: none; } }
   @media (max-width: 900px) {
-    .hero, .local { grid-template-columns: 1fr; }
-    .hero { padding-top: 28px; gap: 40px; }
-    .features { grid-template-columns: 1fr; }
+    .links { display: none; }
+    .abc { grid-template-columns: 1fr; }
+    .abc div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); }
+    .ruler { display: none; }
+    .shot.opt { display: none; }
   }
-  @media (max-width: 520px) {
+  @media (max-width: 560px) {
     body { font-size: 16px; }
-    .lead { font-size: 18px; }
+    .top .gh, .top .btn { display: none; }
+    .brand span { display: none; }
     .panel { padding: 18px; }
-    .top a.gh { display: none; }
-    .win .bar { height: 22px; }
-    .win .bar i { width: 9px; height: 9px; }
+    .shot { width: calc(var(--w) * .62) !important; }
+    /* Auf dem Handy liegen die Bilder hinter dem Text – gedämpft, damit alles lesbar bleibt */
+    .floaters { opacity: .3; }
+    .lead { font-size: 17px; }
+    .btn { padding: 15px 20px; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <a class="brand" href="#"><img src="img/icon.png" alt="">MAZ Launcher</a>
+<header class="top" id="top">
+  <div class="wrap">
+    <a class="brand" href="#"><img src="img/icon.png" alt="" width="32" height="32"><span>Open Game Launcher</span></a>
+    <nav class="links" aria-label="Sections">
+      <a href="#features" data-i18n="nav_features">Features</a>
+      <a href="#screens" data-i18n="nav_look">Look</a>
+      <a href="#download" data-i18n="nav_download">Download</a>
+      <a href="#local" data-i18n="nav_local">Privacy</a>
+    </nav>
     <span class="spacer"></span>
     <a class="gh" href="https://github.com/MikeAdamRGB/MAZ-Lauchner">GitHub</a>
     <label class="sr" for="lang" data-i18n="lang_label">Language</label>
@@ -235,88 +311,115 @@
       <option value="tr">Türkçe</option>
       <option value="ru">Русский</option>
     </select>
-  </header>
+    <a class="btn white small" href="#download" data-i18n="get">Download</a>
+  </div>
+</header>
 
-  <main>
-    <div class="hero">
-      <div>
-        <h1 data-i18n="hero_title">All your games. One launcher.</h1>
-        <p class="lead" data-i18n="hero_lead">Steam, Epic Games, Roblox and your own games in one fast, good-looking library. Free, open source and completely local – no account needed.</p>
-        <div class="cta">
-          <a class="btn primary" id="main-dl" href="#download">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-            <span id="main-dl-text" data-i18n="dl_generic">Download</span>
-          </a>
-          <a class="btn" href="#download" data-i18n="all_downloads">All downloads</a>
-        </div>
-        <p class="meta" id="version-line"></p>
-      </div>
-      <div class="stack" aria-hidden="true">
-        <div class="win back"><div class="bar"><i></i><i></i><i></i></div><img src="img/library-epic-style.webp" width="1308" height="818" alt=""></div>
-        <div class="win mid"><div class="bar"><i></i><i></i><i></i></div><img src="img/free-games.webp" width="1318" height="830" alt=""></div>
-        <div class="win front"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img src="img/library-maz.webp" width="1313" height="828" alt="MAZ Launcher library with game covers"></div>
-      </div>
+<div class="ruler" aria-hidden="true" id="ruler"><span style="top:2%">0</span><span style="top:34%">5</span><span style="top:66%">10</span><span style="top:98%">15</span><i class="mark" id="ruler-mark"></i></div>
+<nav class="secnav" aria-label="Sections" id="secnav">
+  <a href="#features" data-i18n="nav_features">Features</a>
+  <a href="#screens" data-i18n="nav_look">Look</a>
+  <a href="#download" data-i18n="nav_download">Download</a>
+  <a href="#local" data-i18n="nav_local">Privacy</a>
+</nav>
+
+<main>
+  <div class="hero">
+    <svg class="rings" viewBox="0 0 1700 1700" aria-hidden="true">
+      <circle class="r" cx="850" cy="850" r="240"/>
+      <circle class="r" cx="850" cy="850" r="330" stroke-dasharray="2 10"/>
+      <circle class="r" cx="850" cy="850" r="430"/>
+      <circle class="t spin-r" cx="850" cy="850" r="520" stroke-dasharray="1 26"/>
+      <circle class="r" cx="850" cy="850" r="610" stroke-dasharray="6 14"/>
+      <circle class="r" cx="850" cy="850" r="700"/>
+      <circle class="t spin" cx="850" cy="850" r="790" stroke-dasharray="1 40"/>
+      <g class="spin"><circle class="arc" cx="850" cy="850" r="610" stroke="var(--green)" stroke-dasharray="520 3313" stroke-dashoffset="900" opacity=".9"/></g>
+      <g class="spin-r"><circle class="arc" cx="850" cy="850" r="700" stroke="var(--violet)" stroke-dasharray="460 3938" stroke-dashoffset="200" opacity=".9"/></g>
+      <g class="spin-f"><circle class="arc" cx="850" cy="850" r="430" stroke="var(--blue)" stroke-dasharray="260 2442" stroke-dashoffset="1600" opacity=".85"/></g>
+      <g class="spin-r"><circle class="arc" cx="850" cy="850" r="790" stroke="var(--red)" stroke-dasharray="300 4664" stroke-dashoffset="3000" opacity=".7"/></g>
+      <g class="spin"><circle class="arc" cx="850" cy="850" r="330" stroke="var(--green)" stroke-dasharray="120 1953" stroke-dashoffset="400" opacity=".6"/></g>
+    </svg>
+    <div class="floaters" aria-hidden="true" id="floaters">
+      <div class="shot" style="--x:27%;--y:18%;--w:200px;--rot:-3deg;--i:0;--d:0.60"><div class="in"><img src="img/games/0-a-d-1.webp" width="720" height="405" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot" style="--x:58%;--y:13%;--w:120px;--rot:4deg;--i:1;--d:0.85"><div class="in"><img src="img/games/xonotic-1.webp" width="720" height="405" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot" style="--x:76%;--y:24%;--w:160px;--rot:-2deg;--i:2;--d:1.10"><div class="in"><img src="img/games/supertuxkart-3.webp" width="720" height="386" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot" style="--x:89%;--y:44%;--w:210px;--rot:3deg;--i:3;--d:1.35"><div class="in"><img src="img/games/red-eclipse-3.webp" width="720" height="405" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot" style="--x:86%;--y:71%;--w:190px;--rot:-4deg;--i:4;--d:1.60"><div class="in"><img src="img/games/stunt-rally-1.webp" width="720" height="405" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot" style="--x:70%;--y:90%;--w:170px;--rot:2deg;--i:5;--d:0.60"><div class="in"><img src="img/games/veloren-3.webp" width="720" height="405" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot opt" style="--x:94%;--y:17%;--w:150px;--rot:-2deg;--i:6;--d:0.85"><div class="in"><img src="img/games/flightgear-2.webp" width="720" height="544" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot opt" style="--x:46%;--y:96%;--w:140px;--rot:3deg;--i:7;--d:1.10"><div class="in"><img src="img/games/mindustry-3.webp" width="720" height="391" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot" style="--x:22%;--y:88%;--w:180px;--rot:-3deg;--i:8;--d:1.35"><div class="in"><img src="img/games/speed-dreams-1.webp" width="720" height="405" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot" style="--x:11%;--y:63%;--w:210px;--rot:2deg;--i:9;--d:1.60"><div class="in"><img src="img/games/openttd-3.webp" width="720" height="381" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot opt" style="--x:8%;--y:38%;--w:170px;--rot:-4deg;--i:10;--d:0.60"><div class="in"><img src="img/games/extreme-tux-racer-1.webp" width="720" height="405" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot opt" style="--x:12%;--y:12%;--w:140px;--rot:3deg;--i:11;--d:0.85"><div class="in"><img src="img/games/sauerbraten-3.webp" width="720" height="450" alt="" style="--ar:16/10" decoding="async"></div></div>
+      <div class="shot opt" style="--x:44%;--y:6%;--w:110px;--rot:-2deg;--i:12;--d:1.10"><div class="in"><img src="img/games/unvanquished-2.webp" width="720" height="480" alt="" style="--ar:16/10" decoding="async"></div></div>
     </div>
+    <div class="glow" aria-hidden="true"></div>
 
-    <div class="stores">
-      <span><strong>Steam</strong></span>
-      <span><strong>Epic Games</strong></span>
-      <span><strong>GOG</strong></span>
-      <span><strong>Xbox</strong></span>
-      <span><strong>EA app</strong></span>
-      <span><strong>Ubisoft Connect</strong></span>
-      <span><strong>Battle.net</strong></span>
-      <span><strong>Amazon Games</strong></span>
-      <span><strong>itch.io</strong></span>
-      <span><strong>Roblox</strong></span>
-      <span><strong>Minecraft</strong></span>
-      <span><strong>NoRisk Client</strong></span>
-      <span><strong data-i18n="own_games">Your own games</strong></span>
-      <span data-i18n="platforms_line">Windows, macOS and Linux · x86_64 and ARM64</span>
+    <div class="hero-inner">
+      <h1 class="wordmark" aria-label="Open Game Launcher"><span class="line line1" data-split>Open Game</span><span class="line line2" data-split>Launcher</span></h1>
+      <p class="tagline fade" style="--delay:1.1s"><span data-i18n="tag_a">All your games</span> <em data-i18n="tag_b">in one launcher.</em></p>
+      <p class="lead fade" style="--delay:1.25s" data-i18n="hero_lead">Steam, Epic, GOG, Xbox, Minecraft, Roblox and your own games in one fast, good-looking library. Free, open source and completely local – no account needed.</p>
+      <div class="cta fade" style="--delay:1.4s">
+        <a class="btn white" id="main-dl" href="#download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          <span id="main-dl-text" data-i18n="dl_generic">Download free</span>
+        </a>
+        <a class="btn" href="#download" data-i18n="all_downloads">All downloads</a>
+      </div>
+      <div class="badges mono fade" style="--delay:1.55s">
+        <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg><span data-i18n="badge_gh">Open source on GitHub</span></a>
+        <span>Windows · macOS · Linux</span>
+        <span data-i18n="badge_free">No account required</span>
+      </div>
+      <p class="version fade" style="--delay:1.6s" id="version-line"></p>
+      <p class="formerly fade" style="--delay:1.6s" data-i18n="formerly">Formerly MAZ Launcher</p>
     </div>
+  </div>
 
+  <div class="ticker mono" aria-label="Supported stores">
+    <div class="row">
+      <span>Steam</span><span>Epic Games</span><span>GOG</span><span>Xbox</span><span>EA app</span><span>Ubisoft Connect</span><span>Battle.net</span><span>Amazon Games</span><span>itch.io</span><span>Minecraft</span><span>NoRisk Client</span><span>Roblox</span><span data-i18n="own_games">Your own games</span><span data-i18n="emulators">Emulators</span>
+      <span aria-hidden="true">Steam</span><span aria-hidden="true">Epic Games</span><span aria-hidden="true">GOG</span><span aria-hidden="true">Xbox</span><span aria-hidden="true">EA app</span><span aria-hidden="true">Ubisoft Connect</span><span aria-hidden="true">Battle.net</span><span aria-hidden="true">Amazon Games</span><span aria-hidden="true">itch.io</span><span aria-hidden="true">Minecraft</span><span aria-hidden="true">NoRisk Client</span><span aria-hidden="true">Roblox</span><span aria-hidden="true" data-i18n="own_games">Your own games</span><span aria-hidden="true" data-i18n="emulators">Emulators</span>
+    </div>
+  </div>
+
+  <div class="wrap">
     <section id="features">
+      <div class="eyebrow mono"><b>01 /</b> <span data-i18n="eyebrow_features">Every store</span></div>
       <h2 data-i18n="features_title">Everything in one place</h2>
-      <p class="sub" data-i18n="features_sub">MAZ Launcher finds your games by itself. Starting, installing and uninstalling always happens through the official clients.</p>
-      <div class="features">
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="6"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg></div>
-          <div><h3 data-i18n="f1_t">Every game, installed or not</h3><p data-i18n="f1_d">Your whole Steam and Epic library – install a game with one click, uninstall it just as easily.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg></div>
-          <div><h3 data-i18n="f2_t">Roblox with your favorites</h3><p data-i18n="f2_d">Paste a game link from roblox.com and it becomes its own tile that starts straight into the game.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg></div>
-          <div><h3 data-i18n="f3_t">Free games with a countdown</h3><p data-i18n="f3_d">See what's free on Epic and Steam right now and how long the offer lasts. One click on "Get" and it's yours.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-          <div><h3 data-i18n="f4_t">Errors explained in plain words</h3><p data-i18n="f4_d">If a game won't start or crashes, the launcher explains step by step what happened – with buttons that fix it.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1a1.6 1.6 0 0 1 1.6-1.7h2c3 0 5.6-2.5 5.6-5.6C22 6 17.5 2 12 2z"/></svg></div>
-          <div><h3 data-i18n="f5_t">Your look</h3><p data-i18n="f5_d">Three layouts (MAZ, Steam, Epic), 16 designs, your own designs with a live editor and a background image.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></div>
-          <div><h3 data-i18n="f6_t">Updates inside the app</h3><p data-i18n="f6_d">You get a message when a new version is out and update with one click – every download is checked first.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-          <div><h3 data-i18n="f7_t">9 languages</h3><p data-i18n="f7_d">German, English, Spanish, French, Italian, Portuguese, Polish, Turkish and Russian.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg></div>
-          <div><h3 data-i18n="f8_t">Your own games too</h3><p data-i18n="f8_d">Add any game or emulator. Before every start a short checklist asks if everything important is closed.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/></svg></div>
-          <div><h3 data-i18n="f9_t">10 stores in one library</h3><p data-i18n="f9_d">Steam, Epic, GOG, EA app, Ubisoft Connect, Battle.net, Amazon Games, itch.io, Xbox and Roblox – always started through the official app.</p></div></div>
-        <div class="feature"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg></div>
-          <div><h3 data-i18n="f10_t">Your library, your order</h3><p data-i18n="f10_d">Tags, collections, genres, playtime and filters. Games you own twice show up once. Emulators and ROM folders too.</p></div></div>
+      <p class="sub" data-i18n="features_sub">Open Game Launcher finds your games by itself. Starting, installing and uninstalling always happens through the official clients.</p>
+      <div class="cards">
+        <div class="card" style="--c:var(--green)"><div class="n mono">01<i></i></div><h3 data-i18n="f9_t">10 stores in one library</h3><p data-i18n="f9_d">Steam, Epic, GOG, EA app, Ubisoft Connect, Battle.net, Amazon Games, itch.io, Xbox and Roblox – always started through the official app.</p></div>
+        <div class="card" style="--c:var(--blue)"><div class="n mono">02<i></i></div><h3 data-i18n="f1_t">Every game, installed or not</h3><p data-i18n="f1_d">Your whole Steam and Epic library – install a game with one click, uninstall it just as easily.</p></div>
+        <div class="card" style="--c:var(--violet)"><div class="n mono">03<i></i></div><h3 data-i18n="f11_t">Minecraft with mods</h3><p data-i18n="f11_d">Mods, resource packs, shaders and data packs from Modrinth and CurseForge – installed with one click. NoRisk Client profiles start straight from your library.</p></div>
+        <div class="card" style="--c:var(--red)"><div class="n mono">04<i></i></div><h3 data-i18n="f3_t">Free games with a countdown</h3><p data-i18n="f3_d">See what's free on Epic and Steam right now and how long the offer lasts.</p></div>
+        <div class="card" style="--c:var(--green)"><div class="n mono">05<i></i></div><h3 data-i18n="f4_t">Errors explained in plain words</h3><p data-i18n="f4_d">If a game won't start or crashes, the launcher explains step by step what happened – with buttons that fix it.</p></div>
+        <div class="card" style="--c:var(--blue)"><div class="n mono">06<i></i></div><h3 data-i18n="f5_t">Your look</h3><p data-i18n="f5_d">Three layouts (OG, Steam, Epic), 16 designs, your own designs with a live editor and a background image.</p></div>
+        <div class="card" style="--c:var(--violet)"><div class="n mono">07<i></i></div><h3 data-i18n="f10_t">Your library, your order</h3><p data-i18n="f10_d">Tags, collections, genres, playtime and filters. Games you own twice show up once. Emulators and ROM folders too.</p></div>
+        <div class="card" style="--c:var(--red)"><div class="n mono">08<i></i></div><h3 data-i18n="f8_t">Your own games too</h3><p data-i18n="f8_d">Add any game or emulator. Before every start a short checklist asks if everything important is closed.</p></div>
+        <div class="card" style="--c:var(--green)"><div class="n mono">09<i></i></div><h3 data-i18n="f6_t">Updates inside the app</h3><p data-i18n="f6_d">You get a message when a new version is out and update with one click – every download is checked first.</p></div>
       </div>
     </section>
 
     <section id="screens">
+      <div class="eyebrow mono"><b>02 /</b> <span data-i18n="eyebrow_look">Screenshots</span></div>
       <h2 data-i18n="screens_title">Take a look</h2>
+      <p class="sub" data-i18n="screens_sub">Three layouts, 16 designs – and your games always in front.</p>
       <div class="gallery" tabindex="0">
-        <figure><button type="button" data-zoom="img/library-maz.webp" aria-label="MAZ style with "Continue playing""><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/library-maz.webp" width="1313" height="828" alt="MAZ style with "Continue playing""></div></button><figcaption data-i18n="s1">MAZ style with "Continue playing"</figcaption></figure>
-        <figure><button type="button" data-zoom="img/library-steam-style.webp" aria-label="Steam style"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/library-steam-style.webp" width="1306" height="828" alt="Steam style"></div></button><figcaption data-i18n="s2">Steam style</figcaption></figure>
-        <figure><button type="button" data-zoom="img/library-epic-style.webp" aria-label="Epic Games style"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/library-epic-style.webp" width="1308" height="818" alt="Epic Games style"></div></button><figcaption data-i18n="s3">Epic Games style</figcaption></figure>
-        <figure><button type="button" data-zoom="img/game-details.webp" aria-label="Game details: install, help, uninstall"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/game-details.webp" width="1301" height="828" alt="Game details: install, help, uninstall"></div></button><figcaption data-i18n="s4">Game details: install, help, uninstall</figcaption></figure>
-        <figure><button type="button" data-zoom="img/free-games.webp" aria-label="Free games with a countdown"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/free-games.webp" width="1318" height="830" alt="Free games with a countdown"></div></button><figcaption data-i18n="s5">Free games with a countdown</figcaption></figure>
-        <figure><button type="button" data-zoom="img/settings-design.webp" aria-label="16 designs and your own"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/settings-design.webp" width="1300" height="823" alt="16 designs and your own"></div></button><figcaption data-i18n="s6">16 designs and your own</figcaption></figure>
-        <figure><button type="button" data-zoom="img/installed.webp" aria-label="Only installed games"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/installed.webp" width="1313" height="828" alt="Only installed games"></div></button><figcaption data-i18n="s7">Only installed games</figcaption></figure>
-        <figure><button type="button" data-zoom="img/settings-language.webp" aria-label="9 languages"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img loading="lazy" decoding="async" src="img/settings-language.webp" width="1301" height="829" alt="9 languages"></div></button><figcaption data-i18n="s8">9 languages</figcaption></figure>
+        <figure><button type="button" data-zoom="img/library-maz.webp" aria-label="OG style with &quot;Continue playing&quot;"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/library-maz.webp" width="1313" height="795" alt="OG style with &quot;Continue playing&quot;"></div></button><figcaption><span class="mono">01</span><span data-i18n="s1">OG style with &quot;Continue playing&quot;</span></figcaption></figure>
+        <figure><button type="button" data-zoom="img/library-steam-style.webp" aria-label="Steam style"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/library-steam-style.webp" width="1306" height="795" alt="Steam style"></div></button><figcaption><span class="mono">02</span><span data-i18n="s2">Steam style</span></figcaption></figure>
+        <figure><button type="button" data-zoom="img/library-epic-style.webp" aria-label="Epic Games style"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/library-epic-style.webp" width="1308" height="785" alt="Epic Games style"></div></button><figcaption><span class="mono">03</span><span data-i18n="s3">Epic Games style</span></figcaption></figure>
+        <figure><button type="button" data-zoom="img/game-details.webp" aria-label="Game details: install, help, uninstall"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/game-details.webp" width="1301" height="795" alt="Game details: install, help, uninstall"></div></button><figcaption><span class="mono">04</span><span data-i18n="s4">Game details: install, help, uninstall</span></figcaption></figure>
+        <figure><button type="button" data-zoom="img/free-games.webp" aria-label="Free games with a countdown"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/free-games.webp" width="1318" height="797" alt="Free games with a countdown"></div></button><figcaption><span class="mono">05</span><span data-i18n="s5">Free games with a countdown</span></figcaption></figure>
+        <figure><button type="button" data-zoom="img/settings-design.webp" aria-label="16 designs and your own"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/settings-design.webp" width="1300" height="790" alt="16 designs and your own"></div></button><figcaption><span class="mono">06</span><span data-i18n="s6">16 designs and your own</span></figcaption></figure>
+        <figure><button type="button" data-zoom="img/installed.webp" aria-label="Only installed games"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/installed.webp" width="1313" height="795" alt="Only installed games"></div></button><figcaption><span class="mono">07</span><span data-i18n="s7">Only installed games</span></figcaption></figure>
+        <figure><button type="button" data-zoom="img/settings-language.webp" aria-label="9 languages"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img loading="lazy" decoding="async" src="img/settings-language.webp" width="1301" height="796" alt="9 languages"></div></button><figcaption><span class="mono">08</span><span data-i18n="s8">9 languages</span></figcaption></figure>
       </div>
     </section>
 
     <section id="download">
+      <div class="eyebrow mono"><b>03 /</b> <span data-i18n="eyebrow_dl">Free download</span></div>
       <h2 data-i18n="dl_title">Download</h2>
       <p class="sub" data-i18n="dl_sub">Pick your system. Every file is listed with a checksum in SHA256SUMS.txt.</p>
       <div class="os-tabs" role="tablist">
@@ -324,22 +427,19 @@
         <button role="tab" id="tab-macos" aria-controls="p-macos" aria-selected="false">macOS</button>
         <button role="tab" id="tab-linux" aria-controls="p-linux" aria-selected="false">Linux</button>
       </div>
-
       <div class="panel" id="p-windows" role="tabpanel" aria-labelledby="tab-windows">
         <ul class="dl-list">
-          <li><span><span class="name">MAZ-Launcher.exe</span><br><span class="hint" data-i18n="win_x64">Windows 10/11, 64-bit (most PCs)</span></span><a data-asset="win-x64" href="#" data-i18n="get">Download</a></li>
-          <li><span><span class="name">MAZ-Launcher-arm64.exe</span><br><span class="hint" data-i18n="win_arm">Windows on ARM (e.g. Snapdragon laptops)</span></span><a data-asset="win-arm64" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">Open-Game-Launcher.exe</span><br><span class="hint" data-i18n="win_x64">Windows 10/11, 64-bit (most PCs)</span></span><a data-asset="win-x64" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">Open-Game-Launcher-arm64.exe</span><br><span class="hint" data-i18n="win_arm">Windows on ARM (e.g. Snapdragon laptops)</span></span><a data-asset="win-arm64" href="#" data-i18n="get">Download</a></li>
         </ul>
         <p class="note" data-i18n="win_note">Double-click the file and choose "Install". If Windows shows "Windows protected your PC": click "More info", then "Run anyway".</p>
       </div>
-
       <div class="panel" id="p-macos" role="tabpanel" aria-labelledby="tab-macos" hidden>
         <ul class="dl-list">
-          <li><span><span class="name">MAZ Launcher (.dmg)</span><br><span class="hint" data-i18n="mac_universal">Apple Silicon and Intel, macOS 11 or newer</span></span><a data-asset="mac-dmg" href="#" data-i18n="get">Download</a></li>
+          <li><span><span class="name">Open Game Launcher (.dmg)</span><br><span class="hint" data-i18n="mac_universal">Apple Silicon and Intel, macOS 11 or newer</span></span><a data-asset="mac-dmg" href="#" data-i18n="get">Download</a></li>
         </ul>
-        <p class="note" data-i18n="mac_note">Open the .dmg and drag MAZ Launcher into "Applications". The first time, right-click the app and choose "Open" – macOS asks once because the app isn't from the App Store.</p>
+        <p class="note" data-i18n="mac_note">Open the .dmg and drag Open Game Launcher into "Applications". The first time, right-click the app and choose "Open".</p>
       </div>
-
       <div class="panel" id="p-linux" role="tabpanel" aria-labelledby="tab-linux" hidden>
         <div class="arch" role="radiogroup" aria-label="Architecture">
           <label><input type="radio" name="arch" value="x86_64" checked> x86_64</label>
@@ -358,29 +458,71 @@
     </section>
 
     <section id="local">
-      <div class="local">
-        <div>
-          <h2 data-i18n="local_title">Runs on your computer. Only there.</h2>
-          <p class="sub" style="margin-bottom:0" data-i18n="local_sub">No MAZ account, no tracking, no ads. Your library and settings stay on your computer.</p>
-        </div>
-        <ul>
-          <li data-i18n="local_1">Passwords stay with Steam, Epic and Roblox – the launcher never asks for them.</li>
-          <li data-i18n="local_2">Internet is only used for cover art, the free-games list and the update check.</li>
-          <li data-i18n="local_3">Open source under the MIT license – anyone can read the code.</li>
-        </ul>
+      <div class="eyebrow mono"><b>04 /</b> <span data-i18n="eyebrow_local">Local &amp; open</span></div>
+      <h2 data-i18n="local_title">Runs on your computer. Only there.</h2>
+      <p class="sub" data-i18n="local_sub">No account, no tracking, no ads. Your library and settings stay on your computer.</p>
+      <div class="abc">
+        <div><span class="mono">A</span><h3 data-i18n="local_a">Open source</h3><p data-i18n="local_3">Open source under the MIT license – anyone can read the code.</p></div>
+        <div><span class="mono">B</span><h3 data-i18n="local_b">No passwords</h3><p data-i18n="local_1">Passwords stay with Steam, Epic and Roblox – the launcher never asks for them.</p></div>
+        <div><span class="mono">C</span><h3 data-i18n="local_c">Local first</h3><p data-i18n="local_2">Internet is only used for cover art, the free-games list and the update check.</p></div>
       </div>
     </section>
-  </main>
 
-  <footer>
-    <span>© MikeAdamRGB · MIT</span>
-    <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner">GitHub</a>
-    <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner/issues" data-i18n="report">Report a problem</a>
-    <span data-i18n="trademarks">Steam, Epic Games and Roblox are trademarks of their owners. MAZ Launcher is not affiliated with them.</span>
-  </footer>
-</div>
-<dialog class="lightbox" id="lightbox" aria-label="Screenshot"><div class="win"><div class="bar"><i></i><i></i><i></i><b>MAZ Launcher</b></div><img id="lightbox-img" src="" alt=""></div></dialog>
-<script src="i18n.js"></script>
+    <div class="final">
+      <div class="eyebrow mono"><span data-i18n="final_eyebrow">Free · Open source · No account</span></div>
+      <h2 data-i18n="final_title">Start playing.</h2>
+      <div class="cta">
+        <a class="btn white" href="#download" data-i18n="dl_generic">Download free</a>
+        <a class="btn" href="https://github.com/MikeAdamRGB/MAZ-Lauchner" data-i18n="badge_gh">Open source on GitHub</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <a class="brand" href="#"><img src="img/icon.png" alt="" width="32" height="32"><span>Open Game Launcher</span></a>
+        <p style="margin:0;max-width:26em" data-i18n="footer_tag">The open game launcher for Windows, macOS and Linux.</p>
+      </div>
+      <nav aria-label="Footer">
+        <a href="#features" data-i18n="nav_features">Features</a>
+        <a href="#download" data-i18n="nav_download">Download</a>
+        <a href="#local" data-i18n="nav_local">Privacy</a>
+      </nav>
+      <nav aria-label="Project">
+        <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner">GitHub</a>
+        <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner/releases" data-i18n="releases">All versions</a>
+        <a href="https://github.com/MikeAdamRGB/MAZ-Lauchner/issues" data-i18n="report">Report a problem</a>
+      </nav>
+    </div>
+    <div class="legal">
+      <span>© 2026 MikeAdamRGB · MIT</span>
+      <span data-i18n="trademarks">Steam, Epic Games, GOG, Xbox, EA, Ubisoft, Battle.net, Amazon Games, itch.io, Minecraft and Roblox are trademarks of their owners. Open Game Launcher is not affiliated with them.</span>
+      <details>
+        <summary data-i18n="credits_btn">Image credits</summary>
+        <p style="margin:10px 0 0" data-i18n="credits_text">The game pictures at the top are free screenshots of open-source games from Wikimedia Commons:</p>
+        <ul>
+          <li>0 A.D. – Wildfire Games, <a href="https://commons.wikimedia.org/wiki/File:0_A.D._alpha_25_-_playing_as_Spartans.jpg" rel="noopener">CC BY-SA 3.0</a></li>
+          <li>Xonotic – Xonotic developers, <a href="https://commons.wikimedia.org/wiki/File:Xonotic_0.8.2_rocket.jpg" rel="noopener">GPL</a></li>
+          <li>SuperTuxKart – STK dev team, <a href="https://commons.wikimedia.org/wiki/File:Supertuxkart-0.9-screenshot-7.jpg" rel="noopener">CC BY 3.0</a></li>
+          <li>Red Eclipse – TucanHolmes, <a href="https://commons.wikimedia.org/wiki/File:Red_Eclipse_2_Screenshot_-_Edge.png" rel="noopener">CC BY-SA 4.0</a></li>
+          <li>Stunt Rally – Crystal Hammer and contributors, <a href="https://commons.wikimedia.org/wiki/File:Stunt_Rally_23.jpg" rel="noopener">GPL</a></li>
+          <li>Veloren – Antimundo, <a href="https://commons.wikimedia.org/wiki/File:Veloren-0.17-screenshot-sunset.jpg" rel="noopener">CC0</a></li>
+          <li>FlightGear – FlightGear contributors, <a href="https://commons.wikimedia.org/wiki/File:FlightGear_Screenshot.jpg" rel="noopener">GPL</a></li>
+          <li>Mindustry – JPxG, <a href="https://commons.wikimedia.org/wiki/File:Mindyscreenshot2.png" rel="noopener">GPLv3</a></li>
+          <li>Speed Dreams – Antimundo, <a href="https://commons.wikimedia.org/wiki/File:Speed-dreams-2.4.0-screenshot-redcars.jpg" rel="noopener">GPL</a></li>
+          <li>OpenTTD – KamuiZero, <a href="https://commons.wikimedia.org/wiki/File:OpenTTD_1_5_MegaStation_with_FIRS_in_Shadow_Mode.png" rel="noopener">CC BY-SA 4.0</a></li>
+          <li>Extreme Tux Racer – 31NOVA, <a href="https://commons.wikimedia.org/wiki/File:Screenshot_Extreme_Tux_Racer.png" rel="noopener">CC BY-SA 4.0</a></li>
+          <li>Sauerbraten – Johannes Schneider, <a href="https://commons.wikimedia.org/wiki/File:C2_underwater_2.png" rel="noopener">CC BY-SA 3.0</a></li>
+          <li>Unvanquished – Unvanquished Development (http://www.unvanquished.net/about), <a href="https://commons.wikimedia.org/wiki/File:Unvanquished_tyrant.png" rel="noopener">CC BY-SA 2.5</a></li>
+        </ul>
+      </details>
+    </div>
+  </div>
+</footer>
+<dialog class="lightbox" id="lightbox" aria-label="Screenshot"><div class="win"><div class="bar"><i></i><i></i><i></i><b>Open Game Launcher</b></div><img id="lightbox-img" src="" alt=""></div></dialog>
 <script src="app.js"></script>
 </body>
 </html>

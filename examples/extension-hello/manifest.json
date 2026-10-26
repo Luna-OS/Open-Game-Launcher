@@ -2,7 +2,7 @@
   "id": "hello-example",
   "name": "Hello Extension",
   "version": "1.0.0",
-  "author": "MAZ Launcher",
+  "author": "Open Game Launcher",
   "description": "@description",
   "homepage": "https://github.com/MikeAdamRGB/MAZ-Lauchner",
   "run": {

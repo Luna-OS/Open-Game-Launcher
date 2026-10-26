@@ -4,8 +4,6 @@ name: Spiele-Bilder für die Webseite
 
 on:
   workflow_dispatch:
-  push:
-    branches: ["ci/images"]
 
 permissions:
   contents: write

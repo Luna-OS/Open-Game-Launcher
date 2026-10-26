@@ -31,7 +31,7 @@ fn pick_and_stage(app: App, folder: bool) {
     let picked = if folder {
         rfd::FileDialog::new().set_title(t("ext.install")).pick_folder()
     } else {
-        rfd::FileDialog::new().set_title(t("ext.install")).add_filter("MAZ Extension", &["mazext", "zip"]).pick_file()
+        rfd::FileDialog::new().set_title(t("ext.install")).add_filter("OG Extension", &["ogext", "mazext", "zip"]).pick_file()
     };
     let Some(path) = picked else { return };
     spawn(async move {

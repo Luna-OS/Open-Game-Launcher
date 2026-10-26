@@ -172,6 +172,8 @@ pub fn MinecraftPage() -> Element {
     let busy = loading();
     let err = error.read().clone();
     let need_key = provider() == Provider::CurseForge && cf_key.trim().is_empty();
+    // Schlüssel abgelehnt → Eingabe direkt hier wieder anzeigen, damit man es neu probieren kann
+    let key_bad = provider() == Provider::CurseForge && err.as_deref() == Some(t("mc.err_key").as_str());
     let fabric_missing = target.as_ref().map(|t| t.official).unwrap_or(false)
         && kind() == Kind::Mod
         && eff_loader == "fabric"
@@ -347,12 +349,11 @@ pub fn MinecraftPage() -> Element {
                         }
                     }
 
-                    if need_key {
-                        CurseForgeKeyBox { show_guide: show_guide(), on_toggle: move |_| show_guide.set(!show_guide()), key_input: key_input(),
+                    if need_key || key_bad {
+                        CurseForgeKeyBox { rejected: key_bad, busy: busy, on_retry: move |_| run_search(true), show_guide: show_guide(), on_toggle: move |_| show_guide.set(!show_guide()), key_input: key_input(),
                             on_input: move |v: String| key_input.set(v),
                             on_save: move |_| {
-                                let k = key_input.peek().trim().to_string();
-                                if k.len() >= 20 && k.len() < 200 && k.chars().all(|c| c.is_ascii_graphic()) {
+                                if let Some(k) = mc::clean_cf_key(&key_input.peek()) {
                                     app.update(|s| s.curseforge_key = k);
                                     key_input.set(String::new());
                                     app.toast(&t("mc.key_saved"), "check-circle");
@@ -366,7 +367,10 @@ pub fn MinecraftPage() -> Element {
                         if let Some(e) = err {
                             div { class: "mb-5 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm",
                                 Icon { name: "alert", class: "size-4 mt-0.5 shrink-0 text-destructive" }
-                                span { "{e}" }
+                                span { class: "flex-1", "{e}" }
+                                Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm, disabled: busy, onclick: move |_| run_search(true),
+                                    Icon { name: "refresh", class: "size-3.5" } {t("mc.retry")}
+                                }
                             }
                         }
                         if list.is_empty() && busy {
@@ -450,7 +454,11 @@ pub fn MinecraftPage() -> Element {
 
 /// CurseForge-Schlüssel eintragen – mit Schritt-für-Schritt-Anleitung
 #[component]
-pub fn CurseForgeKeyBox(show_guide: bool, on_toggle: EventHandler<()>, key_input: String, on_input: EventHandler<String>, on_save: EventHandler<()>) -> Element {
+pub fn CurseForgeKeyBox(
+    #[props(default)] rejected: bool,
+    #[props(default)] busy: bool,
+    #[props(default)] on_retry: Option<EventHandler<()>>,
+    show_guide: bool, on_toggle: EventHandler<()>, key_input: String, on_input: EventHandler<String>, on_save: EventHandler<()>) -> Element {
     let steps = crate::i18n::tl("mc.key_steps");
     rsx! {
         div { class: "rounded-xl border border-primary/30 bg-primary/5 p-5",
@@ -461,6 +469,18 @@ pub fn CurseForgeKeyBox(show_guide: bool, on_toggle: EventHandler<()>, key_input
                 div { class: "flex-1 min-w-0",
                     div { class: "font-semibold", {t("mc.key_title")} }
                     p { class: "text-sm text-muted-foreground mt-1 leading-relaxed", {t("mc.key_text")} }
+                }
+            }
+            if rejected {
+                div { class: "mt-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm",
+                    Icon { name: "alert", class: "size-4 mt-0.5 shrink-0 text-destructive" }
+                    span { class: "flex-1", {t("mc.key_rejected")} }
+                    if let Some(retry) = on_retry {
+                        Button { variant: ButtonVariant::Outline, size: ButtonSize::Sm, disabled: busy, onclick: move |_| retry.call(()),
+                            if busy { Spinner {} } else { Icon { name: "refresh", class: "size-3.5" } }
+                            {t("mc.retry")}
+                        }
+                    }
                 }
             }
             button { class: "mt-4 text-sm font-medium text-primary hover:underline cursor-pointer", onclick: move |_| on_toggle.call(()),

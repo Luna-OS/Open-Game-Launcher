@@ -408,7 +408,7 @@ pub fn http_agent() -> ureq::Agent {
     let config = ureq::Agent::config_builder()
         .tls_config(tls)
         .timeout_global(Some(std::time::Duration::from_secs(12)))
-        .user_agent("MAZ-Launcher")
+        .user_agent("Open-Game-Launcher")
         .build();
     config.into()
 }

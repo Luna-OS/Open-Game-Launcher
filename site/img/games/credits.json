@@ -1,0 +1,119 @@
+[
+ {
+  "file": "img/games/0-a-d-1.webp",
+  "game": "0 A.D.",
+  "author": "Wildfire Games",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:0_A.D._alpha_25_-_playing_as_Spartans.jpg",
+  "w": 720,
+  "h": 405
+ },
+ {
+  "file": "img/games/flightgear-2.webp",
+  "game": "FlightGear",
+  "author": "FlightGear contributors",
+  "license": "GPL",
+  "source": "https://commons.wikimedia.org/wiki/File:FlightGear_Screenshot.jpg",
+  "w": 720,
+  "h": 544
+ },
+ {
+  "file": "img/games/extreme-tux-racer-1.webp",
+  "game": "Extreme Tux Racer",
+  "author": "31NOVA",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Screenshot_Extreme_Tux_Racer.png",
+  "w": 720,
+  "h": 405
+ },
+ {
+  "file": "img/games/red-eclipse-3.webp",
+  "game": "Red Eclipse",
+  "author": "TucanHolmes",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Red_Eclipse_2_Screenshot_-_Edge.png",
+  "w": 720,
+  "h": 405
+ },
+ {
+  "file": "img/games/stunt-rally-1.webp",
+  "game": "Stunt Rally",
+  "author": "Crystal Hammer and contributors",
+  "license": "GPL",
+  "source": "https://commons.wikimedia.org/wiki/File:Stunt_Rally_23.jpg",
+  "w": 720,
+  "h": 405
+ },
+ {
+  "file": "img/games/supertuxkart-3.webp",
+  "game": "SuperTuxKart",
+  "author": "STK dev team",
+  "license": "CC BY 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:Supertuxkart-0.9-screenshot-7.jpg",
+  "w": 720,
+  "h": 386
+ },
+ {
+  "file": "img/games/veloren-3.webp",
+  "game": "Veloren",
+  "author": "Antimundo",
+  "license": "CC0",
+  "source": "https://commons.wikimedia.org/wiki/File:Veloren-0.17-screenshot-sunset.jpg",
+  "w": 720,
+  "h": 405
+ },
+ {
+  "file": "img/games/xonotic-1.webp",
+  "game": "Xonotic",
+  "author": "Xonotic developers",
+  "license": "GPL",
+  "source": "https://commons.wikimedia.org/wiki/File:Xonotic_0.8.2_rocket.jpg",
+  "w": 720,
+  "h": 405
+ },
+ {
+  "file": "img/games/sauerbraten-3.webp",
+  "game": "Sauerbraten",
+  "author": "Johannes Schneider",
+  "license": "CC BY-SA 3.0",
+  "source": "https://commons.wikimedia.org/wiki/File:C2_underwater_2.png",
+  "w": 720,
+  "h": 450
+ },
+ {
+  "file": "img/games/unvanquished-2.webp",
+  "game": "Unvanquished",
+  "author": "Unvanquished Development (http://www.unvanquished.net/about)",
+  "license": "CC BY-SA 2.5",
+  "source": "https://commons.wikimedia.org/wiki/File:Unvanquished_tyrant.png",
+  "w": 720,
+  "h": 480
+ },
+ {
+  "file": "img/games/speed-dreams-1.webp",
+  "game": "Speed Dreams",
+  "author": "Antimundo",
+  "license": "GPL",
+  "source": "https://commons.wikimedia.org/wiki/File:Speed-dreams-2.4.0-screenshot-redcars.jpg",
+  "w": 720,
+  "h": 405
+ },
+ {
+  "file": "img/games/openttd-3.webp",
+  "game": "OpenTTD",
+  "author": "KamuiZero",
+  "license": "CC BY-SA 4.0",
+  "source": "https://commons.wikimedia.org/wiki/File:OpenTTD_1_5_MegaStation_with_FIRS_in_Shadow_Mode.png",
+  "w": 720,
+  "h": 381
+ },
+ {
+  "file": "img/games/mindustry-3.webp",
+  "game": "Mindustry",
+  "author": "JPxG",
+  "license": "GPLv3",
+  "source": "https://commons.wikimedia.org/wiki/File:Mindyscreenshot2.png",
+  "w": 720,
+  "h": 391
+ }
+]

@@ -194,7 +194,7 @@ fn agent() -> ureq::Agent {
                 .tls_config(tls)
                 .timeout_global(Some(std::time::Duration::from_secs(12)))
                 // Wikipedia verlangt einen aussagekräftigen User-Agent mit Kontakt
-                .user_agent(concat!("MAZ-Launcher/", env!("CARGO_PKG_VERSION"), " (https://github.com/MikeAdamRGB/MAZ-Lauchner)"))
+                .user_agent(concat!("Open-Game-Launcher/", env!("CARGO_PKG_VERSION"), " (https://github.com/MikeAdamRGB/MAZ-Lauchner)"))
                 .build()
                 .into()
         })

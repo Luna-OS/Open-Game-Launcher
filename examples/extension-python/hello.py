@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mini-Erweiterung für den MAZ Launcher in Python (nur Standardbibliothek).
+"""Mini-Erweiterung für den Open Game Launcher in Python (nur Standardbibliothek).
 
 Liest pro Zeile eine JSON-Anfrage von stdin und antwortet pro Zeile auf stdout.
 Endet, sobald der Launcher stdin schließt.

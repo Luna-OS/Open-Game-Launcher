@@ -1,6 +1,6 @@
 name: Build
 
-# Baut bei jedem Push den MAZ Launcher für Windows, Linux und macOS (x86_64 + ARM64),
+# Baut bei jedem Push den Open Game Launcher für Windows, Linux und macOS (x86_64 + ARM64),
 # testet ihn und packt alle Formate. Auf main wird für jede NEUE Version (aus Cargo.toml)
 # einmalig ein GitHub-Release erstellt – ein bestehendes Release wird nie überschrieben.
 #
@@ -31,10 +31,12 @@ jobs:
         include:
           - arch: x86_64
             target: x86_64-pc-windows-msvc
-            exe: MAZ-Launcher.exe
+            exe: Open-Game-Launcher.exe
+            legacy: MAZ-Launcher.exe
           - arch: arm64
             target: aarch64-pc-windows-msvc
-            exe: MAZ-Launcher-arm64.exe
+            exe: Open-Game-Launcher-arm64.exe
+            legacy: MAZ-Launcher-arm64.exe
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
@@ -81,10 +83,12 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item target/${{ matrix.target }}/release/MAZ-Launcher.exe dist/${{ matrix.exe }}
+          Copy-Item target/${{ matrix.target }}/release/Open-Game-Launcher.exe dist/${{ matrix.exe }}
+          # Gleiche Datei unter dem alten Namen: Launcher bis 1.7 suchen beim Update genau diesen Namen
+          Copy-Item target/${{ matrix.target }}/release/Open-Game-Launcher.exe dist/${{ matrix.legacy }}
           if ("${{ matrix.arch }}" -eq "x86_64") {
             choco install upx --version=4.2.4 -y --no-progress
-            if ($LASTEXITCODE -eq 0) { upx --best --lzma -o dist/MAZ-Launcher-mini.exe dist/MAZ-Launcher.exe }
+            if ($LASTEXITCODE -eq 0) { upx --best --lzma -o dist/Open-Game-Launcher-mini.exe dist/Open-Game-Launcher.exe }
             $global:LASTEXITCODE = 0
             Copy-Item Cargo.lock dist/Cargo.lock
           }
@@ -168,20 +172,20 @@ jobs:
       - name: AppImage, .deb, .rpm, Pacman
         run: |
           set -o pipefail
-          scripts/package-linux.sh target/release/MAZ-Launcher "${{ steps.ver.outputs.version }}" ${{ matrix.arch }} deb rpm pacman appimage 2>&1 | tee package-linux-${{ matrix.arch }}.log
+          scripts/package-linux.sh target/release/Open-Game-Launcher "${{ steps.ver.outputs.version }}" ${{ matrix.arch }} deb rpm pacman appimage 2>&1 | tee package-linux-${{ matrix.arch }}.log
 
       - name: Flatpak
         continue-on-error: true
         run: |
           set -o pipefail
-          scripts/package-linux.sh target/release/MAZ-Launcher "${{ steps.ver.outputs.version }}" ${{ matrix.arch }} flatpak 2>&1 | tee flatpak-${{ matrix.arch }}.log
+          scripts/package-linux.sh target/release/Open-Game-Launcher "${{ steps.ver.outputs.version }}" ${{ matrix.arch }} flatpak 2>&1 | tee flatpak-${{ matrix.arch }}.log
 
       - name: Snap
         continue-on-error: true
         run: |
           set -o pipefail
           sudo snap install snapcraft --classic
-          scripts/package-linux.sh target/release/MAZ-Launcher "${{ steps.ver.outputs.version }}" ${{ matrix.arch }} snap 2>&1 | tee snap-${{ matrix.arch }}.log
+          scripts/package-linux.sh target/release/Open-Game-Launcher "${{ steps.ver.outputs.version }}" ${{ matrix.arch }} snap 2>&1 | tee snap-${{ matrix.arch }}.log
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -232,7 +236,7 @@ jobs:
         run: |
           set -o pipefail
           v=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
-          scripts/package-macos.sh target/aarch64-apple-darwin/release/MAZ-Launcher target/x86_64-apple-darwin/release/MAZ-Launcher "$v" 2>&1 | tee package-macos.log
+          scripts/package-macos.sh target/aarch64-apple-darwin/release/Open-Game-Launcher target/x86_64-apple-darwin/release/Open-Game-Launcher "$v" 2>&1 | tee package-macos.log
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -321,7 +325,7 @@ jobs:
         run: |
           # Abschnitt "## [VERSION]" bis zum nächsten "## [" herausschneiden
           awk -v v="$VERSION" '
-            /^## \[/ { inside = index($0, "## [" v "]") == 1; if (inside) { print "## MAZ Launcher " v; next } }
+            /^## \[/ { inside = index($0, "## [" v "]") == 1; if (inside) { print "## Open Game Launcher " v; next } }
             inside { print }
           ' CHANGELOG.md > RELEASE_BODY.md
           if [ ! -s RELEASE_BODY.md ]; then
@@ -343,7 +347,7 @@ jobs:
         with:
           tag_name: v${{ needs.windows.outputs.version }}
           target_commitish: ${{ github.sha }}
-          name: MAZ Launcher ${{ needs.windows.outputs.version }}${{ steps.notes.outputs.prerelease == 'true' && ' (Test)' || '' }}
+          name: Open Game Launcher ${{ needs.windows.outputs.version }}${{ steps.notes.outputs.prerelease == 'true' && ' (Test)' || '' }}
           body_path: RELEASE_BODY.md
           prerelease: ${{ steps.notes.outputs.prerelease == 'true' }}
           make_latest: ${{ steps.notes.outputs.prerelease == 'true' && 'false' || 'true' }}

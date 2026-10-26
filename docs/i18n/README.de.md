@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="../../assets/icon-256.png" width="128" alt="MAZ Launcher Logo">
+<img src="../../assets/icon-256.png" width="128" alt="Open Game Launcher Logo">
 
-# MAZ Launcher
+# Open Game Launcher
 
-**Alle deine Spiele. Ein Launcher.**
+**Alle deine Spiele. Ein Launcher.** · kurz OG · früher *MAZ Launcher*
 
 Steam, Epic Games, Roblox und deine eigenen Spiele in einer schnellen, schlanken und schönen App für **Windows, macOS und Linux**, geschrieben zu 100 % in Rust. Alles läuft lokal – kein Konto.
 
@@ -21,7 +21,7 @@ Steam, Epic Games, Roblox und deine eigenen Spiele in einer schnellen, schlanken
 
 <br>
 
-<img src="../screenshots/library-maz.webp" alt="MAZ Launcher Bibliothek im MAZ-Stil" width="900">
+<img src="../screenshots/library-maz.webp" alt="Open Game Launcher Bibliothek im OG-Stil" width="900">
 
 </div>
 
@@ -51,16 +51,16 @@ Steam, Epic Games, Roblox und deine eigenen Spiele in einer schnellen, schlanken
 | 🗂️ **Bibliothek ordnen** | Suchen, sortieren (Name, zuletzt gespielt, Spielzeit, zuletzt hinzugefügt) und filtern (Store, installiert, Favoriten, Genre, Tags, Sammlungen). Eigene Tags und Sammlungen, Spielzeit-Messung, doppelte Spiele aus mehreren Stores werden zusammengefasst. |
 | 📝 **Spiel-Infos** | Beschreibung, Genres, Entwickler, Erscheinungsdatum, **Mindest- und empfohlene PC-Anforderungen** und die **Steam-Deck-Bewertung** – aus dem öffentlichen Steam-Store und für alles andere (z. B. ROMs, GOG- oder Xbox-Spiele) aus **Wikipedia/Wikidata**. Lokal zwischengespeichert, alles selbst bearbeitbar. |
 | 🐧 **Wine & Proton pro Spiel** | Unter Linux für jedes Windows-Spiel die Wine- oder Proton-Version wählen (System-Wine, Steam-Proton, GE-Proton, Lutris- und Heroic-Versionen). |
-| 🎁 **Gratis-Spiele** | Ein Tab mit allen Spielen, die es gerade bei Epic Games und Steam kostenlos gibt, mit Countdown, wie lange noch. „Zur Bibliothek hinzufügen“ öffnet den Store – ein Klick auf „Holen“ und das Spiel ist im MAZ Launcher. |
+| 🎁 **Gratis-Spiele** | Ein Tab mit allen Spielen, die es gerade bei Epic Games und Steam kostenlos gibt, mit Countdown, wie lange noch. „Zur Bibliothek hinzufügen“ öffnet den Store – ein Klick auf „Holen“ und das Spiel ist im Open Game Launcher. |
 | 🚀 **Eigene Spiele** | Füge jedes Spiel hinzu: EXE, Verknüpfung oder Batch-Datei. Vor **jedem** Start fragt eine Checkliste: *„Hast du alles Wichtige deaktiviert?“* Bei **Nein** startet das Spiel nicht. |
 | 🖼️ **Original-Icons & Cover** | Echte Spiel-Icons (direkt aus der EXE bzw. aus Steam) und Original-Cover. Für jedes Spiel kannst du ein eigenes Cover setzen. |
-| 🎨 **3 Ansichten** | Sieht aus **wie die Steam-Bibliothek**, **wie Epic Games** oder im **eigenen MAZ-Stil**. |
+| 🎨 **3 Ansichten** | Sieht aus **wie die Steam-Bibliothek**, **wie Epic Games** oder im **eigenen OG-Stil**. |
 | 🌈 **16 Designs + eigene** | 16 fertige Farbschemata, ein Design-Editor für eigene Designs mit Schrift, Abständen und Ansicht – teilbar als Code oder `.maztheme.json`-Datei –, eigene Akzentfarbe und eigenes Hintergrundbild. |
 | 🎮 **Controller-Modus** | Optional: den ganzen Launcher mit dem Gamepad bedienen (Steuerkreuz/Stick, A, B, LB/RB). |
 | 🌍 **9 Sprachen** | Deutsch, English, Español, Français, Italiano, Português, Polski, Türkçe und Русский – inklusive aller Fehlererklärungen. |
 | 🛟 **Fehler einfach erklärt** | Startet ein Spiel nicht oder stürzt es direkt nach dem Start ab (Steam, Epic oder eigenes), erklärt der Launcher **Schritt für Schritt** in einfachen Worten, was los ist und wie man es behebt, mit Knöpfen, die direkt helfen (z. B. „Spieldateien überprüfen“, „Als Administrator starten“ oder „Visual C++ herunterladen“). Jedes Spiel hat außerdem einen Knopf „Startet nicht? Hilfe“. |
 | 🔄 **Updates in der App** | Du bekommst Bescheid, wenn es eine neue Version gibt. „Jetzt updaten“ lädt sie, prüft die SHA256-Prüfsumme und installiert sie – ohne Umweg über GitHub. |
-| 🔒 **Alles lokal** | Kein MAZ-Konto, kein Server, kein Tracking. Passwörter bleiben bei Steam, Epic und Roblox. |
+| 🔒 **Alles lokal** | Kein OG-Konto, kein Server, kein Tracking. Passwörter bleiben bei Steam, Epic und Roblox. |
 | 🐧 **Alle Systeme** | Windows (x86_64, ARM64), macOS (Apple Silicon + Intel), Linux (x86_64, ARM64) als AppImage, .deb, .rpm, .pkg.tar.zst, Flatpak und Snap. |
 | 📦 **Eingebauter Installer (Windows)** | Eine einzige EXE: Doppelklick öffnet ein Installationsmenü mit Desktop-Verknüpfung, Startmenü-Eintrag, „Jetzt öffnen“ und „App-Ordner öffnen“. Keine Admin-Rechte nötig. |
 | 🪶 **Winzig** | Eine einzige, auf Größe optimierte EXE ohne Zusatzdateien. |
@@ -70,8 +70,8 @@ Steam, Epic Games, Roblox und deine eigenen Spiele in einer schnellen, schlanken
 <table>
   <tr>
     <td width="50%" align="center">
-      <img src="../screenshots/library-maz.webp" alt="MAZ-Stil"><br>
-      <sub><b>MAZ-Stil</b>: eigener Look mit „Weiterspielen“-Banner und allen Spielen als Raster</sub>
+      <img src="../screenshots/library-maz.webp" alt="OG-Stil"><br>
+      <sub><b>OG-Stil</b>: eigener Look mit „Weiterspielen“-Banner und allen Spielen als Raster</sub>
     </td>
     <td width="50%" align="center">
       <img src="../screenshots/installed.webp" alt="Installiert"><br>
@@ -125,21 +125,21 @@ Steam, Epic Games, Roblox und deine eigenen Spiele in einer schnellen, schlanken
 Alle Dateien gibt es unter [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest). In `SHA256SUMS.txt` steht zu jeder Datei eine Prüfsumme.
 
 ### Windows 10 / 11
-1. **`MAZ-Launcher.exe`** herunterladen (Windows auf ARM: **`MAZ-Launcher-arm64.exe`**).
+1. **`Open-Game-Launcher.exe`** herunterladen (Windows auf ARM: **`Open-Game-Launcher-arm64.exe`**).
 2. **Doppelklick** → **„Installieren“** → **„Jetzt öffnen“**.
 
 > [!TIP]
 > **„Der Computer wurde durch Windows geschützt“?** Das passiert bei neuen Programmen ohne bezahltes Zertifikat. Auf **„Weitere Informationen“** und dann **„Trotzdem ausführen“** klicken.
 
 ### macOS 11 oder neuer (Apple Silicon + Intel)
-1. **`MAZ-Launcher-…-macOS.dmg`** herunterladen, öffnen und **MAZ Launcher** in **„Programme“** ziehen.
+1. **`Open-Game-Launcher-…-macOS.dmg`** herunterladen, öffnen und **Open Game Launcher** in **„Programme“** ziehen.
 2. Beim ersten Mal: **Rechtsklick** auf die App → **„Öffnen“** → **„Öffnen“**. macOS fragt einmal, weil die App nicht aus dem App Store kommt.
 
 ### Linux (x86_64 und ARM64)
 
 | Distribution | Datei | Installieren |
 |---|---|---|
-| Alle | `MAZ-Launcher-…-x86_64.AppImage` / `-aarch64.AppImage` | `chmod +x MAZ-Launcher-*.AppImage` und starten |
+| Alle | `Open-Game-Launcher-…-x86_64.AppImage` / `-aarch64.AppImage` | `chmod +x Open-Game-Launcher-*.AppImage` und starten |
 | Ubuntu, Debian, Mint, Pop!_OS | `maz-launcher_…_amd64.deb` / `_arm64.deb` | `sudo apt install ./maz-launcher_*.deb` |
 | Fedora, openSUSE, Nobara | `maz-launcher-…-1.x86_64.rpm` / `.aarch64.rpm` | `sudo dnf install ./maz-launcher-*.rpm` |
 | Arch, Manjaro, EndeavourOS, CachyOS | `maz-launcher-…-x86_64.pkg.tar.zst` | `sudo pacman -U maz-launcher-*.pkg.tar.zst` |
@@ -149,13 +149,13 @@ Alle Dateien gibt es unter [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lau
 Der Launcher nutzt **webkit2gtk-4.1** vom System (auf den meisten Desktops schon da). Epic-Spiele laufen über den [Heroic Games Launcher](https://heroicgameslauncher.com), Roblox über [Sober](https://flathub.org/apps/org.vinegarhq.Sober).
 
 ### Updates
-Der MAZ Launcher schaut bei GitHub nach neuen Versionen (abschaltbar unter **Einstellungen → Allgemein**). **„Jetzt updaten“** lädt die passende Datei, prüft die Prüfsumme und installiert sie. Bei Linux-Paketen fragt er nach deinem Passwort und nutzt den Paketmanager. Neue Versionen erscheinen weiterhin auch auf GitHub.
+Der Open Game Launcher schaut bei GitHub nach neuen Versionen (abschaltbar unter **Einstellungen → Allgemein**). **„Jetzt updaten“** lädt die passende Datei, prüft die Prüfsumme und installiert sie. Bei Linux-Paketen fragt er nach deinem Passwort und nutzt den Paketmanager. Neue Versionen erscheinen weiterhin auch auf GitHub.
 
 ## Benutzung
 
 - **Spielen:** Mit der Maus über ein Spiel fahren und auf ▶ klicken. Ein Klick auf das Cover öffnet die Details.
 - **Eigenes Spiel hinzufügen:** Links auf **„Spiel hinzufügen“** → bei „Programm“ auf **„Durchsuchen…“** → die Start-Datei des Spiels wählen → **„Hinzufügen“**.
-- **Aussehen ändern:** **Einstellungen → Design** → Ansicht (MAZ / Steam / Epic) und Farbschema wählen.
+- **Aussehen ändern:** **Einstellungen → Design** → Ansicht (OG / Steam / Epic) und Farbschema wählen.
 - **Alle Epic-Spiele sehen:** oben in der Bibliothek beim Hinweis auf **Verbinden** klicken (oder **Einstellungen → Verbindungen → Epic-Konto verbinden**). Drei Schritte: im Browser bei Epic anmelden → auf der Seite, die Epic zeigt, Strg + A und Strg + C drücken (Mac: ⌘) → fertig. Ein Balken zeigt, wie viele Spiele schon geladen sind.
 - **Genauere Steam-Liste (optional):** **Einstellungen → Verbindungen** → kostenlosen Steam-Web-API-Schlüssel eintragen. Die Anleitung steht direkt daneben.
 - **Spiel deinstallieren:** Spiel öffnen → **Deinstallieren**.
@@ -181,7 +181,7 @@ Spiel stürzt direkt nach dem Start ab (Steam, Epic oder eigenes) · Spieldatei 
 git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
 cd MAZ-Lauchner
 cargo run                 # Entwickeln
-cargo build --release     # Fertige EXE: target\release\MAZ-Launcher.exe
+cargo build --release     # Fertige EXE: target\release\Open-Game-Launcher.exe
 .\scripts\build.ps1 -Mini # EXE nach dist\ + zusätzlich mit UPX gepackte Mini-Version
 ```
 
@@ -215,7 +215,7 @@ Das fertige CSS (`assets/maz.css`) liegt schon im Repo und wird in die EXE einge
 - Windows-Funktionen über direkte API-Aufrufe statt großer Binding-Crates
 - TLS über das in Windows eingebaute SChannel
 - Bilder nur PNG/JPEG, CSS minifiziert und eingebettet
-- Optional: mit UPX gepackte `MAZ-Launcher-mini.exe`
+- Optional: mit UPX gepackte `Open-Game-Launcher-mini.exe`
 
 </details>
 
@@ -238,7 +238,7 @@ src/
 └── ui/            Oberfläche (Bibliothek in 3 Stilen, Dialoge, Einstellungen, Installer)
 ```
 
-Einstellungen liegen in `%APPDATA%\MAZ Launcher\config.json`, der Bilder-Cache in `%LOCALAPPDATA%\MAZ Launcher`.
+Einstellungen liegen in `%APPDATA%\Open Game Launcher\config.json`, der Bilder-Cache in `%LOCALAPPDATA%\Open Game Launcher`.
 
 </details>
 
@@ -257,7 +257,7 @@ Epic gibt die Liste der gekauften Spiele nur nach einer Anmeldung heraus. Geh au
 Der Launcher braucht Microsoft WebView2 (bei Windows 10/11 normalerweise dabei). Fehlt es, erklärt der Launcher beim Start, wie man es installiert.
 
 **Werden meine Daten irgendwohin gesendet?**
-Nein. Es gibt kein MAZ-Konto und keinen MAZ-Server. Internet wird nur für Cover-Bilder, die Gratis-Spiele-Liste, die Update-Prüfung und – falls verbunden – Steam und Epic genutzt. Siehe [Datenschutzerklärung](../DATENSCHUTZ.md).
+Nein. Es gibt kein OG-Konto und keinen OG-Server. Internet wird nur für Cover-Bilder, die Gratis-Spiele-Liste, die Update-Prüfung und – falls verbunden – Steam und Epic genutzt. Siehe [Datenschutzerklärung](../DATENSCHUTZ.md).
 
 ## Mitmachen
 

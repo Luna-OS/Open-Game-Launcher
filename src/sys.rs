@@ -5,11 +5,21 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub const APP_NAME: &str = "MAZ Launcher";
+pub const APP_NAME: &str = "Open Game Launcher";
+/// Kurzname / Logo
+pub const SHORT_NAME: &str = "OG";
+/// Früherer Name (bis 1.7) – für Umzug der Ordner, Verknüpfungen und alte Installationen
+pub const OLD_APP_NAME: &str = "MAZ Launcher";
 #[cfg(windows)]
-pub const EXE_NAME: &str = "MAZ-Launcher.exe";
+pub const EXE_NAME: &str = "Open-Game-Launcher.exe";
+/// Alte EXE in bestehenden Installationen (wird vom Updater an Ort und Stelle ersetzt)
+#[cfg(windows)]
+pub const OLD_EXE_NAME: &str = "MAZ-Launcher.exe";
+// Linux/macOS: Programmname bleibt intern gleich (Paketnamen, Updates)
 #[cfg(not(windows))]
 pub const EXE_NAME: &str = "maz-launcher";
+#[cfg(not(windows))]
+pub const OLD_EXE_NAME: &str = "maz-launcher";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GITHUB_URL: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner";
 
@@ -23,42 +33,74 @@ fn home() -> PathBuf {
     env_path("HOME").or_else(|| env_path("USERPROFILE")).unwrap_or_else(|| PathBuf::from("."))
 }
 
-/// Einstellungen & eigene Spiele
-/// - Windows: %APPDATA%\MAZ Launcher
-/// - macOS: ~/Library/Application Support/MAZ Launcher
-/// - Linux: ~/.config/maz-launcher (bzw. $XDG_CONFIG_HOME)
-pub fn roaming_dir() -> PathBuf {
+/// Ordnernamen (neu, alt) je System
+#[cfg(any(windows, target_os = "macos"))]
+const DIR_NAMES: (&str, &str) = (APP_NAME, OLD_APP_NAME);
+#[cfg(not(any(windows, target_os = "macos")))]
+const DIR_NAMES: (&str, &str) = ("open-game-launcher", "maz-launcher");
+
+/// Ordner unter `base` mit neuem Namen. Gibt es nur den alten Ordner (bis 1.7 „MAZ Launcher“),
+/// wird er einmalig umbenannt – Einstellungen, Spiele und Erweiterungen ziehen so mit.
+/// Klappt das Umbenennen nicht (z. B. Datei gerade geöffnet), wird einfach der alte Ordner benutzt.
+pub fn migrated_dir(base: &Path, new: &str, old: &str) -> PathBuf {
+    let n = base.join(new);
+    if n.exists() {
+        return n;
+    }
+    let o = base.join(old);
+    let is_real_dir = std::fs::symlink_metadata(&o).map(|m| m.is_dir()).unwrap_or(false);
+    if is_real_dir && std::fs::rename(&o, &n).is_err() {
+        return o;
+    }
+    n
+}
+
+fn roaming_base() -> PathBuf {
     #[cfg(windows)]
     {
-        env_path("APPDATA").unwrap_or_else(home).join(APP_NAME)
+        env_path("APPDATA").unwrap_or_else(home)
     }
     #[cfg(target_os = "macos")]
     {
-        home().join("Library").join("Application Support").join(APP_NAME)
+        home().join("Library").join("Application Support")
     }
     #[cfg(not(any(windows, target_os = "macos")))]
     {
-        env_path("XDG_CONFIG_HOME").unwrap_or_else(|| home().join(".config")).join("maz-launcher")
+        env_path("XDG_CONFIG_HOME").unwrap_or_else(|| home().join(".config"))
     }
 }
 
-/// Cache (Icons, WebView-Daten)
-/// - Windows: %LOCALAPPDATA%\MAZ Launcher
-/// - macOS: ~/Library/Caches/MAZ Launcher
-/// - Linux: ~/.cache/maz-launcher (bzw. $XDG_CACHE_HOME)
-pub fn local_dir() -> PathBuf {
+fn local_base() -> PathBuf {
     #[cfg(windows)]
     {
-        env_path("LOCALAPPDATA").unwrap_or_else(home).join(APP_NAME)
+        env_path("LOCALAPPDATA").unwrap_or_else(home)
     }
     #[cfg(target_os = "macos")]
     {
-        home().join("Library").join("Caches").join(APP_NAME)
+        home().join("Library").join("Caches")
     }
     #[cfg(not(any(windows, target_os = "macos")))]
     {
-        env_path("XDG_CACHE_HOME").unwrap_or_else(|| home().join(".cache")).join("maz-launcher")
+        env_path("XDG_CACHE_HOME").unwrap_or_else(|| home().join(".cache"))
     }
+}
+
+/// Einstellungen & eigene Spiele
+/// - Windows: %APPDATA%\Open Game Launcher
+/// - macOS: ~/Library/Application Support/Open Game Launcher
+/// - Linux: ~/.config/open-game-launcher (bzw. $XDG_CONFIG_HOME)
+pub fn roaming_dir() -> PathBuf {
+    static DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    DIR.get_or_init(|| migrated_dir(&roaming_base(), DIR_NAMES.0, DIR_NAMES.1)).clone()
+}
+
+/// Cache (Icons, WebView-Daten)
+/// - Windows: %LOCALAPPDATA%\Open Game Launcher
+/// - macOS: ~/Library/Caches/Open Game Launcher
+/// - Linux: ~/.cache/open-game-launcher (bzw. $XDG_CACHE_HOME)
+pub fn local_dir() -> PathBuf {
+    static DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    DIR.get_or_init(|| migrated_dir(&local_base(), DIR_NAMES.0, DIR_NAMES.1)).clone()
 }
 
 /// Pfad aus einer Konfigurationsdatei in die Schreibweise des Systems bringen
@@ -691,6 +733,25 @@ pub fn format_ago(ts: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn old_folder_moves_to_new_name() {
+        let base = std::env::temp_dir().join(format!("og-migrate-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        std::fs::create_dir_all(base.join("Alt")).unwrap();
+        std::fs::write(base.join("Alt").join("config.json"), "{}").unwrap();
+        let d = migrated_dir(&base, "Neu", "Alt");
+        assert_eq!(d, base.join("Neu"));
+        assert!(d.join("config.json").exists());
+        assert!(!base.join("Alt").exists());
+        // Gibt es beide, bleibt der neue – der alte wird nicht angefasst
+        std::fs::create_dir_all(base.join("Alt")).unwrap();
+        assert_eq!(migrated_dir(&base, "Neu", "Alt"), base.join("Neu"));
+        assert!(base.join("Alt").exists());
+        // Weder noch: neuer Name
+        assert_eq!(migrated_dir(&base, "X", "Y"), base.join("X"));
+        let _ = std::fs::remove_dir_all(&base);
+    }
 
     #[test]
     fn file_url_roundtrip() {

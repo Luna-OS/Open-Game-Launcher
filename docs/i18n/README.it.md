@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../../assets/icon-256.png" width="128" alt="Logo di MAZ Launcher">
+<img src="../../assets/icon-256.png" width="128" alt="Logo di Open Game Launcher">
 
-# MAZ Launcher
+# Open Game Launcher
 
 **Tutti i tuoi giochi. Un solo launcher.**
 
@@ -21,7 +21,7 @@ Steam, Epic Games e i tuoi giochi in un'unica app per Windows veloce, leggera e 
 
 <br>
 
-<img src="../screenshots/library-epic-style.webp" alt="Libreria di MAZ Launcher in stile Epic Games" width="900">
+<img src="../screenshots/library-epic-style.webp" alt="Libreria di Open Game Launcher in stile Epic Games" width="900">
 
 </div>
 
@@ -38,8 +38,8 @@ Steam, Epic Games e i tuoi giochi in un'unica app per Windows veloce, leggera e 
 | 🟦 **Epic Games** | Rileva automaticamente tutti i giochi Epic installati. |
 | 🚀 **I tuoi giochi** | Aggiungi qualsiasi gioco: `.exe`, collegamento o file batch. Prima di **ogni** avvio una checklist chiede *«Hai disattivato tutto ciò che è importante?»*. Se rispondi **No**, il gioco non parte. |
 | 🖼️ **Icone e copertine originali** | Icone reali (estratte dall'EXE o da Steam) e copertine ufficiali. Puoi impostare una copertina personalizzata per ogni gioco. |
-| 🎨 **3 layout** | Si presenta **come la libreria di Steam**, **come Epic Games** oppure nello **stile MAZ**. |
-| 🌈 **8 temi colore** | MAZ Viola, Mezzanotte, Neon, Brace, Foresta, Sakura, Nero OLED e Chiaro, più un colore d'accento personalizzato. |
+| 🎨 **3 layout** | Si presenta **come la libreria di Steam**, **come Epic Games** oppure nello **stile OG**. |
+| 🌈 **8 temi colore** | OG Viola, Mezzanotte, Neon, Brace, Foresta, Sakura, Nero OLED e Chiaro, più un colore d'accento personalizzato. |
 | 🛟 **Errori spiegati in modo semplice** | Se qualcosa non parte, il launcher spiega **passo dopo passo** cosa è successo e come risolverlo, con pulsanti che aiutano subito (ad esempio *Esegui come amministratore* o *Scarica Visual C++*). |
 | 📦 **Installer integrato** | Un unico EXE: con un doppio clic si apre un menu di installazione con collegamento sul desktop, voce nel menu Start, *Apri ora* e *Apri cartella dell'app*. Non servono diritti di amministratore. |
 | 🪶 **Leggerissimo** | Un solo EXE ottimizzato per le dimensioni, senza file aggiuntivi. |
@@ -73,7 +73,7 @@ Steam, Epic Games e i tuoi giochi in un'unica app per Windows veloce, leggera e 
 
 **Requisiti:** Windows 10 o 11 (64 bit) con [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/), preinstallato nelle versioni attuali di Windows.
 
-1. Scarica l'ultimo **`MAZ-Launcher.exe`** da [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest).
+1. Scarica l'ultimo **`Open-Game-Launcher.exe`** da [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest).
 2. Fai **doppio clic** sul file.
 3. Clicca su **«Installieren»** (*Installa*) nel menu di installazione.
 4. Fatto! Clicca su **«Jetzt öffnen»** (*Apri ora*). Da quel momento avvia il launcher dal collegamento sul desktop.
@@ -85,15 +85,15 @@ Steam, Epic Games e i tuoi giochi in un'unica app per Windows veloce, leggera e 
 > [!TIP]
 > **Preferisci la versione portable?** Clicca su **«Ohne Installation starten»** (*Avvia senza installare*) nel menu di installazione, oppure metti un file vuoto chiamato `portable.txt` accanto all'EXE.
 
-**`MAZ-Launcher-mini.exe`** è la stessa app compressa con UPX. Alcuni antivirus segnalano per errore gli EXE compressi; in tal caso usa la versione normale.
+**`Open-Game-Launcher-mini.exe`** è la stessa app compressa con UPX. Alcuni antivirus segnalano per errore gli EXE compressi; in tal caso usa la versione normale.
 
-**Disinstallazione:** Impostazioni di Windows → App → «MAZ Launcher» → Disinstalla, oppure nel launcher in **Einstellungen → Allgemein** (*Impostazioni → Generale*). I tuoi giochi restano intatti.
+**Disinstallazione:** Impostazioni di Windows → App → «Open Game Launcher» → Disinstalla, oppure nel launcher in **Einstellungen → Allgemein** (*Impostazioni → Generale*). I tuoi giochi restano intatti.
 
 ## Utilizzo
 
 - **Giocare:** passa il mouse su un gioco e clicca su ▶. Un clic sulla copertina apre i dettagli.
 - **Aggiungere un gioco:** clicca su **«Spiel hinzufügen»** (*Aggiungi gioco*) a sinistra → **«Durchsuchen…»** (*Sfoglia…*) accanto a «Programm» → scegli l'eseguibile del gioco → **«Hinzufügen»** (*Aggiungi*).
-- **Cambiare aspetto:** **Einstellungen → Design** → scegli un layout (MAZ / Steam / Epic) e un tema colore.
+- **Cambiare aspetto:** **Einstellungen → Design** → scegli un layout (OG / Steam / Epic) e un tema colore.
 - **Vedere tutti i giochi Steam, anche non installati:** **Einstellungen → Verbindungen** (*Connessioni*) → inserisci una chiave Steam Web API gratuita. Le istruzioni sono proprio lì accanto.
 - **Personalizzare la checklist:** **Einstellungen → Eigene Spiele** (*Giochi personali*) → aggiungi, modifica o elimina voci, in generale o per singolo gioco.
 
@@ -109,7 +109,7 @@ File del gioco mancante · unità o disco USB non collegato · servono i diritti
 git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
 cd MAZ-Lauchner
 cargo run                 # sviluppo
-cargo build --release     # EXE finale: target\release\MAZ-Launcher.exe
+cargo build --release     # EXE finale: target\release\Open-Game-Launcher.exe
 .\scripts\build.ps1 -Mini # copia l'EXE in dist\ e crea una versione mini compressa con UPX
 ```
 
@@ -123,7 +123,7 @@ Dettagli tecnici (stack, struttura del progetto, ottimizzazione delle dimensioni
 No. I giochi Steam ed Epic vengono sempre avviati tramite i launcher ufficiali. Non vengono mai richieste password.
 
 **Perché non vedo tutti i miei giochi Epic?**
-Epic fornisce l'elenco dei giochi acquistati solo dopo l'accesso. MAZ Launcher mostra tutti i giochi Epic **installati**.
+Epic fornisce l'elenco dei giochi acquistati solo dopo l'accesso. Open Game Launcher mostra tutti i giochi Epic **installati**.
 
 **La finestra resta bianca o non si apre.**
 Il launcher richiede Microsoft WebView2 (normalmente incluso in Windows 10 e 11). Se manca, all'avvio il launcher spiega come installarlo.

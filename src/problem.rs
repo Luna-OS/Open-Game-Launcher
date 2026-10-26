@@ -461,7 +461,8 @@ impl Problem {
     /// Kurzer Text für die Zwischenablage / GitHub-Issues.
     pub fn to_clipboard_text(&self) -> String {
         let mut out = format!(
-            "MAZ Launcher – {}\n\n{}\n{}\n\n{}\n{}\n\n{}\n",
+            "{} – {}\n\n{}\n{}\n\n{}\n{}\n\n{}\n",
+            crate::sys::APP_NAME,
             self.title,
             t("problem.what"),
             self.what_happened,

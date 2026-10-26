@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="../../assets/icon-256.png" width="128" alt="MAZ Launcher ロゴ">
+<img src="../../assets/icon-256.png" width="128" alt="Open Game Launcher ロゴ">
 
-# MAZ Launcher
+# Open Game Launcher
 
 **すべてのゲームを、ひとつのランチャーで。**
 
@@ -21,7 +21,7 @@ Steam、Epic Games、そして自分で追加したゲームを、高速・軽�
 
 <br>
 
-<img src="../screenshots/library-epic-style.webp" alt="Epic Games スタイルの MAZ Launcher ライブラリ" width="900">
+<img src="../screenshots/library-epic-style.webp" alt="Epic Games スタイルの Open Game Launcher ライブラリ" width="900">
 
 </div>
 
@@ -38,8 +38,8 @@ Steam、Epic Games、そして自分で追加したゲームを、高速・軽�
 | 🟦 **Epic Games** | インストール済みの Epic ゲームを自動検出します。 |
 | 🚀 **自分のゲーム** | `.exe`、ショートカット、バッチファイルなど、どんなゲームでも追加できます。起動前には**毎回**チェックリストで *「大事なものはすべてオフにした?」* と確認し、**いいえ** を選ぶとゲームは起動しません。 |
 | 🖼️ **オリジナルのアイコンとカバー** | EXE や Steam から取得した本物のアイコンと公式カバー画像を表示。ゲームごとに独自のカバーも設定できます。 |
-| 🎨 **3 種類のレイアウト** | **Steam ライブラリ風**、**Epic Games 風**、またはオリジナルの **MAZ スタイル**。 |
-| 🌈 **8 つのカラーテーマ** | MAZ バイオレット、ミッドナイト、ネオン、エンバー、フォレスト、サクラ、OLED ブラック、ライト。アクセントカラーも自由に設定可能。 |
+| 🎨 **3 種類のレイアウト** | **Steam ライブラリ風**、**Epic Games 風**、またはオリジナルの **OG スタイル**。 |
+| 🌈 **8 つのカラーテーマ** | OG バイオレット、ミッドナイト、ネオン、エンバー、フォレスト、サクラ、OLED ブラック、ライト。アクセントカラーも自由に設定可能。 |
 | 🛟 **わかりやすいエラー説明** | 起動できないときは、何が起きたのか、どう直せばよいのかを**ステップごとに**説明。*管理者として実行* や *Visual C++ をダウンロード* など、その場で解決できるボタンも表示します。 |
 | 📦 **インストーラー内蔵** | EXE ひとつだけ。ダブルクリックするとインストールメニューが開き、デスクトップのショートカット、スタートメニューへの登録、*今すぐ開く*、*アプリフォルダーを開く* が選べます。管理者権限は不要です。 |
 | 🪶 **超軽量** | サイズを最適化した単一の EXE。追加ファイルはありません。 |
@@ -73,7 +73,7 @@ Steam、Epic Games、そして自分で追加したゲームを、高速・軽�
 
 **動作環境:** Windows 10 / 11(64 ビット)と [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)(最近の Windows にはプリインストール済み)。
 
-1. [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) から最新の **`MAZ-Launcher.exe`** をダウンロードします。
+1. [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) から最新の **`Open-Game-Launcher.exe`** をダウンロードします。
 2. ファイルを**ダブルクリック**します。
 3. インストールメニューで **「Installieren」**(*インストール*)をクリックします。
 4. 完了です。**「Jetzt öffnen」**(*今すぐ開く*)をクリックしてください。以降はデスクトップのショートカットから起動できます。
@@ -85,15 +85,15 @@ Steam、Epic Games、そして自分で追加したゲームを、高速・軽�
 > [!TIP]
 > **ポータブル版として使いたい場合** はインストールメニューで **「Ohne Installation starten」**(*インストールせずに起動*)をクリックするか、EXE と同じフォルダーに空の `portable.txt` を置いてください。
 
-**`MAZ-Launcher-mini.exe`** は同じアプリを UPX で圧縮したものです。圧縮された EXE をウイルス対策ソフトが誤検知することがあるので、その場合は通常版を使ってください。
+**`Open-Game-Launcher-mini.exe`** は同じアプリを UPX で圧縮したものです。圧縮された EXE をウイルス対策ソフトが誤検知することがあるので、その場合は通常版を使ってください。
 
-**アンインストール:** Windows の設定 → アプリ → 「MAZ Launcher」 → アンインストール、またはランチャーの **Einstellungen → Allgemein**(*設定 → 一般*)から。ゲーム自体は削除されません。
+**アンインストール:** Windows の設定 → アプリ → 「Open Game Launcher」 → アンインストール、またはランチャーの **Einstellungen → Allgemein**(*設定 → 一般*)から。ゲーム自体は削除されません。
 
 ## 使い方
 
 - **プレイ:** ゲームにマウスを重ねて ▶ をクリック。カバーをクリックすると詳細が開きます。
 - **自分のゲームを追加:** 左側の **「Spiel hinzufügen」**(*ゲームを追加*) → 「Programm」の **「Durchsuchen…」**(*参照…*) → ゲームの実行ファイルを選択 → **「Hinzufügen」**(*追加*)。
-- **見た目を変更:** **Einstellungen → Design** → レイアウト(MAZ / Steam / Epic)とカラーテーマを選択。
+- **見た目を変更:** **Einstellungen → Design** → レイアウト(OG / Steam / Epic)とカラーテーマを選択。
 - **未インストールを含むすべての Steam ゲームを表示:** **Einstellungen → Verbindungen**(*接続*) → 無料の Steam Web API キーを入力。手順はすぐ横に表示されます。
 - **チェックリストを編集:** **Einstellungen → Eigene Spiele**(*自分のゲーム*) → 項目を追加・編集・削除。ゲームごとの項目も設定できます。
 
@@ -109,7 +109,7 @@ Steam、Epic Games、そして自分で追加したゲームを、高速・軽�
 git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
 cd MAZ-Lauchner
 cargo run                 # 開発用ビルド
-cargo build --release     # リリース用 EXE: target\release\MAZ-Launcher.exe
+cargo build --release     # リリース用 EXE: target\release\Open-Game-Launcher.exe
 .\scripts\build.ps1 -Mini # EXE を dist\ にコピーし、UPX で圧縮した mini 版も作成
 ```
 
@@ -123,7 +123,7 @@ cargo build --release     # リリース用 EXE: target\release\MAZ-Launcher.exe
 いいえ。Steam と Epic のゲームは常に公式ランチャー経由で起動します。パスワードを求めることはありません。
 
 **Epic のゲームがすべて表示されないのはなぜ?**
-Epic はログイン後でないと購入済みゲームの一覧を提供しません。MAZ Launcher は**インストール済み**の Epic ゲームをすべて表示します。
+Epic はログイン後でないと購入済みゲームの一覧を提供しません。Open Game Launcher は**インストール済み**の Epic ゲームをすべて表示します。
 
 **ウィンドウが真っ白のまま / 起動しない。**
 Microsoft WebView2 が必要です(通常は Windows 10 / 11 に含まれています)。見つからない場合は、起動時にインストール方法を案内します。

@@ -694,9 +694,33 @@ fn iso_now() -> String {
     format!("{y:04}-{mo:02}-{d:02}T{h:02}:{mi:02}:00.000Z")
 }
 
+/// Eingefügten CurseForge-Schlüssel säubern: Leerzeichen, Zeilenumbrüche und Anführungszeichen
+/// weg, ein mitkopiertes „x-api-key:“ entfernen. None = sieht nicht wie ein Schlüssel aus.
+pub fn clean_cf_key(raw: &str) -> Option<String> {
+    let mut k: String = raw.chars().filter(|c| !c.is_whitespace()).collect();
+    for prefix in ["x-api-key:", "X-Api-Key:", "x-api-key=", "apikey:", "apikey="] {
+        if let Some(rest) = k.strip_prefix(prefix) {
+            k = rest.to_string();
+        }
+    }
+    let k = k.trim_matches(|c| matches!(c, '"' | '\'' | '`' | '“' | '”' | '„'));
+    (k.len() >= 20 && k.len() < 200 && k.chars().all(|c| c.is_ascii_graphic())).then(|| k.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cf_key_cleaning() {
+        let real = "$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV12";
+        assert_eq!(clean_cf_key(real).as_deref(), Some(real));
+        assert_eq!(clean_cf_key(&format!("  \"{real}\"\n")).as_deref(), Some(real));
+        assert_eq!(clean_cf_key(&format!("x-api-key: {real}")).as_deref(), Some(real));
+        assert_eq!(clean_cf_key(&format!("{}\n{}", &real[..20], &real[20..])).as_deref(), Some(real));
+        assert!(clean_cf_key("zu kurz").is_none());
+        assert!(clean_cf_key("äöüäöüäöüäöüäöüäöüäöüäöü").is_none());
+    }
 
     #[test]
     fn urls_and_parsing() {

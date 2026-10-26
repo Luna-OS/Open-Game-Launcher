@@ -1,4 +1,4 @@
-//! SDK für Erweiterungen des MAZ Launchers (Protokoll Version 1).
+//! SDK für Erweiterungen des Open Game Launchers (Protokoll Version 1).
 //!
 //! Eine Erweiterung ist ein eigenes Programm. Der Launcher schreibt pro Zeile eine Anfrage
 //! (JSON) auf stdin, die Erweiterung antwortet pro Zeile auf stdout. Siehe docs/EXTENSIONS.md.

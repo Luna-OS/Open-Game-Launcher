@@ -20,11 +20,11 @@ fn main() {
     // ID 1 = Icon im Explorer, 32512 = Fenster-/Taskleisten-Icon (wird von Dioxus genutzt)
     res.set_icon("assets/icon.ico");
     res.set_icon_with_id("assets/icon.ico", "32512");
-    res.set("ProductName", "MAZ Launcher");
-    res.set("FileDescription", "MAZ Launcher");
+    res.set("ProductName", "Open Game Launcher");
+    res.set("FileDescription", "Open Game Launcher");
     res.set("CompanyName", "MikeAdamRGB");
     res.set("LegalCopyright", "MIT-Lizenz");
-    res.set("OriginalFilename", "MAZ-Launcher.exe");
+    res.set("OriginalFilename", "Open-Game-Launcher.exe");
     res.set("ProductVersion", &version);
     res.set("FileVersion", &version);
     res.set_manifest(

@@ -32,7 +32,7 @@ pub fn MarkdownNotes(text: String) -> Element {
     let body = text.split("<!-- footer -->").next().unwrap_or("");
     let blocks: Vec<Block> = crate::notes::parse(body)
         .into_iter()
-        .filter(|b| !matches!(b, Block::Heading(l, t) if *l <= 2 && t.starts_with("MAZ Launcher")))
+        .filter(|b| !matches!(b, Block::Heading(l, t) if *l <= 2 && (t.starts_with(crate::sys::APP_NAME) || t.starts_with(crate::sys::OLD_APP_NAME))))
         .collect();
     rsx! {
         div { class: "space-y-1.5 text-sm leading-relaxed text-foreground/85",

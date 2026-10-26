@@ -1,24 +1,24 @@
-# Datenschutzerklärung – MAZ Launcher
+# Datenschutzerklärung – Open Game Launcher
 
 Stand: Oktober 2026 (ab Version 1.4.0)
 
-Der MAZ Launcher ist ein kostenloses Open-Source-Programm für Windows, macOS und Linux von MikeAdamRGB
+Der Open Game Launcher ist ein kostenloses Open-Source-Programm für Windows, macOS und Linux von MikeAdamRGB
 (Kontakt: m.zweers10@gmail.com, GitHub: https://github.com/MikeAdamRGB/MAZ-Lauchner).
 
 ## Kurz gesagt
-**Der MAZ Launcher läuft komplett auf deinem Computer.** Es gibt kein MAZ-Konto, keinen MAZ-Server,
+**Der Open Game Launcher läuft komplett auf deinem Computer.** Es gibt kein OG-Konto, keinen OG-Server,
 keine Werbung und kein Tracking. Wir (der Entwickler) bekommen keine Daten von dir.
 
 ## Was auf deinem Computer gespeichert wird
 Spieleliste-Einstellungen, eigene Spiele, Roblox-Favoriten, Designs, Favoriten und „zuletzt gespielt“:
-- Windows: `%APPDATA%\MAZ Launcher` (Einstellungen) und `%LOCALAPPDATA%\MAZ Launcher` (Bilder-Cache)
-- macOS: `~/Library/Application Support/MAZ Launcher` und `~/Library/Caches/MAZ Launcher`
-- Linux: `~/.config/maz-launcher` und `~/.cache/maz-launcher`
+- Windows: `%APPDATA%\Open Game Launcher` (Einstellungen) und `%LOCALAPPDATA%\Open Game Launcher` (Bilder-Cache)
+- macOS: `~/Library/Application Support/Open Game Launcher` und `~/Library/Caches/Open Game Launcher`
+- Linux: `~/.config/open-game-launcher` und `~/.cache/open-game-launcher`
 
 Anmeldedaten für die freiwillige Epic-Verbindung werden unter Windows mit Windows (DPAPI) verschlüsselt gespeichert.
 
 ## Wann der Launcher ins Internet geht
-Nur für diese Dinge – und immer direkt zum jeweiligen Anbieter, nie über einen MAZ-Server:
+Nur für diese Dinge – und immer direkt zum jeweiligen Anbieter, nie über einen OG-Server:
 
 | Wofür | Wohin | Was wird gesendet |
 |---|---|---|
@@ -41,7 +41,7 @@ Die NoRisk-Client-Profile werden nur lokal aus einer Kopie seiner Datenbank gele
 Wie bei jeder Internetverbindung sehen diese Anbieter deine IP-Adresse. Es gelten deren Datenschutzbestimmungen.
 
 ## Passwörter
-Der MAZ Launcher fragt **nie** nach Passwörtern von Steam, Epic, Roblox oder anderen Diensten.
+Der Open Game Launcher fragt **nie** nach Passwörtern von Steam, Epic, Roblox oder anderen Diensten.
 
 ## Frühere Versionen (1.2.0 – 1.3.2)
 Diese Versionen hatten ein freiwilliges Konto mit Freunden und Chat (Server bei Supabase, Frankfurt).

@@ -7,6 +7,23 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [1.8.0] – 2026-10-26 (Test)
+
+### Neu
+- **Neuer Name: Open Game Launcher (kurz OG).** Neues Logo und Icon überall – App, Fenster, Installer, Verknüpfungen, Downloads und Webseite. Deine Einstellungen, Spiele, Designs und Erweiterungen ziehen beim ersten Start automatisch mit, nichts geht verloren. Alte Design-Codes (`MAZTHEME:`) und `.mazext`-Pakete funktionieren weiter.
+- **Neue Webseite** mit schwebenden Spielbildern, Ringen und einem Namen, der beim Laden auseinanderfährt. Die Spielbilder sind freie Screenshots von Open-Source-Spielen (mit Bildnachweis).
+
+### Verbessert
+- **Besser lesbar:** In hellen Designs ist der Nebentext deutlich dunkler. Auch eigene Designs werden automatisch angepasst, wenn graue Schrift auf hellem Hintergrund schlecht lesbar wäre.
+- Webseite: alle Texte in hellem Weiß bzw. fast Weiß statt Grau.
+
+### Behoben
+- **CurseForge:** Wird der Schlüssel abgelehnt, erscheint das Eingabefeld direkt wieder – mit Anleitung und „Nochmal“-Knopf. Beim Einfügen werden Leerzeichen, Zeilenumbrüche, Anführungszeichen und ein mitkopiertes „x-api-key:“ automatisch entfernt.
+
+### Hinweis
+- Die Windows-Datei heißt jetzt `Open-Game-Launcher.exe`. Damit ältere Versionen sich weiter selbst updaten können, liegt sie im Release zusätzlich unter dem alten Namen `MAZ-Launcher.exe`.
+- Linux-Pakete behalten intern den Namen `maz-launcher`, damit Updates über .deb, .rpm, Pacman, Flatpak und Snap weiter funktionieren.
+
 ## [1.7.1] – 2026-10-26 (Test)
 
 ### Neu

@@ -1,10 +1,10 @@
-// MAZ Launcher – Webseite: Sprache, Downloads (direkt vom neuesten GitHub-Release), System-Erkennung
+// Open Game Launcher – Webseite: Sprache, Downloads (direkt vom neuesten GitHub-Release), System-Erkennung, Animationen
 (function () {
   "use strict";
   var REPO = "MikeAdamRGB/MAZ-Lauchner";
   var RELEASES = "https://github.com/" + REPO + "/releases/latest";
   var LANGS = ["de", "en", "es", "fr", "it", "pt", "pl", "tr", "ru"];
-  var T = window.MAZ_I18N || {};
+  var T = window.OG_I18N || {};
   var lang = "en";
   var assets = [];
   var version = "";
@@ -20,7 +20,7 @@
   function pickLang() {
     var q = new URLSearchParams(location.search).get("lang");
     if (q && LANGS.indexOf(q) >= 0) return q;
-    var saved = store("maz-lang");
+    var saved = store("og-lang");
     if (saved && LANGS.indexOf(saved) >= 0) return saved;
     var list = navigator.languages || [navigator.language || "en"];
     for (var i = 0; i < list.length; i++) {
@@ -65,8 +65,11 @@
   function find(kind) {
     var a = arch(), deb = a === "aarch64" ? "arm64" : "amd64";
     var tests = {
-      "win-x64": function (n) { return n === "MAZ-Launcher.exe"; },
-      "win-arm64": function (n) { return n === "MAZ-Launcher-arm64.exe"; },
+      // Neuer Name zuerst, alter Name (bis 1.7) als Ausweich
+      "win-x64": function (n) { return n === "Open-Game-Launcher.exe"; },
+      "win-x64-old": function (n) { return n === "MAZ-Launcher.exe"; },
+      "win-arm64": function (n) { return n === "Open-Game-Launcher-arm64.exe"; },
+      "win-arm64-old": function (n) { return n === "MAZ-Launcher-arm64.exe"; },
       "mac-dmg": function (n) { return /-macOS\.dmg$/.test(n); },
       "appimage": function (n) { return n.endsWith("-" + a + ".AppImage"); },
       "deb": function (n) { return n.endsWith("_" + deb + ".deb"); },
@@ -76,6 +79,7 @@
       "snap": function (n) { return n.endsWith("_" + deb + ".snap"); }
     };
     for (var i = 0; i < assets.length; i++) if (tests[kind] && tests[kind](assets[i].name)) return assets[i];
+    if (tests[kind + "-old"]) return find(kind + "-old");
     return null;
   }
   function fillLinks() {
@@ -122,7 +126,7 @@
   }
 
   document.getElementById("lang").addEventListener("change", function (e) {
-    store("maz-lang", e.target.value);
+    store("og-lang", e.target.value);
     applyLang(e.target.value);
   });
 
@@ -144,6 +148,81 @@
     });
     box.addEventListener("click", function () { box.close(); });
   }
+
+
+  // ---------- Animationen ----------
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Name in Buchstaben teilen: jeder Buchstabe startet in der Mitte und geht nach außen
+  function splitWord(el) {
+    var text = el.textContent;
+    el.textContent = "";
+    var spans = [];
+    for (var i = 0; i < text.length; i++) {
+      var s = document.createElement("span");
+      s.className = "ch";
+      s.setAttribute("aria-hidden", "true");
+      s.textContent = text[i] === " " ? " " : text[i];
+      el.appendChild(s);
+      spans.push(s);
+    }
+    var box = el.getBoundingClientRect();
+    var mid = box.left + box.width / 2;
+    spans.forEach(function (s, i) {
+      var r = s.getBoundingClientRect();
+      var dx = mid - (r.left + r.width / 2);
+      s.style.setProperty("--dx", dx.toFixed(1) + "px");
+      s.style.setProperty("--d", String(80 + Math.abs(dx) * 0.35 + i * 12));
+    });
+  }
+  var wm = document.querySelector(".wordmark");
+  var started = false;
+  function startWordmark() {
+    if (started) return;
+    started = true;
+    if (!reduce) document.querySelectorAll("[data-split]").forEach(splitWord);
+    if (wm) wm.classList.add("ready");
+  }
+  // Erst wenn die Schrift geladen ist (sonst stimmen die Abstände nicht) – höchstens 900 ms warten
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(startWordmark);
+  setTimeout(startWordmark, 900);
+
+  // Bilder folgen leicht der Maus (Tiefe je Bild)
+  var shots = Array.prototype.slice.call(document.querySelectorAll(".shot"));
+  if (!reduce && window.matchMedia("(pointer: fine)").matches) {
+    var raf = 0, mx = 0, my = 0;
+    window.addEventListener("pointermove", function (e) {
+      mx = e.clientX / window.innerWidth - 0.5;
+      my = e.clientY / window.innerHeight - 0.5;
+      if (raf) return;
+      raf = requestAnimationFrame(function () {
+        raf = 0;
+        shots.forEach(function (el) {
+          var d = parseFloat(el.style.getPropertyValue("--d")) || 1;
+          var inner = el.firstElementChild;
+          inner.style.setProperty("--px", (-mx * 26 * d).toFixed(1) + "px");
+          inner.style.setProperty("--py", (-my * 20 * d).toFixed(1) + "px");
+        });
+      });
+    }, { passive: true });
+  }
+
+  // Kopfzeile, Lineal rechts, aktiver Abschnitt
+  var top = document.getElementById("top");
+  var mark = document.getElementById("ruler-mark");
+  var links = Array.prototype.slice.call(document.querySelectorAll("#secnav a"));
+  var secs = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+  function onScroll() {
+    var y = window.scrollY || 0;
+    var max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    if (top) top.classList.toggle("solid", y > 20);
+    if (mark) mark.style.top = (2 + (y / max) * 96).toFixed(2) + "%";
+    var cur = -1;
+    secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < window.innerHeight * 0.45) cur = i; });
+    links.forEach(function (a, i) { a.classList.toggle("on", i === cur); });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
 
   fetch("https://api.github.com/repos/" + REPO + "/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
     .then(function (r) { return r.ok ? r.json() : null; })

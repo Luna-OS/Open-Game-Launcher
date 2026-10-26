@@ -624,7 +624,7 @@ fn CollectionsNav() -> Element {
                 }
             }
             if cols.is_empty() && !adding() {
-                div { class: "px-3 text-xs text-muted-foreground/70", {t("coll.none")} }
+                div { class: "px-3 text-xs text-muted-foreground", {t("coll.none")} }
             }
             {cols.into_iter().map(|c| {
                 let n = count_with(app, Filter::Collection, &c.id);
@@ -905,7 +905,7 @@ fn SteamLayout() -> Element {
                         } else if g.installed {
                             "w-full flex items-center gap-2 px-3 h-7 text-left text-foreground/90 hover:bg-white/5 cursor-pointer"
                         } else {
-                            "w-full flex items-center gap-2 px-3 h-7 text-left text-muted-foreground/70 hover:bg-white/5 cursor-pointer"
+                            "w-full flex items-center gap-2 px-3 h-7 text-left text-muted-foreground hover:bg-white/5 cursor-pointer"
                         };
                         let name = g.name.clone();
                         rsx! {
@@ -1214,7 +1214,7 @@ pub fn TitleBrand() -> Element {
     rsx! {
         div { class: "flex items-center gap-2.5 pl-3 pointer-events-none",
             MazLogo { class: "size-6 text-[8px] rounded-md" }
-            span { class: "text-[13px] font-semibold tracking-tight", "MAZ Launcher" }
+            span { class: "text-[13px] font-semibold tracking-tight", {crate::sys::APP_NAME} }
         }
     }
 }
