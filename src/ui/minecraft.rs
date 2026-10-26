@@ -353,7 +353,8 @@ pub fn MinecraftPage() -> Element {
                         CurseForgeKeyBox { rejected: key_bad, busy: busy, on_retry: move |_| run_search(true), show_guide: show_guide(), on_toggle: move |_| show_guide.set(!show_guide()), key_input: key_input(),
                             on_input: move |v: String| key_input.set(v),
                             on_save: move |_| {
-                                if let Some(k) = mc::clean_cf_key(&key_input.peek()) {
+                                let cleaned = mc::clean_cf_key(&key_input.peek());
+                                if let Some(k) = cleaned {
                                     app.update(|s| s.curseforge_key = k);
                                     key_input.set(String::new());
                                     app.toast(&t("mc.key_saved"), "check-circle");
