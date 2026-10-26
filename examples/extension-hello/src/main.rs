@@ -17,14 +17,14 @@ impl Extension for Hello {
                 name: "Hello Game One".into(),
                 // Spielordner = Ordner der Erweiterung (nur für das Beispiel)
                 install_dir: Some(self.dir.clone()),
-                launch: Launch { uri: Some("https://github.com/MikeAdamRGB/MAZ-Lauchner".into()), ..Default::default() },
+                launch: Launch { uri: Some("https://github.com/MikeAdamRGB/Open-Game-Launcher".into()), ..Default::default() },
                 cover: Some("cover.png".into()),
                 ..Default::default()
             },
             GameInfo {
                 id: "hello-2".into(),
                 name: "Hello Game Two".into(),
-                launch: Launch { uri: Some("https://mikeadamrgb.github.io/MAZ-Lauchner/".into()), ..Default::default() },
+                launch: Launch { uri: Some("https://mikeadamrgb.github.io/Open-Game-Launcher/".into()), ..Default::default() },
                 ..Default::default()
             },
         ])

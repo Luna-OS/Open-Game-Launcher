@@ -1,7 +1,7 @@
 // Open Game Launcher – Webseite: Sprache, Downloads (direkt vom neuesten GitHub-Release), System-Erkennung, Animationen
 (function () {
   "use strict";
-  var REPO = "MikeAdamRGB/MAZ-Lauchner";
+  var REPO = "MikeAdamRGB/Open-Game-Launcher";
   var RELEASES = "https://github.com/" + REPO + "/releases/latest";
   var LANGS = ["de", "en", "es", "fr", "it", "pt", "pl", "tr", "ru"];
   var T = window.OG_I18N || {};

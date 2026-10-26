@@ -19,9 +19,9 @@
     </ul>
   </description>
   <launchable type="desktop-id">io.github.mikeadamrgb.MAZLauncher.desktop</launchable>
-  <url type="homepage">https://mikeadamrgb.github.io/MAZ-Lauchner/</url>
-  <url type="bugtracker">https://github.com/MikeAdamRGB/MAZ-Lauchner/issues</url>
-  <url type="vcs-browser">https://github.com/MikeAdamRGB/MAZ-Lauchner</url>
+  <url type="homepage">https://mikeadamrgb.github.io/Open-Game-Launcher/</url>
+  <url type="bugtracker">https://github.com/MikeAdamRGB/Open-Game-Launcher/issues</url>
+  <url type="vcs-browser">https://github.com/MikeAdamRGB/Open-Game-Launcher</url>
   <content_rating type="oars-1.1"/>
   <categories>
     <category>Game</category>

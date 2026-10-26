@@ -7,7 +7,7 @@ Aufruf: python3 scripts/fetch-game-images.py <ausgabeordner>
 """
 import json, os, re, sys, time, urllib.parse, urllib.request
 
-UA = "OpenGameLauncher-site/1.0 (https://github.com/MikeAdamRGB/MAZ-Lauchner)"
+UA = "OpenGameLauncher-site/1.0 (https://github.com/MikeAdamRGB/Open-Game-Launcher)"
 API = "https://commons.wikimedia.org/w/api.php"
 GAMES = ["0 A.D.", "Veloren", "Xonotic", "SuperTuxKart", "Luanti", "Minetest", "FlightGear",
          "Speed Dreams", "Stunt Rally", "Red Eclipse", "Unvanquished", "Battle for Wesnoth",

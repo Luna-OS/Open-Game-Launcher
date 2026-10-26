@@ -8,9 +8,9 @@
 
 Steam, Epic Games, Roblox and your own games in one fast, lightweight and good-looking app for **Windows, macOS and Linux**, written in 100% Rust. Everything runs locally – no account.
 
-[![Latest release](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
-[![Build](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/MikeAdamRGB/Open-Game-Launcher?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/MikeAdamRGB/Open-Game-Launcher/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases)
+[![Build](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-11%2B-000000?logo=apple&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-x86__64%20%7C%20ARM64-FCC624?logo=linux&logoColor=black)
@@ -19,7 +19,7 @@ Steam, Epic Games, Roblox and your own games in one fast, lightweight and good-l
 
 **English** · [Deutsch](docs/i18n/README.de.md) · [Français](docs/i18n/README.fr.md) · [Español](docs/i18n/README.es.md) · [Italiano](docs/i18n/README.it.md) · [Português](docs/i18n/README.pt-BR.md) · [Polski](docs/i18n/README.pl.md) · [Türkçe](docs/i18n/README.tr.md) · [Русский](docs/i18n/README.ru.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [简体中文](docs/i18n/README.zh-CN.md)
 
-[**⬇️ Download**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) · [**🌐 Website**](https://mikeadamrgb.github.io/MAZ-Lauchner/)
+[**⬇️ Download**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest) · [**🌐 Website**](https://mikeadamrgb.github.io/Open-Game-Launcher/)
 
 <br>
 
@@ -126,7 +126,7 @@ Steam, Epic Games, Roblox and your own games in one fast, lightweight and good-l
 
 ## Installation
 
-All files are on the [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) page. `SHA256SUMS.txt` lists a checksum for every file.
+All files are on the [**Releases**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest) page. `SHA256SUMS.txt` lists a checksum for every file.
 
 ### Windows 10 / 11
 
@@ -194,7 +194,7 @@ Game crashed right after launch (Steam, Epic or own games) · missing game file 
 - **Linux:** `sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libxdo-dev libssl-dev pkg-config` (or the same packages for your distribution).
 
 ```powershell
-git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
+git clone https://github.com/MikeAdamRGB/Open-Game-Launcher.git
 cd MAZ-Lauchner
 cargo run                 # development build
 cargo build --release     # release build: target/release/Open-Game-Launcher(.exe)
@@ -298,8 +298,8 @@ No. There is no OG account and no OG server. Network access is only used for cov
 
 Bug reports, ideas and pull requests are welcome.
 
-- 🐞 [Report a bug](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose)
-- 💡 [Suggest an idea](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose)
+- 🐞 [Report a bug](https://github.com/MikeAdamRGB/Open-Game-Launcher/issues/new/choose)
+- 💡 [Suggest an idea](https://github.com/MikeAdamRGB/Open-Game-Launcher/issues/new/choose)
 - 🛠️ Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request
 
 ## License

@@ -11,6 +11,6 @@
 
 Schon installiert? Der Launcher meldet das Update selbst – einfach auf „Jetzt updaten“ klicken.
 
-Alle Prüfsummen stehen in `SHA256SUMS.txt`. Webseite: https://mikeadamrgb.github.io/MAZ-Lauchner/ · Alle Änderungen: [CHANGELOG.md](https://github.com/MikeAdamRGB/MAZ-Lauchner/blob/main/CHANGELOG.md)
+Alle Prüfsummen stehen in `SHA256SUMS.txt`. Webseite: https://mikeadamrgb.github.io/Open-Game-Launcher/ · Alle Änderungen: [CHANGELOG.md](https://github.com/MikeAdamRGB/Open-Game-Launcher/blob/main/CHANGELOG.md)
 
 Windows zeigt „Der Computer wurde durch Windows geschützt“? → „Weitere Informationen“ → „Trotzdem ausführen“.

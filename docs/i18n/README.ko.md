@@ -8,16 +8,16 @@
 
 Steam, Epic Games 그리고 직접 추가한 게임을 빠르고 가볍고 보기 좋은 Windows 앱 하나에. 100% Rust로 만들었습니다.
 
-[![최신 릴리스](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
-[![다운로드](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
-[![Build](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml)
+[![최신 릴리스](https://img.shields.io/github/v/release/MikeAdamRGB/Open-Game-Launcher?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
+[![다운로드](https://img.shields.io/github/downloads/MikeAdamRGB/Open-Game-Launcher/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases)
+[![Build](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![Rust](https://img.shields.io/badge/100%25-Rust-DEA584?logo=rust&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../../LICENSE)
 
 [English](../../README.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [Español](README.es.md) · [Italiano](README.it.md) · [Português](README.pt-BR.md) · [Polski](README.pl.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · **한국어** · [简体中文](README.zh-CN.md)
 
-[**⬇️ Windows용 다운로드**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+[**⬇️ Windows용 다운로드**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
 
 <br>
 
@@ -73,7 +73,7 @@ Steam, Epic Games 그리고 직접 추가한 게임을 빠르고 가볍고 보�
 
 **요구 사항:** [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)가 있는 Windows 10 또는 11(64비트). 최신 Windows에는 WebView2가 기본 포함되어 있습니다.
 
-1. [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)에서 최신 **`Open-Game-Launcher.exe`**를 다운로드합니다.
+1. [**Releases**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)에서 최신 **`Open-Game-Launcher.exe`**를 다운로드합니다.
 2. 파일을 **더블클릭**합니다.
 3. 설치 메뉴에서 **„Installieren“**(*설치*)을 클릭합니다.
 4. 끝입니다! **„Jetzt öffnen“**(*지금 열기*)을 클릭하세요. 이후에는 바탕 화면 바로 가기로 실행하면 됩니다.
@@ -106,7 +106,7 @@ Steam, Epic Games 그리고 직접 추가한 게임을 빠르고 가볍고 보�
 **요구 사항:** Windows의 [Rust](https://rustup.rs)(stable, 1.85 이상). 그 외에는 필요 없습니다(Node.js, Dioxus CLI 불필요).
 
 ```powershell
-git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
+git clone https://github.com/MikeAdamRGB/Open-Game-Launcher.git
 cd MAZ-Lauchner
 cargo run                 # 개발 빌드
 cargo build --release     # 릴리스 EXE: target\release\Open-Game-Launcher.exe
@@ -133,7 +133,7 @@ Epic은 로그인한 뒤에만 구매한 게임 목록을 제공합니다. Open 
 
 ## 기여하기
 
-버그 제보, 아이디어, 풀 리퀘스트 모두 환영합니다: [이슈 열기](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
+버그 제보, 아이디어, 풀 리퀘스트 모두 환영합니다: [이슈 열기](https://github.com/MikeAdamRGB/Open-Game-Launcher/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 
 ## 확장 기능과 Minecraft

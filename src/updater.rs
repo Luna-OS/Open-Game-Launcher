@@ -14,10 +14,17 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-const API: &str = "https://api.github.com/repos/MikeAdamRGB/MAZ-Lauchner/releases/latest";
+const API: &str = "https://api.github.com/repos/MikeAdamRGB/Open-Game-Launcher/releases/latest";
 /// Liste der letzten Releases (inkl. Test-Versionen)
-const API_ALL: &str = "https://api.github.com/repos/MikeAdamRGB/MAZ-Lauchner/releases?per_page=15";
-const DOWNLOAD_PREFIX: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/";
+const API_ALL: &str = "https://api.github.com/repos/MikeAdamRGB/Open-Game-Launcher/releases?per_page=15";
+const DOWNLOAD_PREFIX: &str = "https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/";
+/// Früherer Name des Repositorys (bis 1.8) – GitHub leitet weiter
+const OLD_DOWNLOAD_PREFIX: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/";
+
+/// SICHERHEIT: nur Dateien aus genau diesem Repository
+fn allowed_url(url: &str) -> bool {
+    url.starts_with(DOWNLOAD_PREFIX) || url.starts_with(OLD_DOWNLOAD_PREFIX)
+}
 const MAX_SIZE: u64 = 400 * 1024 * 1024;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -196,7 +203,7 @@ pub fn parse_release(v: &serde_json::Value) -> Option<Release> {
                 .filter_map(|a| {
                     let url = a.get("browser_download_url")?.as_str()?.to_string();
                     // SICHERHEIT: nur Dateien aus genau diesem Repository
-                    if !url.starts_with(DOWNLOAD_PREFIX) {
+                    if !allowed_url(&url) {
                         return None;
                     }
                     Some(Asset {
@@ -243,7 +250,7 @@ pub fn check(test: bool) -> Result<Option<Release>, String> {
 }
 
 fn download(asset: &Asset, progress: &Arc<AtomicU64>) -> Result<Vec<u8>, String> {
-    if !asset.url.starts_with(DOWNLOAD_PREFIX) {
+    if !allowed_url(&asset.url) {
         return Err("Invalid download URL".into());
     }
     let mut resp = agent(900).get(&asset.url).call().map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
@@ -463,6 +470,9 @@ mod tests {
         }
         assert_eq!(pick_asset(&InstallKind::MacApp(PathBuf::new()), &list).unwrap().name, "MAZ-Launcher-1.4.0-macOS.app.zip");
         assert!(pick_asset(&InstallKind::Manual, &list).is_none());
+        assert!(allowed_url("https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/v1/x.exe"));
+        assert!(allowed_url("https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/v1/x.exe"));
+        assert!(!allowed_url("https://github.com/someone/else/releases/download/v1/x.exe"));
         let sums = "ab12  other.exe\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  MAZ-Launcher.exe\n";
         assert_eq!(expected_hash(sums, "MAZ-Launcher.exe").unwrap().len(), 64);
         // Neuer Name hat Vorrang vor dem alten

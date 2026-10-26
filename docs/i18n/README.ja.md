@@ -8,16 +8,16 @@
 
 Steam、Epic Games、そして自分で追加したゲームを、高速・軽量・美しい Windows アプリにまとめました。100% Rust 製です。
 
-[![最新リリース](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
-[![ダウンロード数](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
-[![Build](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml)
+[![最新リリース](https://img.shields.io/github/v/release/MikeAdamRGB/Open-Game-Launcher?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
+[![ダウンロード数](https://img.shields.io/github/downloads/MikeAdamRGB/Open-Game-Launcher/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases)
+[![Build](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![Rust](https://img.shields.io/badge/100%25-Rust-DEA584?logo=rust&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../../LICENSE)
 
 [English](../../README.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [Español](README.es.md) · [Italiano](README.it.md) · [Português](README.pt-BR.md) · [Polski](README.pl.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · **日本語** · [한국어](README.ko.md) · [简体中文](README.zh-CN.md)
 
-[**⬇️ Windows 版をダウンロード**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+[**⬇️ Windows 版をダウンロード**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
 
 <br>
 
@@ -73,7 +73,7 @@ Steam、Epic Games、そして自分で追加したゲームを、高速・軽�
 
 **動作環境:** Windows 10 / 11(64 ビット)と [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)(最近の Windows にはプリインストール済み)。
 
-1. [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) から最新の **`Open-Game-Launcher.exe`** をダウンロードします。
+1. [**Releases**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest) から最新の **`Open-Game-Launcher.exe`** をダウンロードします。
 2. ファイルを**ダブルクリック**します。
 3. インストールメニューで **「Installieren」**(*インストール*)をクリックします。
 4. 完了です。**「Jetzt öffnen」**(*今すぐ開く*)をクリックしてください。以降はデスクトップのショートカットから起動できます。
@@ -106,7 +106,7 @@ Steam、Epic Games、そして自分で追加したゲームを、高速・軽�
 **必要なもの:** Windows 上の [Rust](https://rustup.rs)(stable、1.85 以降)。それ以外は不要です(Node.js や Dioxus CLI も不要)。
 
 ```powershell
-git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
+git clone https://github.com/MikeAdamRGB/Open-Game-Launcher.git
 cd MAZ-Lauchner
 cargo run                 # 開発用ビルド
 cargo build --release     # リリース用 EXE: target\release\Open-Game-Launcher.exe
@@ -133,7 +133,7 @@ Microsoft WebView2 が必要です(通常は Windows 10 / 11 に含まれてい�
 
 ## コントリビュート
 
-バグ報告、アイデア、プルリクエストを歓迎します: [Issue を作成](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
+バグ報告、アイデア、プルリクエストを歓迎します: [Issue を作成](https://github.com/MikeAdamRGB/Open-Game-Launcher/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 
 ## 拡張機能と Minecraft

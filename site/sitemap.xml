@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://mikeadamrgb.github.io/MAZ-Lauchner/</loc>
+    <loc>https://mikeadamrgb.github.io/Open-Game-Launcher/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="de" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=de"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="es" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=es"/>
-    <xhtml:link rel="alternate" hreflang="fr" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=fr"/>
-    <xhtml:link rel="alternate" hreflang="it" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=it"/>
-    <xhtml:link rel="alternate" hreflang="pt" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=pt"/>
-    <xhtml:link rel="alternate" hreflang="pl" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=pl"/>
-    <xhtml:link rel="alternate" hreflang="tr" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=tr"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://mikeadamrgb.github.io/MAZ-Lauchner/?lang=ru"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=de"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=es"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=it"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=pl"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://mikeadamrgb.github.io/Open-Game-Launcher/?lang=ru"/>
   </url>
 </urlset>

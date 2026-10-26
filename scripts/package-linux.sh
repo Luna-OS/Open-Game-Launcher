@@ -12,7 +12,7 @@ WORK="$(mktemp -d)"
 ID="io.github.mikeadamrgb.MAZLauncher"
 PKG="maz-launcher"
 DESC="All your Steam, Epic, Roblox and own games in one launcher"
-URL="https://github.com/MikeAdamRGB/MAZ-Lauchner"
+URL="https://github.com/MikeAdamRGB/Open-Game-Launcher"
 case "$ARCH" in
   x86_64) DEB_ARCH=amd64; SNAP_ARCH=amd64 ;;
   aarch64) DEB_ARCH=arm64; SNAP_ARCH=arm64 ;;

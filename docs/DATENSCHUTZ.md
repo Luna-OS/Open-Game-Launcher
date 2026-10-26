@@ -3,7 +3,7 @@
 Stand: Oktober 2026 (ab Version 1.4.0)
 
 Der Open Game Launcher ist ein kostenloses Open-Source-Programm für Windows, macOS und Linux von MikeAdamRGB
-(Kontakt: m.zweers10@gmail.com, GitHub: https://github.com/MikeAdamRGB/MAZ-Lauchner).
+(Kontakt: m.zweers10@gmail.com, GitHub: https://github.com/MikeAdamRGB/Open-Game-Launcher).
 
 ## Kurz gesagt
 **Der Open Game Launcher läuft komplett auf deinem Computer.** Es gibt kein OG-Konto, keinen OG-Server,

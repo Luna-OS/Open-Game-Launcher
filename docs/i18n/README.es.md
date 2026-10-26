@@ -8,16 +8,16 @@
 
 Steam, Epic Games y tus propios juegos en una app para Windows rápida, ligera y bonita, escrita al 100 % en Rust.
 
-[![Última versión](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=Versi%C3%B3n&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
-[![Descargas](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=Descargas&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
-[![Build](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml)
+[![Última versión](https://img.shields.io/github/v/release/MikeAdamRGB/Open-Game-Launcher?label=Versi%C3%B3n&color=8b5cf6)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
+[![Descargas](https://img.shields.io/github/downloads/MikeAdamRGB/Open-Game-Launcher/total?label=Descargas&color=ec4899)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases)
+[![Build](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![Rust](https://img.shields.io/badge/100%25-Rust-DEA584?logo=rust&logoColor=white)
 [![Licencia: MIT](https://img.shields.io/badge/Licencia-MIT-22c55e)](../../LICENSE)
 
 [English](../../README.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · **Español** · [Italiano](README.it.md) · [Português](README.pt-BR.md) · [Polski](README.pl.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh-CN.md)
 
-[**⬇️ Descargar para Windows**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+[**⬇️ Descargar para Windows**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
 
 <br>
 
@@ -73,7 +73,7 @@ Steam, Epic Games y tus propios juegos en una app para Windows rápida, ligera y
 
 **Requisitos:** Windows 10 u 11 (64 bits) con [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/), que viene preinstalado en las versiones actuales de Windows.
 
-1. Descarga el último **`Open-Game-Launcher.exe`** desde [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest).
+1. Descarga el último **`Open-Game-Launcher.exe`** desde [**Releases**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest).
 2. Haz **doble clic** en el archivo.
 3. Pulsa **«Installieren»** (*Instalar*) en el menú de instalación.
 4. ¡Listo! Pulsa **«Jetzt öffnen»** (*Abrir ahora*). A partir de entonces, abre el launcher desde el acceso directo del escritorio.
@@ -106,7 +106,7 @@ Falta el archivo del juego · unidad o disco USB no conectado · se necesitan pe
 **Requisitos:** [Rust](https://rustup.rs) (stable, 1.85 o superior) en Windows. Nada más: ni Node.js ni la CLI de Dioxus.
 
 ```powershell
-git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
+git clone https://github.com/MikeAdamRGB/Open-Game-Launcher.git
 cd MAZ-Lauchner
 cargo run                 # desarrollo
 cargo build --release     # EXE final: target\release\Open-Game-Launcher.exe
@@ -133,7 +133,7 @@ Sin cuentas ni telemetría. La red solo se usa para las portadas y, si añades u
 
 ## Contribuir
 
-Se agradecen informes de errores, ideas y pull requests: [abrir un issue](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
+Se agradecen informes de errores, ideas y pull requests: [abrir un issue](https://github.com/MikeAdamRGB/Open-Game-Launcher/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 
 ## Extensiones y Minecraft

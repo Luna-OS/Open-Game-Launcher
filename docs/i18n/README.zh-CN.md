@@ -8,16 +8,16 @@
 
 将 Steam、Epic Games 和你自己的游戏汇集到一个快速、轻量、美观的 Windows 应用中,100% 使用 Rust 编写。
 
-[![最新版本](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
-[![下载量](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
-[![Build](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml)
+[![最新版本](https://img.shields.io/github/v/release/MikeAdamRGB/Open-Game-Launcher?label=Release&color=8b5cf6)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
+[![下载量](https://img.shields.io/github/downloads/MikeAdamRGB/Open-Game-Launcher/total?label=Downloads&color=ec4899)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases)
+[![Build](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![Rust](https://img.shields.io/badge/100%25-Rust-DEA584?logo=rust&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e)](../../LICENSE)
 
 [English](../../README.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [Español](README.es.md) · [Italiano](README.it.md) · [Português](README.pt-BR.md) · [Polski](README.pl.md) · [Türkçe](README.tr.md) · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · **简体中文**
 
-[**⬇️ 下载 Windows 版**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+[**⬇️ 下载 Windows 版**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
 
 <br>
 
@@ -73,7 +73,7 @@
 
 **系统要求:** Windows 10 或 11(64 位),并安装 [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)(新版 Windows 已预装)。
 
-1. 从 [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) 下载最新的 **`Open-Game-Launcher.exe`**。
+1. 从 [**Releases**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest) 下载最新的 **`Open-Game-Launcher.exe`**。
 2. **双击**该文件。
 3. 在安装菜单中点击 **“Installieren”**(*安装*)。
 4. 完成!点击 **“Jetzt öffnen”**(*立即打开*)。之后通过桌面快捷方式启动即可。
@@ -106,7 +106,7 @@
 **要求:** Windows 上的 [Rust](https://rustup.rs)(stable,1.85 或更高版本)。无需其他工具:不需要 Node.js,也不需要 Dioxus CLI。
 
 ```powershell
-git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
+git clone https://github.com/MikeAdamRGB/Open-Game-Launcher.git
 cd MAZ-Lauchner
 cargo run                 # 开发
 cargo build --release     # 发布版 EXE:target\release\Open-Game-Launcher.exe
@@ -133,7 +133,7 @@ Epic 只有在登录后才提供已购游戏列表。Open Game Launcher 会显�
 
 ## 参与贡献
 
-欢迎提交错误报告、想法和 Pull Request:[提交 Issue](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
+欢迎提交错误报告、想法和 Pull Request:[提交 Issue](https://github.com/MikeAdamRGB/Open-Game-Launcher/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 
 ## 扩展与 Minecraft

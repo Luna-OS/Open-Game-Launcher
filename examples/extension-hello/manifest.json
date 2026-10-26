@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "author": "Open Game Launcher",
   "description": "@description",
-  "homepage": "https://github.com/MikeAdamRGB/MAZ-Lauchner",
+  "homepage": "https://github.com/MikeAdamRGB/Open-Game-Launcher",
   "run": {
     "windows": "extension-hello.exe",
     "linux": "extension-hello",

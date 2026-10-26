@@ -8,16 +8,16 @@
 
 Steam, Epic Games ve kendi oyunların; tamamen Rust ile yazılmış hızlı, hafif ve şık bir Windows uygulamasında.
 
-[![Son sürüm](https://img.shields.io/github/v/release/MikeAdamRGB/MAZ-Lauchner?label=S%C3%BCr%C3%BCm&color=8b5cf6)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
-[![İndirmeler](https://img.shields.io/github/downloads/MikeAdamRGB/MAZ-Lauchner/total?label=%C4%B0ndirme&color=ec4899)](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases)
-[![Build](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/MAZ-Lauchner/actions/workflows/build.yml)
+[![Son sürüm](https://img.shields.io/github/v/release/MikeAdamRGB/Open-Game-Launcher?label=S%C3%BCr%C3%BCm&color=8b5cf6)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
+[![İndirmeler](https://img.shields.io/github/downloads/MikeAdamRGB/Open-Game-Launcher/total?label=%C4%B0ndirme&color=ec4899)](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases)
+[![Build](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml/badge.svg)](https://github.com/MikeAdamRGB/Open-Game-Launcher/actions/workflows/build.yml)
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![Rust](https://img.shields.io/badge/100%25-Rust-DEA584?logo=rust&logoColor=white)
 [![Lisans: MIT](https://img.shields.io/badge/Lisans-MIT-22c55e)](../../LICENSE)
 
 [English](../../README.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [Español](README.es.md) · [Italiano](README.it.md) · [Português](README.pt-BR.md) · [Polski](README.pl.md) · **Türkçe** · [Русский](README.ru.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [简体中文](README.zh-CN.md)
 
-[**⬇️ Windows için indir**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest)
+[**⬇️ Windows için indir**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest)
 
 <br>
 
@@ -73,7 +73,7 @@ Steam, Epic Games ve kendi oyunların; tamamen Rust ile yazılmış hızlı, haf
 
 **Gereksinimler:** [Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) yüklü Windows 10 veya 11 (64 bit). WebView2 güncel Windows sürümlerinde hazır gelir.
 
-1. En son **`Open-Game-Launcher.exe`** dosyasını [**Releases**](https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/latest) sayfasından indir.
+1. En son **`Open-Game-Launcher.exe`** dosyasını [**Releases**](https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/latest) sayfasından indir.
 2. Dosyaya **çift tıkla**.
 3. Kurulum menüsünde **„Installieren“** (*Yükle*) düğmesine tıkla.
 4. Bitti! **„Jetzt öffnen“** (*Şimdi aç*) düğmesine tıkla. Bundan sonra launcher'ı masaüstü kısayolundan aç.
@@ -106,7 +106,7 @@ Oyun dosyası eksik · sürücü veya USB disk takılı değil · yönetici yetk
 **Gereksinimler:** Windows'ta [Rust](https://rustup.rs) (stable, 1.85 veya üzeri). Başka bir şey gerekmez: Node.js ve Dioxus CLI yok.
 
 ```powershell
-git clone https://github.com/MikeAdamRGB/MAZ-Lauchner.git
+git clone https://github.com/MikeAdamRGB/Open-Game-Launcher.git
 cd MAZ-Lauchner
 cargo run                 # geliştirme
 cargo build --release     # son EXE: target\release\Open-Game-Launcher.exe
@@ -133,7 +133,7 @@ Hesap yok, telemetri yok. İnternet yalnızca kapak görselleri ve anahtar ekled
 
 ## Katkıda bulunma
 
-Hata bildirimleri, fikirler ve pull request'ler memnuniyetle karşılanır: [issue aç](https://github.com/MikeAdamRGB/MAZ-Lauchner/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
+Hata bildirimleri, fikirler ve pull request'ler memnuniyetle karşılanır: [issue aç](https://github.com/MikeAdamRGB/Open-Game-Launcher/issues/new/choose) · [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 
 ## Uzantılar ve Minecraft

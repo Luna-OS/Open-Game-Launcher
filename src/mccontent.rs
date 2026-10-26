@@ -152,7 +152,7 @@ fn agent() -> ureq::Agent {
                 .timeout_global(Some(Duration::from_secs(60)))
                 .http_status_as_error(false)
                 // Modrinth wünscht einen eindeutigen User-Agent mit Kontakt
-                .user_agent(concat!("MikeAdamRGB/MAZ-Lauchner/", env!("CARGO_PKG_VERSION"), " (https://github.com/MikeAdamRGB/MAZ-Lauchner)"))
+                .user_agent(concat!("MikeAdamRGB/Open-Game-Launcher/", env!("CARGO_PKG_VERSION"), " (https://github.com/MikeAdamRGB/Open-Game-Launcher)"))
                 .build()
                 .into()
         })
