@@ -70,7 +70,10 @@ pub struct Loaded {
 
 impl Loaded {
     pub fn status(&self) -> Status {
-        self.status.lock().map(|s| s.clone()).unwrap_or(Status::Failed("lock".into()))
+        self.status
+            .lock()
+            .map(|s| s.clone())
+            .unwrap_or(Status::Failed("lock".into()))
     }
     fn set_status(&self, s: Status) {
         if let Ok(mut g) = self.status.lock() {
@@ -78,7 +81,10 @@ impl Loaded {
         }
     }
     pub fn name(&self) -> String {
-        self.manifest.as_ref().map(|m| self.text(&m.name)).unwrap_or_else(|| self.id.clone())
+        self.manifest
+            .as_ref()
+            .map(|m| self.text(&m.name))
+            .unwrap_or_else(|| self.id.clone())
     }
     pub fn has(&self, k: ExtKind) -> bool {
         self.manifest.as_ref().map(|m| m.has(k)).unwrap_or(false)
@@ -86,7 +92,12 @@ impl Loaded {
     /// Text der Erweiterung übersetzen: "@schlüssel" → lang/<sprache>.txt, sonst Englisch, sonst roh
     pub fn text(&self, s: &str) -> String {
         match s.strip_prefix('@') {
-            Some(key) => self.texts.get(key).or_else(|| self.texts_en.get(key)).cloned().unwrap_or_else(|| key.to_string()),
+            Some(key) => self
+                .texts
+                .get(key)
+                .or_else(|| self.texts_en.get(key))
+                .cloned()
+                .unwrap_or_else(|| key.to_string()),
             None => s.to_string(),
         }
     }
@@ -112,7 +123,9 @@ fn registry() -> &'static RwLock<Vec<Arc<Loaded>>> {
 fn index_of(id: &str) -> u16 {
     static IDS: OnceLock<Mutex<Vec<String>>> = OnceLock::new();
     let m = IDS.get_or_init(|| Mutex::new(Vec::new()));
-    let Ok(mut ids) = m.lock() else { return u16::MAX };
+    let Ok(mut ids) = m.lock() else {
+        return u16::MAX;
+    };
     match ids.iter().position(|x| x == id) {
         Some(i) => i as u16,
         None => {
@@ -136,7 +149,9 @@ fn by_idx(idx: u16) -> Option<Arc<Loaded>> {
 
 /// Anzeigename zu Source::Extension(n)
 pub fn name_of(idx: u16) -> String {
-    by_idx(idx).map(|e| e.name()).unwrap_or_else(|| "Extension".into())
+    by_idx(idx)
+        .map(|e| e.name())
+        .unwrap_or_else(|| "Extension".into())
 }
 
 /// Ordner, in dem Erweiterungen liegen
@@ -172,17 +187,28 @@ pub fn refresh(settings: &Settings) {
         .collect();
     dirs.sort();
     for dir in dirs.into_iter().take(50) {
-        let id = dir.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+        let id = dir
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
         if !manifest::valid_id(&id) {
             continue; // z. B. ".staging-…"
         }
         let state = settings.extensions.get(&id).cloned();
         let (manifest, run, mut status) = match manifest::load_dir(&dir) {
-            Ok((m, _)) if m.id != id => (None, None, Status::Invalid(crate::i18n::t("ext.err.id_dir"))),
+            Ok((m, _)) if m.id != id => (
+                None,
+                None,
+                Status::Invalid(crate::i18n::t("ext.err.id_dir")),
+            ),
             Ok((m, run)) => (Some(m), Some(run), Status::Active),
             Err(e) => (None, None, Status::Invalid(e.explain())),
         };
-        let hash = if manifest.is_some() { folder_hash(&dir).unwrap_or_default() } else { String::new() };
+        let hash = if manifest.is_some() {
+            folder_hash(&dir).unwrap_or_default()
+        } else {
+            String::new()
+        };
         if status == Status::Active {
             status = match &state {
                 _ if !settings.extensions_allowed => Status::NotAllowed,
@@ -192,8 +218,16 @@ pub fn refresh(settings: &Settings) {
                 Some(_) => Status::Active,
             };
         }
-        // Laufenden Prozess behalten, wenn sich nichts geändert hat
-        if let Some(prev) = old.iter().find(|o| o.id == id && o.hash == hash && !hash.is_empty()) {
+        // Laufenden Prozess behalten, wenn sich nichts geändert hat (auch nicht die Rechte –
+        // sonst gälte z. B. ein entzogenes Internet-Recht erst nach dem nächsten Neustart)
+        let same_rights = |o: &Loaded| match &state {
+            Some(s) => o.network == s.network && o.approved_schemes == s.approved_schemes,
+            None => !o.network && o.approved_schemes.is_empty(),
+        };
+        if let Some(prev) = old
+            .iter()
+            .find(|o| o.id == id && o.hash == hash && !hash.is_empty() && same_rights(o))
+        {
             let keep_failed = matches!(prev.status(), Status::Failed(_));
             if status == Status::Active && keep_failed {
                 list.push(prev.clone());
@@ -326,13 +360,21 @@ fn text(v: &Value, k: &str, max: usize) -> String {
 }
 
 fn safe_game_id(id: &str) -> bool {
-    !id.is_empty() && id.len() <= 100 && id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+    !id.is_empty()
+        && id.len() <= 100
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
 }
 
 /// Ist der Pfad (aufgelöst) innerhalb eines der Ordner?
 pub fn inside_any(path: &Path, dirs: &[PathBuf]) -> bool {
-    let Ok(p) = std::fs::canonicalize(path) else { return false };
-    dirs.iter().filter_map(|d| std::fs::canonicalize(d).ok()).any(|d| (p.starts_with(&d) && p != d) || (p == d && path.is_dir()))
+    let Ok(p) = std::fs::canonicalize(path) else {
+        return false;
+    };
+    dirs.iter()
+        .filter_map(|d| std::fs::canonicalize(d).ok())
+        .any(|d| (p.starts_with(&d) && p != d) || (p == d && path.is_dir()))
 }
 
 /// Darf diese Erweiterung den Link öffnen?
@@ -350,7 +392,10 @@ pub fn url_ok(e_schemes: &[String], url: &str) -> bool {
 /// Von irgendeiner aktiven Erweiterung bestätigte Link-Art (für das Starten von Spielen)
 pub fn scheme_approved(url: &str) -> bool {
     let scheme = url.split(':').next().unwrap_or("").to_ascii_lowercase();
-    !scheme.is_empty() && all().iter().any(|e| e.status() == Status::Active && e.approved_schemes.contains(&scheme))
+    !scheme.is_empty()
+        && all()
+            .iter()
+            .any(|e| e.status() == Status::Active && e.approved_schemes.contains(&scheme))
 }
 
 /// Bild: https (PNG/JPEG/WebP) oder Datei im Erweiterungsordner (max. 5 MB)
@@ -361,7 +406,9 @@ fn image(e: &Loaded, v: &Value, k: &str) -> Option<String> {
     }
     let lower = s.to_ascii_lowercase();
     let path_part = lower.split(['?', '#']).next().unwrap_or("");
-    let img_ext = [".png", ".jpg", ".jpeg", ".webp"].iter().any(|x| path_part.ends_with(x));
+    let img_ext = [".png", ".jpg", ".jpeg", ".webp"]
+        .iter()
+        .any(|x| path_part.ends_with(x));
     if !img_ext {
         return None;
     }
@@ -369,7 +416,9 @@ fn image(e: &Loaded, v: &Value, k: &str) -> Option<String> {
         return Some(s.to_string());
     }
     let p = manifest::resolve_inside(&e.dir, s)?;
-    let small = std::fs::metadata(&p).map(|m| m.len() <= 5 * 1024 * 1024).unwrap_or(false);
+    let small = std::fs::metadata(&p)
+        .map(|m| m.len() <= 5 * 1024 * 1024)
+        .unwrap_or(false);
     small.then(|| crate::sys::file_url(&p))
 }
 
@@ -396,19 +445,37 @@ pub fn parse_game(e: &Loaded, v: &Value, installed_default: bool) -> Option<Game
         // Programm muss im Spielordner liegen
         let dir = install_dir.clone()?;
         let path = PathBuf::from(x.get("path")?.as_str()?);
-        if !path.is_file() || !inside_any(&path, std::slice::from_ref(&dir)) {
+        // Relativer Pfad würde später vom Arbeitsordner des Launchers aus (bzw. über PATH) gesucht
+        if !path.is_absolute() || !path.is_file() || !inside_any(&path, std::slice::from_ref(&dir))
+        {
             return None;
         }
         let args: Vec<String> = x
             .get("args")
             .and_then(|a| a.as_array())
-            .map(|a| a.iter().filter_map(|s| s.as_str()).filter(|s| s.len() < 300 && !s.contains('\0')).take(20).map(String::from).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|s| s.as_str())
+                    .filter(|s| s.len() < 300 && !s.contains('\0'))
+                    .take(20)
+                    .map(String::from)
+                    .collect()
+            })
             .unwrap_or_default();
-        LaunchTarget::Exe { path: path.to_string_lossy().to_string(), args, dir: dir.to_string_lossy().to_string() }
+        LaunchTarget::Exe {
+            path: path.to_string_lossy().to_string(),
+            args,
+            dir: dir.to_string_lossy().to_string(),
+        }
     } else {
         // Microsoft-Store-App (nur Windows)
         let a = launch.get("appx").filter(|_| cfg!(windows))?;
-        let simple = |s: &str| !s.is_empty() && s.len() < 130 && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
+        let simple = |s: &str| {
+            !s.is_empty()
+                && s.len() < 130
+                && s.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+        };
         let (family, app) = (text(a, "family", 130), text(a, "app", 130));
         if !simple(&family) || !simple(&app) {
             return None;
@@ -423,7 +490,10 @@ pub fn parse_game(e: &Loaded, v: &Value, installed_default: bool) -> Option<Game
         id: format!("ext:{}:{gid}", e.id),
         name,
         source: Source::Extension(e.idx),
-        installed: v.get("installed").and_then(|b| b.as_bool()).unwrap_or(installed_default),
+        installed: v
+            .get("installed")
+            .and_then(|b| b.as_bool())
+            .unwrap_or(installed_default),
         install_dir: install_dir.map(|d| d.to_string_lossy().to_string()),
         exe: None,
         launch: target,
@@ -435,9 +505,17 @@ pub fn parse_game(e: &Loaded, v: &Value, installed_default: bool) -> Option<Game
 }
 
 fn games_from(e: &Loaded, call_name: &str, installed: bool) -> Vec<Game> {
-    let Ok(res) = call(e, call_name, json!({})) else { return Vec::new() };
+    let Ok(res) = call(e, call_name, json!({})) else {
+        return Vec::new();
+    };
     let mut out: Vec<Game> = Vec::new();
-    for g in res.get("games").and_then(|g| g.as_array()).into_iter().flatten().take(MAX_GAMES) {
+    for g in res
+        .get("games")
+        .and_then(|g| g.as_array())
+        .into_iter()
+        .flatten()
+        .take(MAX_GAMES)
+    {
         if let Some(game) = parse_game(e, g, installed) {
             if !out.iter().any(|o| o.id == game.id) {
                 out.push(game);
@@ -489,14 +567,24 @@ impl StoreLibrary for ExtensionLibrary {
             Status::Failed(e) => Some(e),
             _ => None,
         };
-        let status = StoreStatus { found: true, installed, owned: games.len(), note, ..Default::default() };
+        let status = StoreStatus {
+            found: true,
+            installed,
+            owned: games.len(),
+            note,
+            ..Default::default()
+        };
         StoreScan { games, status }
     }
 }
 
 /// Aktive Bibliotheks-Erweiterungen
 pub fn libraries() -> Vec<ExtensionLibrary> {
-    all().into_iter().filter(|e| e.status() == Status::Active && e.has(ExtKind::Library)).map(ExtensionLibrary).collect()
+    all()
+        .into_iter()
+        .filter(|e| e.status() == Status::Active && e.has(ExtKind::Library))
+        .map(ExtensionLibrary)
+        .collect()
 }
 
 // ----------------------------------------------------------------------
@@ -505,8 +593,17 @@ pub fn libraries() -> Vec<ExtensionLibrary> {
 
 /// Infos aus Erweiterungen (nach den eingebauten Quellen)
 pub fn metadata(name: &str, game_id: &str) -> Option<crate::metadata::Info> {
-    for e in all().into_iter().filter(|e| e.status() == Status::Active && e.has(ExtKind::Metadata)) {
-        let Ok(v) = call(&e, "metadata", json!({ "name": name.chars().take(120).collect::<String>(), "id": game_id })) else { continue };
+    for e in all()
+        .into_iter()
+        .filter(|e| e.status() == Status::Active && e.has(ExtKind::Metadata))
+    {
+        let Ok(v) = call(
+            &e,
+            "metadata",
+            json!({ "name": name.chars().take(120).collect::<String>(), "id": game_id }),
+        ) else {
+            continue;
+        };
         let description = text(&v, "description", 4000);
         if description.is_empty() && v.get("genres").is_none() {
             continue;
@@ -516,11 +613,19 @@ pub fn metadata(name: &str, game_id: &str) -> Option<crate::metadata::Info> {
             genres: v
                 .get("genres")
                 .and_then(|g| g.as_array())
-                .map(|a| a.iter().filter_map(|x| x.as_str()).map(|x| x.chars().take(30).collect()).take(8).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|x| x.as_str())
+                        .map(|x| x.chars().take(30).collect())
+                        .take(8)
+                        .collect()
+                })
                 .unwrap_or_default(),
             developer: text(&v, "developer", 80),
             release: text(&v, "release", 30),
-            cover: image(&e, &v, "cover").filter(|c| c.starts_with("https://")).unwrap_or_default(),
+            cover: image(&e, &v, "cover")
+                .filter(|c| c.starts_with("https://"))
+                .unwrap_or_default(),
             source: format!("ext:{}", e.id),
             version: crate::metadata::VERSION,
             fetched: crate::sys::now_secs(),
@@ -554,12 +659,27 @@ fn game_json(g: &Game) -> Value {
 
 pub fn actions(g: &Game) -> Vec<Action> {
     let mut out = Vec::new();
-    for e in all().into_iter().filter(|e| e.status() == Status::Active && e.has(ExtKind::Action)) {
-        let Ok(v) = call(&e, "actions", json!({ "game": game_json(g) })) else { continue };
-        for a in v.get("actions").and_then(|a| a.as_array()).into_iter().flatten().take(8) {
+    for e in all()
+        .into_iter()
+        .filter(|e| e.status() == Status::Active && e.has(ExtKind::Action))
+    {
+        let Ok(v) = call(&e, "actions", json!({ "game": game_json(g) })) else {
+            continue;
+        };
+        for a in v
+            .get("actions")
+            .and_then(|a| a.as_array())
+            .into_iter()
+            .flatten()
+            .take(8)
+        {
             let (id, label) = (text(a, "id", 60), text(a, "label", 60));
             if safe_game_id(&id) && !label.is_empty() {
-                out.push(Action { ext: e.id.clone(), id, label: e.text(&label) });
+                out.push(Action {
+                    ext: e.id.clone(),
+                    id,
+                    label: e.text(&label),
+                });
             }
         }
     }
@@ -570,7 +690,12 @@ pub fn actions(g: &Game) -> Vec<Action> {
 /// erlaubten Link öffnen, Meldung anzeigen.
 pub fn run_action(ext: &str, action: &str, g: &Game) -> Result<ActionResult, String> {
     let e = get(ext).ok_or_else(|| crate::i18n::t("ext.call.crashed"))?;
-    let v = call(&e, "run_action", json!({ "action": action, "game": game_json(g) })).map_err(|x| x.explain())?;
+    let v = call(
+        &e,
+        "run_action",
+        json!({ "action": action, "game": game_json(g) }),
+    )
+    .map_err(|x| x.explain())?;
     validate_action(&e, &v, g)
 }
 
@@ -579,7 +704,11 @@ fn validate_action(e: &Loaded, v: &Value, g: &Game) -> Result<ActionResult, Stri
     match v.get("type").and_then(|t| t.as_str()) {
         Some("open_folder") => {
             let p = PathBuf::from(text(v, "path", 500));
-            let mut allowed = e.manifest.as_ref().map(|m| m.read_paths()).unwrap_or_default();
+            let mut allowed = e
+                .manifest
+                .as_ref()
+                .map(|m| m.read_paths())
+                .unwrap_or_default();
             if let Some(d) = &g.install_dir {
                 allowed.push(PathBuf::from(d));
             }
@@ -625,7 +754,10 @@ pub fn folder_hash(dir: &Path) -> Result<String, String> {
                 if total > 200 * 1024 * 1024 || files.len() > 2000 {
                     return Err(crate::i18n::t("ext.err.too_big"));
                 }
-                let rel = p.strip_prefix(dir).map(|r| r.to_string_lossy().replace('\\', "/")).unwrap_or_default();
+                let rel = p
+                    .strip_prefix(dir)
+                    .map(|r| r.to_string_lossy().replace('\\', "/"))
+                    .unwrap_or_default();
                 files.push((rel, p));
             }
         }
@@ -642,7 +774,9 @@ pub fn folder_hash(dir: &Path) -> Result<String, String> {
 }
 
 pub fn file_hash(p: &Path) -> String {
-    std::fs::read(p).map(|d| crate::util::hex(&crate::util::sha256(&d))).unwrap_or_default()
+    std::fs::read(p)
+        .map(|d| crate::util::hex(&crate::util::sha256(&d)))
+        .unwrap_or_default()
 }
 
 /// Vorbereitete Installation (noch nicht bestätigt)
@@ -657,7 +791,10 @@ pub struct Staged {
 
 fn copy_dir(from: &Path, to: &Path, budget: &mut u64) -> Result<(), String> {
     std::fs::create_dir_all(to).map_err(|e| e.to_string())?;
-    for ent in std::fs::read_dir(from).map_err(|e| e.to_string())?.flatten() {
+    for ent in std::fs::read_dir(from)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
         let p = ent.path();
         let meta = std::fs::symlink_metadata(&p).map_err(|e| e.to_string())?;
         if meta.file_type().is_symlink() {
@@ -667,7 +804,9 @@ fn copy_dir(from: &Path, to: &Path, budget: &mut u64) -> Result<(), String> {
         if meta.is_dir() {
             copy_dir(&p, &dest, budget)?;
         } else {
-            *budget = budget.checked_sub(meta.len()).ok_or_else(|| crate::i18n::t("ext.err.too_big"))?;
+            *budget = budget
+                .checked_sub(meta.len())
+                .ok_or_else(|| crate::i18n::t("ext.err.too_big"))?;
             std::fs::copy(&p, &dest).map_err(|e| e.to_string())?;
             #[cfg(unix)]
             {
@@ -683,7 +822,12 @@ fn copy_dir(from: &Path, to: &Path, budget: &mut u64) -> Result<(), String> {
 /// Ordner oder .mazext-Datei in einen Zwischenordner holen und prüfen
 pub fn stage(source: &Path) -> Result<Staged, String> {
     let root = root();
-    let staging = root.join(format!(".staging-{}", crate::sys::now_secs()));
+    // Zufälliger Name: zwei Installationen in derselben Sekunde dürfen sich nicht gegenseitig löschen
+    let staging = root.join(format!(
+        ".staging-{}-{}",
+        crate::sys::now_secs(),
+        crate::util::hex(&crate::util::random_bytes(4))
+    ));
     let _ = std::fs::remove_dir_all(&staging);
     std::fs::create_dir_all(&staging).map_err(|e| e.to_string())?;
     let res = (|| {
@@ -697,7 +841,9 @@ pub fn stage(source: &Path) -> Result<Staged, String> {
             }
             let data = std::fs::read(source).map_err(|e| e.to_string())?;
             let files = zipread::extract(&data, &staging).map_err(|e| match e {
-                zipread::ZipError::Unsafe(p) => crate::i18n::tf("ext.err.zip_unsafe", &[("path", &p)]),
+                zipread::ZipError::Unsafe(p) => {
+                    crate::i18n::tf("ext.err.zip_unsafe", &[("path", &p)])
+                }
                 zipread::ZipError::TooBig => crate::i18n::t("ext.err.too_big"),
                 _ => crate::i18n::t("ext.err.zip"),
             })?;
@@ -707,8 +853,12 @@ pub fn stage(source: &Path) -> Result<Staged, String> {
                 use std::os::unix::fs::PermissionsExt;
                 if let Ok(text) = std::fs::read_to_string(staging.join("manifest.json")) {
                     if let Ok(m) = manifest::parse(&text) {
-                        if let Some(run) = m.run_for_os().and_then(|r| manifest::safe_relative(&r)) {
-                            let _ = std::fs::set_permissions(staging.join(run), std::fs::Permissions::from_mode(0o755));
+                        if let Some(run) = m.run_for_os().and_then(|r| manifest::safe_relative(&r))
+                        {
+                            let _ = std::fs::set_permissions(
+                                staging.join(run),
+                                std::fs::Permissions::from_mode(0o755),
+                            );
                         }
                     }
                 }
@@ -719,7 +869,13 @@ pub fn stage(source: &Path) -> Result<Staged, String> {
         }
         let (m, run) = manifest::load_dir(&staging).map_err(|e| e.explain())?;
         let hash = folder_hash(&staging)?;
-        Ok(Staged { update: root.join(&m.id).exists(), run_hash: file_hash(&run), manifest: m, hash, dir: staging.clone() })
+        Ok(Staged {
+            update: root.join(&m.id).exists(),
+            run_hash: file_hash(&run),
+            manifest: m,
+            hash,
+            dir: staging.clone(),
+        })
     })();
     if res.is_err() {
         let _ = std::fs::remove_dir_all(&staging);
@@ -783,7 +939,13 @@ pub fn remove(id: &str) -> Result<(), String> {
 pub fn review(id: &str) -> Result<Staged, String> {
     let dir = root().join(id);
     let (m, run) = manifest::load_dir(&dir).map_err(|e| e.explain())?;
-    Ok(Staged { hash: folder_hash(&dir)?, run_hash: file_hash(&run), manifest: m, dir, update: true })
+    Ok(Staged {
+        hash: folder_hash(&dir)?,
+        run_hash: file_hash(&run),
+        manifest: m,
+        dir,
+        update: true,
+    })
 }
 
 /// Zusammenfassung für die Einstellungen
@@ -804,9 +966,21 @@ pub fn summaries() -> Vec<Summary> {
         .map(|e| Summary {
             id: e.id.clone(),
             name: e.name(),
-            version: e.manifest.as_ref().map(|m| m.version.clone()).unwrap_or_default(),
-            author: e.manifest.as_ref().map(|m| m.author.clone()).unwrap_or_default(),
-            description: e.manifest.as_ref().map(|m| e.text(&m.description)).unwrap_or_default(),
+            version: e
+                .manifest
+                .as_ref()
+                .map(|m| m.version.clone())
+                .unwrap_or_default(),
+            author: e
+                .manifest
+                .as_ref()
+                .map(|m| m.author.clone())
+                .unwrap_or_default(),
+            description: e
+                .manifest
+                .as_ref()
+                .map(|m| e.text(&m.description))
+                .unwrap_or_default(),
             status: e.status(),
             dir: e.dir.to_string_lossy().to_string(),
         })
@@ -850,11 +1024,26 @@ mod tests {
         let g = parse_game(&e, &ok, true).unwrap();
         assert_eq!(g.id, "ext:test-ext:g1");
         let outside = json!({"id":"g2","name":"Böse","install_dir":dir,"launch":{"exe":{"path":base.join("outside.exe")}}});
-        assert!(parse_game(&e, &outside, true).is_none(), "exe außerhalb von install_dir");
+        let relative =
+            json!({"id":"g7","name":"x","install_dir":dir,"launch":{"exe":{"path":"run.exe"}}});
+        assert!(
+            parse_game(&e, &relative, true).is_none(),
+            "relativer exe-Pfad"
+        );
+        assert!(
+            parse_game(&e, &outside, true).is_none(),
+            "exe außerhalb von install_dir"
+        );
         let bad_uri = json!({"id":"g3","name":"x","launch":{"uri":"file:///etc/passwd"}});
-        assert!(parse_game(&e, &bad_uri, true).is_none(), "verbotenes Schema");
+        assert!(
+            parse_game(&e, &bad_uri, true).is_none(),
+            "verbotenes Schema"
+        );
         let own_uri = json!({"id":"g4","name":"x","launch":{"uri":"mystore://play/1"}});
-        assert!(parse_game(&e, &own_uri, true).is_some(), "bestätigtes Schema");
+        assert!(
+            parse_game(&e, &own_uri, true).is_some(),
+            "bestätigtes Schema"
+        );
         let other_uri = json!({"id":"g5","name":"x","launch":{"uri":"otherstore://play/1"}});
         assert!(parse_game(&e, &other_uri, true).is_none());
         let bad_id = json!({"id":"../x","name":"x","launch":{"uri":"https://a.b"}});
@@ -885,13 +1074,24 @@ mod tests {
             steam_appid: None,
         };
         let ok = json!({"type":"open_folder","path":base.join("game/saves")});
-        assert!(matches!(validate_action(&e, &ok, &g), Ok(ActionResult::OpenFolder(_))));
+        assert!(matches!(
+            validate_action(&e, &ok, &g),
+            Ok(ActionResult::OpenFolder(_))
+        ));
         let bad = json!({"type":"open_folder","path":std::env::temp_dir()});
         assert!(validate_action(&e, &bad, &g).is_err());
-        assert!(validate_action(&e, &json!({"type":"open_url","url":"https://example.com"}), &g).is_ok());
+        assert!(validate_action(
+            &e,
+            &json!({"type":"open_url","url":"https://example.com"}),
+            &g
+        )
+        .is_ok());
         assert!(validate_action(&e, &json!({"type":"open_url","url":"file:///etc"}), &g).is_err());
         assert!(validate_action(&e, &json!({"type":"run","cmd":"rm -rf /"}), &g).is_err());
-        assert_eq!(validate_action(&e, &json!({"type":"message","text":"@hi"}), &g), Ok(ActionResult::Message("Hallo".into())));
+        assert_eq!(
+            validate_action(&e, &json!({"type":"message","text":"@hi"}), &g),
+            Ok(ActionResult::Message("Hallo".into()))
+        );
         g.install_dir = None;
         assert!(validate_action(&e, &ok, &g).is_err());
         let _ = std::fs::remove_dir_all(&base);
@@ -907,7 +1107,11 @@ mod tests {
         let h1 = folder_hash(&d).unwrap();
         assert_eq!(h1, folder_hash(&d).unwrap());
         std::fs::write(d.join("sub/b"), b"3").unwrap();
-        assert_ne!(h1, folder_hash(&d).unwrap(), "geänderte Datei → anderer Hash");
+        assert_ne!(
+            h1,
+            folder_hash(&d).unwrap(),
+            "geänderte Datei → anderer Hash"
+        );
         std::fs::write(d.join("sub/b"), b"2").unwrap();
         std::fs::write(d.join("neu"), b"").unwrap();
         assert_ne!(h1, folder_hash(&d).unwrap(), "neue Datei → anderer Hash");
@@ -918,7 +1122,9 @@ mod tests {
     /// Wird übersprungen, wenn Cargo/Internet fehlt.
     #[test]
     fn example_extension_end_to_end() {
-        let Ok(cargo) = std::env::var("CARGO") else { return };
+        let Ok(cargo) = std::env::var("CARGO") else {
+            return;
+        };
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
         let target = std::env::temp_dir().join("maz-ext-example-target");
         let ok = std::process::Command::new(&cargo)
@@ -933,18 +1139,37 @@ mod tests {
             eprintln!("Beispiel-Erweiterung konnte nicht gebaut werden – Test übersprungen");
             return;
         }
-        let exe = target.join("debug").join(if cfg!(windows) { "extension-hello.exe" } else { "extension-hello" });
+        let exe = target.join("debug").join(if cfg!(windows) {
+            "extension-hello.exe"
+        } else {
+            "extension-hello"
+        });
         let dir = root.join("examples/extension-hello");
         let mut p = ExtProcess::spawn(&exe, &dir, false).expect("start");
-        let hello = p.call("hello", json!({"api_version":1,"os":manifest::os_key(),"lang":"de","network":false}), TIMEOUT).expect("hello");
+        let hello = p
+            .call(
+                "hello",
+                json!({"api_version":1,"os":manifest::os_key(),"lang":"de","network":false}),
+                TIMEOUT,
+            )
+            .expect("hello");
         assert_eq!(hello["name"], "Hello Extension");
         let games = p.call("games", json!({}), TIMEOUT).expect("games");
         let e = test_loaded(&dir, vec![]);
-        let list: Vec<Game> = games["games"].as_array().unwrap().iter().filter_map(|g| parse_game(&e, g, true)).collect();
+        let list: Vec<Game> = games["games"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|g| parse_game(&e, g, true))
+            .collect();
         assert_eq!(list.len(), 2);
-        let meta = p.call("metadata", json!({"name":"Hello Game One"}), TIMEOUT).expect("metadata");
+        let meta = p
+            .call("metadata", json!({"name":"Hello Game One"}), TIMEOUT)
+            .expect("metadata");
         assert!(meta["description"].as_str().unwrap().len() > 5);
-        let acts = p.call("actions", json!({"game": game_json(&list[0])}), TIMEOUT).expect("actions");
+        let acts = p
+            .call("actions", json!({"game": game_json(&list[0])}), TIMEOUT)
+            .expect("actions");
         assert_eq!(acts["actions"][0]["id"], "open-folder");
         p.stop();
     }

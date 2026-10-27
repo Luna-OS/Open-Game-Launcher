@@ -15,9 +15,9 @@ pub mod net;
 pub mod settings;
 pub mod state;
 
+use crate::i18n::{t, tf};
 use crate::install::StartMode;
 use crate::model::{layout, StoreStatus};
-use crate::i18n::{t, tf};
 use crate::{config, sys, theme};
 use dioxus::desktop::wry::http::Response;
 use dioxus::desktop::{use_asset_handler, window, LogicalSize};
@@ -66,7 +66,8 @@ pub fn Root() -> Element {
     use_asset_handler("maz", move |req, responder| {
         let path = req.uri().path().to_string();
         std::thread::spawn(move || {
-            let found = sys::decode_file_url(&path).and_then(|p| std::fs::read(&p).ok().map(|b| (p, b)));
+            let found =
+                sys::decode_file_url(&path).and_then(|p| std::fs::read(&p).ok().map(|b| (p, b)));
             let resp = match found {
                 Some((p, bytes)) => Response::builder()
                     .status(200)
@@ -94,7 +95,11 @@ pub fn Root() -> Element {
     };
     // Farben: eigenes Design oder fertiges Design (bei Original-Farben übernimmt das CSS)
     let custom = s.custom_themes.iter().find(|c| c.id == s.theme).cloned();
-    let data_theme = if custom.is_some() { "custom".to_string() } else { s.theme.clone() };
+    let data_theme = if custom.is_some() {
+        "custom".to_string()
+    } else {
+        s.theme.clone()
+    };
     let mut style = String::new();
     if authentic.is_empty() {
         if let Some(c) = &custom {
@@ -105,7 +110,10 @@ pub fn Root() -> Element {
         }
         if !s.accent.is_empty() && custom.is_none() {
             let a = &s.accent;
-            style.push_str(&format!("--primary:{a};--ring:{a};--glow:{a};--primary-foreground:{};", theme::contrast_text(a)));
+            style.push_str(&format!(
+                "--primary:{a};--ring:{a};--glow:{a};--primary-foreground:{};",
+                theme::contrast_text(a)
+            ));
         }
     }
     let anim = if s.animations { "" } else { "no-anim" };
@@ -114,10 +122,18 @@ pub fn Root() -> Element {
     } else {
         let url = sys::file_url(std::path::Path::new(&s.wallpaper));
         let opacity = (100 - s.wallpaper_dim.min(90) as u32) as f32 / 100.0;
-        let blur = if s.wallpaper_blur { "filter: blur(14px); transform: scale(1.06);" } else { "" };
+        let blur = if s.wallpaper_blur {
+            "filter: blur(14px); transform: scale(1.06);"
+        } else {
+            ""
+        };
         Some((url, format!("opacity: {opacity}; {blur}")))
     };
-    let lang = if s.language.is_empty() { "auto".to_string() } else { s.language.clone() };
+    let lang = if s.language.is_empty() {
+        "auto".to_string()
+    } else {
+        s.language.clone()
+    };
     drop(s);
 
     rsx! {
@@ -160,7 +176,8 @@ pub fn Root() -> Element {
 
 /// Controller-Modus ein-/ausschalten (Skript wird nur einmal geladen)
 fn apply_controller(on: bool) {
-    let js = include_str!("../../assets/controller.js").replace("__ON__", if on { "true" } else { "false" });
+    let js = include_str!("../../assets/controller.js")
+        .replace("__ON__", if on { "true" } else { "false" });
     let _ = window().webview.evaluate_script(&js);
 }
 
@@ -169,7 +186,11 @@ fn LauncherShell() -> Element {
     let app = use_app();
     // Suche leeren, sobald man zu einer anderen Seite oder Ansicht (Store, Sammlung …) wechselt
     use_effect(move || {
-        let _ = (app.page.read().clone(), app.filter.read().clone(), app.filter_arg.read().clone());
+        let _ = (
+            *app.page.read(),
+            *app.filter.read(),
+            app.filter_arg.read().clone(),
+        );
         let mut s = app.search;
         if !s.peek().is_empty() {
             s.set(String::new());
@@ -202,13 +223,24 @@ fn LauncherShell() -> Element {
 
 /// Haupt-Tab in der Titelleiste
 #[component]
-fn NavTab(#[props(into)] label: String, icon: &'static str, active: bool, badge: usize, #[props(default = false)] alert: bool, onclick: EventHandler<()>) -> Element {
+fn NavTab(
+    #[props(into)] label: String,
+    icon: &'static str,
+    active: bool,
+    badge: usize,
+    #[props(default = false)] alert: bool,
+    onclick: EventHandler<()>,
+) -> Element {
     let cls = if active {
         "relative h-8 px-3 rounded-md flex items-center gap-2 text-[13px] font-medium bg-sidenav-accent text-foreground cursor-pointer"
     } else {
-        "relative h-8 px-3 rounded-md flex items-center gap-2 text-[13px] text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground cursor-pointer"
+        "relative h-8 px-3 rounded-md flex items-center gap-2 text-[13px] text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground transition-colors cursor-pointer"
     };
-    let badge_cls = if alert { "bg-primary text-primary-foreground" } else { "bg-success/20 text-success" };
+    let badge_cls = if alert {
+        "bg-primary text-primary-foreground"
+    } else {
+        "bg-success/20 text-success"
+    };
     rsx! {
         button { class: "{cls}", onclick: move |_| onclick.call(()),
             Icon { name: icon, class: "size-4" }
@@ -232,12 +264,20 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
     let lib_active = page == Page::Library && filter != Filter::Installed;
     let inst_active = page == Page::Library && filter == Filter::Installed;
     let (free_badge, installed) = if nav {
-        (free::unclaimed_count(app), library::count_for(app, Filter::Installed))
+        (
+            free::unclaimed_count(app),
+            library::count_for(app, Filter::Installed),
+        )
     } else {
         (0, 0)
     };
     // Minecraft-Tab nur, wenn Minecraft oder NoRisk installiert ist
-    let has_mc = nav && app.games.read().iter().any(|g| g.source == crate::model::Source::Minecraft);
+    let has_mc = nav
+        && app
+            .games
+            .read()
+            .iter()
+            .any(|g| g.source == crate::model::Source::Minecraft);
     let go_lib = move |f: Filter| {
         let mut fl = app.filter;
         fl.set(f);
@@ -281,19 +321,19 @@ fn TitleBar(#[props(default = false)] nav: bool) -> Element {
                 onmousedown: move |e| e.stop_propagation(),
                 ondoubleclick: move |e| e.stop_propagation(),
                 button {
-                    class: "titlebar-btn w-12 h-full grid place-items-center text-muted-foreground hover:bg-white/10 hover:text-foreground cursor-pointer",
+                    class: "titlebar-btn w-12 h-full grid place-items-center text-muted-foreground hover:bg-white/10 hover:text-foreground transition-colors cursor-pointer",
                     title: t("win.minimize"),
                     onclick: move |_| window().window.set_minimized(true),
                     Icon { name: "minus", class: "size-4" }
                 }
                 button {
-                    class: "titlebar-btn w-12 h-full grid place-items-center text-muted-foreground hover:bg-white/10 hover:text-foreground cursor-pointer",
+                    class: "titlebar-btn w-12 h-full grid place-items-center text-muted-foreground hover:bg-white/10 hover:text-foreground transition-colors cursor-pointer",
                     title: t("win.maximize"),
                     onclick: move |_| window().toggle_maximized(),
                     Icon { name: "square", class: "size-3.5" }
                 }
                 button {
-                    class: "titlebar-btn is-close w-12 h-full grid place-items-center text-muted-foreground hover:text-white cursor-pointer",
+                    class: "titlebar-btn is-close w-12 h-full grid place-items-center text-muted-foreground hover:text-white transition-colors cursor-pointer",
                     title: t("common.close"),
                     onclick: move |_| window().close(),
                     Icon { name: "x", class: "size-4" }
@@ -321,7 +361,7 @@ fn Toasts() -> Element {
                         }
                         span { class: "flex-1", "{text}" }
                         button {
-                            class: "p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer",
+                            class: "p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer",
                             onclick: move |_| {
                                 let mut ts = app.toasts;
                                 ts.write().retain(|x| x.id != id);

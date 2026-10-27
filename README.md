@@ -52,7 +52,7 @@ Steam, Epic Games, Roblox and your own games in one fast, lightweight and good-l
 | 🕹️ **Emulators** | Profiles for RetroArch, Dolphin, PCSX2, DuckStation, PPSSPP, mGBA, Snes9x or any other emulator. Pick your ROM folders – every ROM becomes its own game. |
 | 🗂️ **Organize your library** | Search, sort (name, last played, playtime, recently added) and filter (store, installed, favorites, genre, tags, collections). Your own tags and collections, playtime tracking, duplicates across stores merged into one tile. |
 | 📝 **Game info** | Description, genres, developer, release date, **minimum and recommended PC specs** and the **Steam Deck rating** – from the public Steam store, and from **Wikipedia/Wikidata** for everything else (e.g. ROMs, GOG or Xbox games). Cached locally; edit everything yourself. |
-| ⛏️ **Minecraft & NoRisk Client** | The official Minecraft Launcher (Store, classic, macOS, Linux) and **every NoRisk Client profile** as its own tile – Play starts that exact profile. A built-in browser for **mods, resource packs, shaders and data packs** from Modrinth (no key) and CurseForge (your own free key, with a step-by-step guide) installs them into `.minecraft` or a NoRisk profile – including required dependencies and one-click Fabric setup. |
+| ⛏️ **Minecraft & NoRisk Client** | The official Minecraft Launcher (Store, classic, macOS, Linux) and **one NoRisk Client tile**. Play starts your last-played NoRisk profile; the tile opens an **in-launcher hub** with all your NoRisk profiles (play, open, create a new one – profiles are always created by the NoRisk Launcher itself). OGL only reads a copy of the NoRisk database and starts the NoRisk Launcher through its official command line (`launch --profile`, `open --theme lu_hub`); see the [interop notes](../nrc/docs/OGL_INTEROP.md). A built-in browser for **mods, resource packs, shaders and data packs** from Modrinth (no key) and CurseForge (your own free key) installs them into `.minecraft` or a NoRisk profile – including required dependencies and one-click Fabric setup.<br><br>![NoRisk tile](docs/screenshots/norisk-hub-tile.png)<br>![NoRisk hub](docs/screenshots/norisk-hub.png)<br>![NoRisk hub – mods](docs/screenshots/norisk-hub-mods.png) |
 | 🧩 **Extensions** | Optional and off by default: add new game sources, game info or buttons through small external programs (any language, JSON over stdin/stdout). Every extension shows its permissions and checksum before you agree, is pinned by hash and is checked strictly. **Honest note:** extensions run with your user rights – only install ones you trust. See [docs/EXTENSIONS.md](docs/EXTENSIONS.md). |
 | 🐧 **Wine & Proton per game** | On Linux, pick the Wine or Proton version for each Windows game (system Wine, Steam Proton, GE-Proton, Lutris and Heroic versions). |
 | 🎁 **Free games** | A tab with every game that is currently free on Epic Games and Steam, with a countdown of how long the offer lasts. *Add to library* opens the store page – one click on *Get* and it shows up in Open Game Launcher. |
@@ -174,7 +174,7 @@ Open Game Launcher checks GitHub for new versions (can be turned off in **Settin
 - **Roblox:** **Settings → Connections → Roblox** → paste the link of a Roblox game (e.g. `https://www.roblox.com/games/920587237/…`).
 - **Scan a folder:** empty library or **My games** → **Scan a folder** → pick e.g. `D:\Games` → tick the games → **Add**.
 - **Tags & collections:** open a game → type a tag at the bottom or click a collection. Create collections with **+** in the sidebar.
-- **Minecraft mods:** click the **Minecraft** tab at the top (or open a Minecraft tile → **Mods & textures**) → choose where to install → search → **Install**. For CurseForge, add your free key once (the guide is right there).
+- **Minecraft mods:** click the **Minecraft** tab at the top (or open the NoRisk hub / a Minecraft tile → **Mods & textures**) → choose where to install → search → **Install**. For CurseForge, add your free key once (the guide is right there).
 - **Extensions:** **Settings → Extensions** → turn on "Allow extensions" → **Install extension…** → check the permissions → agree.
 - **Wine/Proton (Linux):** open a Windows game you added → **Edit** → pick a version under "Wine / Proton".
 - **Emulators:** **Settings → Connections → Emulators** → pick a preset → choose the emulator program and your ROM folders.
@@ -257,7 +257,7 @@ src/
 ├── metadata.rs    automatic game info (cached)
 ├── playtime.rs    local playtime tracking
 ├── runners.rs     Wine / Proton versions on Linux
-├── minecraft.rs   Minecraft Launcher + NoRisk Client profiles
+├── minecraft/     Minecraft Launcher + NoRisk Client (norisk.rs: profiles, CLI; art.rs: tile art)
 ├── mccontent.rs   Modrinth / CurseForge search and install
 ├── extensions/    extension system (manifest, protocol, processes, install)
 ├── notes.rs       changelog rendering for the update window

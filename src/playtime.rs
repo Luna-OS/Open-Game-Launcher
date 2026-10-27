@@ -27,7 +27,11 @@ impl Matcher {
                 d.len() > 3 && p.starts_with(&format!("{d}/"))
             }
             Matcher::Exe(e) => p == norm(e),
-            Matcher::Name(n) => p.rsplit('/').next().map(|f| f.contains(&n.to_lowercase())).unwrap_or(false),
+            Matcher::Name(n) => p
+                .rsplit('/')
+                .next()
+                .map(|f| f.contains(&n.to_lowercase()))
+                .unwrap_or(false),
         }
     }
 }
@@ -70,7 +74,13 @@ pub fn process_paths() -> Vec<String> {
             .args(["-axo", "comm="])
             .output()
             .ok()
-            .map(|o| String::from_utf8_lossy(&o.stdout).lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect())
+            .map(|o| {
+                String::from_utf8_lossy(&o.stdout)
+                    .lines()
+                    .map(|l| l.trim().to_string())
+                    .filter(|l| !l.is_empty())
+                    .collect()
+            })
             .unwrap_or_default()
     }
     #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]

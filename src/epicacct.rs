@@ -20,10 +20,14 @@ pub struct Progress {
 
 const CLIENT_ID: &str = "34a02cf8f4414e29b15921876da36f9a";
 /// Base64 von "client_id:client_secret" des Epic Games Launchers
-const BASIC: &str = "MzRhMDJjZjhmNDQxNGUyOWIxNTkyMTg3NmRhMzZmOWE6ZGFhZmJjY2M3Mzc3NDUwMzlkZmZlNTNkOTRmYzc2Y2Y=";
-const OAUTH: &str = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
-const LIBRARY: &str = "https://library-service.live.use1a.on.epicgames.com/library/api/public/items";
-const CATALOG: &str = "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace";
+const BASIC: &str =
+    "MzRhMDJjZjhmNDQxNGUyOWIxNTkyMTg3NmRhMzZmOWE6ZGFhZmJjY2M3Mzc3NDUwMzlkZmZlNTNkOTRmYzc2Y2Y=";
+const OAUTH: &str =
+    "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
+const LIBRARY: &str =
+    "https://library-service.live.use1a.on.epicgames.com/library/api/public/items";
+const CATALOG: &str =
+    "https://catalog-public-service-prod06.ol.epicgames.com/catalog/api/shared/namespace";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -57,7 +61,11 @@ impl OwnedEpic {
             cover: self.cover.clone(),
             hero: self.hero.clone(),
             logo: self.logo.clone(),
-            icon: self.cover.iter().map(|u| format!("{u}?w=64&h=64&resize=1")).collect(),
+            icon: self
+                .cover
+                .iter()
+                .map(|u| format!("{u}?w=64&h=64&resize=1"))
+                .collect(),
             header: self.hero.clone(),
         }
     }
@@ -65,8 +73,12 @@ impl OwnedEpic {
 
 /// Seite, auf der man sich anmeldet. Danach zeigt Epic eine Textseite mit "authorizationCode".
 pub fn login_url() -> String {
-    let redirect = format!("https://www.epicgames.com/id/api/redirect?clientId={CLIENT_ID}&responseType=code");
-    format!("https://www.epicgames.com/id/login?redirectUrl={}", crate::sys::url_encode(&redirect))
+    let redirect =
+        format!("https://www.epicgames.com/id/api/redirect?clientId={CLIENT_ID}&responseType=code");
+    format!(
+        "https://www.epicgames.com/id/login?redirectUrl={}",
+        crate::sys::url_encode(&redirect)
+    )
 }
 
 /// Holt den Code aus dem, was der Nutzer eingefügt hat: die ganze Seite (JSON),
@@ -113,22 +125,34 @@ fn build_agent() -> ureq::Agent {
         .tls_config(tls)
         .timeout_global(Some(Duration::from_secs(20)))
         .http_status_as_error(false)
-        .user_agent("UELauncher/11.0.1-14907503+++Portal+Release-Live Windows/10.0.19041.1.256.64bit")
+        .user_agent(
+            "UELauncher/11.0.1-14907503+++Portal+Release-Live Windows/10.0.19041.1.256.64bit",
+        )
         .build()
         .into()
 }
 
-fn read(resp: Result<ureq::http::Response<ureq::Body>, ureq::Error>) -> Result<(u16, serde_json::Value), String> {
+fn read(
+    resp: Result<ureq::http::Response<ureq::Body>, ureq::Error>,
+) -> Result<(u16, serde_json::Value), String> {
     let mut resp = resp.map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
     let status = resp.status().as_u16();
     // Antworten begrenzen (Katalog-Antworten sind wenige hundert KB)
-    let text = resp.body_mut().with_config().limit(8 * 1024 * 1024).read_to_string().unwrap_or_default();
+    let text = resp
+        .body_mut()
+        .with_config()
+        .limit(8 * 1024 * 1024)
+        .read_to_string()
+        .unwrap_or_default();
     let v = serde_json::from_str(&text).unwrap_or(serde_json::Value::Null);
     Ok((status, v))
 }
 
 fn jstr(v: &serde_json::Value, key: &str) -> String {
-    v.get(key).and_then(|x| x.as_str()).unwrap_or("").to_string()
+    v.get(key)
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string()
 }
 
 fn token(body: String) -> Result<EpicAuth, String> {
@@ -142,13 +166,15 @@ fn token(body: String) -> Result<EpicAuth, String> {
     if status >= 400 || v.get("access_token").is_none() {
         let code = jstr(&v, "errorCode");
         let msg = jstr(&v, "errorMessage");
-        return Err(if code.contains("invalid_grant") || code.contains("not_found") {
-            crate::i18n::t("epic.err_code")
-        } else if msg.is_empty() {
-            format!("Epic: HTTP {status}")
-        } else {
-            format!("Epic: {msg}")
-        });
+        return Err(
+            if code.contains("invalid_grant") || code.contains("not_found") {
+                crate::i18n::t("epic.err_code")
+            } else if msg.is_empty() {
+                format!("Epic: HTTP {status}")
+            } else {
+                format!("Epic: {msg}")
+            },
+        );
     }
     let now = crate::sys::now_secs();
     let secs = |k: &str, d: u64| v.get(k).and_then(|x| x.as_u64()).unwrap_or(d);
@@ -164,7 +190,10 @@ fn token(body: String) -> Result<EpicAuth, String> {
 
 /// Code aus dem Browser gegen eine Anmeldung tauschen
 pub fn exchange(code: &str) -> Result<EpicAuth, String> {
-    token(format!("grant_type=authorization_code&code={}&token_type=eg1", crate::sys::url_encode(code)))
+    token(format!(
+        "grant_type=authorization_code&code={}&token_type=eg1",
+        crate::sys::url_encode(code)
+    ))
 }
 
 /// Anmeldung erneuern (falls das Token abgelaufen ist)
@@ -184,7 +213,12 @@ pub fn ensure_fresh(auth: &EpicAuth) -> Result<EpicAuth, String> {
 }
 
 fn get(url: &str, auth: &EpicAuth) -> Result<serde_json::Value, String> {
-    let (status, v) = read(agent().get(url).header("Authorization", &format!("bearer {}", auth.access_token)).call())?;
+    let (status, v) = read(
+        agent()
+            .get(url)
+            .header("Authorization", &format!("bearer {}", auth.access_token))
+            .call(),
+    )?;
     if status == 401 {
         return Err(crate::i18n::t("epic.err_expired"));
     }
@@ -195,12 +229,18 @@ fn get(url: &str, auth: &EpicAuth) -> Result<serde_json::Value, String> {
 }
 
 fn key_images(v: &serde_json::Value, types: &[&str]) -> Vec<String> {
-    let Some(list) = v.get("keyImages").and_then(|k| k.as_array()) else { return Vec::new() };
+    let Some(list) = v.get("keyImages").and_then(|k| k.as_array()) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for t in types {
         for img in list {
             if img.get("type").and_then(|x| x.as_str()) == Some(*t) {
-                if let Some(u) = img.get("url").and_then(|x| x.as_str()).filter(|u| !u.is_empty()) {
+                if let Some(u) = img
+                    .get("url")
+                    .and_then(|x| x.as_str())
+                    .filter(|u| !u.is_empty())
+                {
                     out.push(u.to_string());
                 }
             }
@@ -211,7 +251,12 @@ fn key_images(v: &serde_json::Value, types: &[&str]) -> Vec<String> {
 
 /// Bibliothek laden. `known` = bereits bekannte Einträge (Cache), damit nicht jedes Mal
 /// hunderte Katalog-Abfragen nötig sind.
-pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str, progress: &Progress) -> Result<Vec<OwnedEpic>, String> {
+pub fn fetch_library(
+    auth: &EpicAuth,
+    known: &[OwnedEpic],
+    lang: &str,
+    progress: &Progress,
+) -> Result<Vec<OwnedEpic>, String> {
     // 1. Alle Einträge der Bibliothek (seitenweise)
     let mut records: Vec<(String, String, String)> = Vec::new();
     let mut cursor = String::new();
@@ -221,7 +266,12 @@ pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str, progress:
             url.push_str(&format!("&cursor={}", crate::sys::url_encode(&cursor)));
         }
         let v = get(&url, auth)?;
-        for r in v.get("records").and_then(|r| r.as_array()).into_iter().flatten() {
+        for r in v
+            .get("records")
+            .and_then(|r| r.as_array())
+            .into_iter()
+            .flatten()
+        {
             let ns = jstr(r, "namespace");
             let item = jstr(r, "catalogItemId");
             let app = jstr(r, "appName");
@@ -263,7 +313,10 @@ pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str, progress:
     let mut by_ns: BTreeMap<String, Vec<(String, String)>> = BTreeMap::new();
     let total = records.len();
     for (ns, item, app) in records {
-        if let Some(k) = known.iter().find(|k| k.app_name == app && !k.title.is_empty()) {
+        if let Some(k) = known
+            .iter()
+            .find(|k| k.app_name == app && !k.title.is_empty())
+        {
             out.push(k.clone());
         } else {
             by_ns.entry(ns).or_default().push((item, app));
@@ -299,13 +352,22 @@ pub fn fetch_library(auth: &EpicAuth, known: &[OwnedEpic], lang: &str, progress:
     if let Ok(mut f) = found.lock() {
         out.append(&mut f);
     }
-    out.sort_by(|a, b| a.title.to_lowercase().cmp(&b.title.to_lowercase()));
+    out.sort_by_cached_key(|a| a.title.to_lowercase());
     Ok(out)
 }
 
 /// Titel und Bilder für einige Einträge eines Namespaces
-fn catalog_items(auth: &EpicAuth, ns: &str, chunk: &[(String, String)], locale: &str, country: &str) -> Vec<OwnedEpic> {
-    let ids: String = chunk.iter().map(|(i, _)| format!("&id={}", crate::sys::url_encode(i))).collect();
+fn catalog_items(
+    auth: &EpicAuth,
+    ns: &str,
+    chunk: &[(String, String)],
+    locale: &str,
+    country: &str,
+) -> Vec<OwnedEpic> {
+    let ids: String = chunk
+        .iter()
+        .map(|(i, _)| format!("&id={}", crate::sys::url_encode(i)))
+        .collect();
     let url = format!(
         "{CATALOG}/{}/bulk/items?includeDLCDetails=true&includeMainGameDetails=true&country={country}&locale={locale}{ids}",
         crate::sys::url_encode(ns)
@@ -317,9 +379,15 @@ fn catalog_items(auth: &EpicAuth, ns: &str, chunk: &[(String, String)], locale: 
     };
     let mut out = Vec::new();
     for (item, app) in chunk {
-        let Some(info) = v.get(item.as_str()) else { continue };
+        let Some(info) = v.get(item.as_str()) else {
+            continue;
+        };
         // DLCs, Zusatzinhalte und Programme ohne Spiel weglassen
-        if info.get("mainGameItem").map(|m| !m.is_null()).unwrap_or(false) {
+        if info
+            .get("mainGameItem")
+            .map(|m| !m.is_null())
+            .unwrap_or(false)
+        {
             continue;
         }
         let cats: Vec<String> = info
@@ -327,7 +395,12 @@ fn catalog_items(auth: &EpicAuth, ns: &str, chunk: &[(String, String)], locale: 
             .and_then(|c| c.as_array())
             .map(|a| a.iter().map(|c| jstr(c, "path").to_lowercase()).collect())
             .unwrap_or_default();
-        if cats.iter().any(|c| matches!(c.as_str(), "addons" | "engines" | "digitalextras" | "plugins")) {
+        if cats.iter().any(|c| {
+            matches!(
+                c.as_str(),
+                "addons" | "engines" | "digitalextras" | "plugins"
+            )
+        }) {
             continue;
         }
         if !cats.is_empty() && !cats.iter().any(|c| c == "games" || c == "applications") {
@@ -337,14 +410,24 @@ fn catalog_items(auth: &EpicAuth, ns: &str, chunk: &[(String, String)], locale: 
         if title.is_empty() {
             continue;
         }
-        let https = |v: Vec<String>| v.into_iter().filter(|u| u.starts_with("https://")).collect::<Vec<_>>();
+        let https = |v: Vec<String>| {
+            v.into_iter()
+                .filter(|u| u.starts_with("https://"))
+                .collect::<Vec<_>>()
+        };
         out.push(OwnedEpic {
             app_name: app.clone(),
             namespace: ns.to_string(),
             item_id: item.clone(),
             title,
-            cover: https(key_images(info, &["DieselGameBoxTall", "OfferImageTall", "Thumbnail"])),
-            hero: https(key_images(info, &["DieselGameBox", "OfferImageWide", "DieselStoreFrontWide"])),
+            cover: https(key_images(
+                info,
+                &["DieselGameBoxTall", "OfferImageTall", "Thumbnail"],
+            )),
+            hero: https(key_images(
+                info,
+                &["DieselGameBox", "OfferImageWide", "DieselStoreFrontWide"],
+            )),
             logo: https(key_images(info, &["DieselGameBoxLogo"])),
         });
     }
@@ -369,7 +452,7 @@ pub fn save_cache(list: &[OwnedEpic]) {
         let _ = std::fs::create_dir_all(dir);
     }
     if let Ok(text) = serde_json::to_string(list) {
-        let _ = crate::sys::write_private(&p, text.as_bytes());
+        let _ = crate::sys::write_atomic(&p, text.as_bytes());
     }
 }
 
@@ -384,10 +467,17 @@ mod tests {
     #[test]
     fn code_extraction() {
         let page = r#"{"warning":"Do not share this code with any 3rd party service.","redirectUrl":"https://localhost/launcher/authorized?code=0123456789abcdef0123456789abcdef","authorizationCode":"0123456789abcdef0123456789abcdef","exchangeCode":null,"sid":null}"#;
-        assert_eq!(extract_code(page).as_deref(), Some("0123456789abcdef0123456789abcdef"));
-        assert_eq!(extract_code("  0123456789abcdef0123456789abcdef \n").as_deref(), Some("0123456789abcdef0123456789abcdef"));
+        assert_eq!(
+            extract_code(page).as_deref(),
+            Some("0123456789abcdef0123456789abcdef")
+        );
+        assert_eq!(
+            extract_code("  0123456789abcdef0123456789abcdef \n").as_deref(),
+            Some("0123456789abcdef0123456789abcdef")
+        );
         assert_eq!(extract_code(r#"{"authorizationCode":null}"#), None);
         assert_eq!(extract_code("hallo"), None);
-        assert!(login_url().starts_with("https://www.epicgames.com/id/login?redirectUrl=https%3A%2F%2F"));
+        assert!(login_url()
+            .starts_with("https://www.epicgames.com/id/login?redirectUrl=https%3A%2F%2F"));
     }
 }

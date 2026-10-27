@@ -78,14 +78,43 @@ pub fn EditMetaDialog(id: String) -> Element {
     let Some(game) = app.game(&id) else {
         return rsx! {};
     };
-    let own = app.settings.peek().meta.get(&id).cloned().unwrap_or_default();
+    let own = app
+        .settings
+        .peek()
+        .meta
+        .get(&id)
+        .cloned()
+        .unwrap_or_default();
     let auto = app.meta_cache.peek().get(&id).cloned().unwrap_or_default();
-    let mut name = use_signal(|| if own.name.is_empty() { game.name.clone() } else { own.name.clone() });
+    let mut name = use_signal(|| {
+        if own.name.is_empty() {
+            game.name.clone()
+        } else {
+            own.name.clone()
+        }
+    });
     let mut hero = use_signal(|| own.hero.clone());
-    let mut cover = use_signal(|| app.settings.peek().cover_overrides.get(&id).cloned().unwrap_or_default());
-    let mut desc = use_signal(|| if own.description.is_empty() { auto.description.clone() } else { own.description.clone() });
+    let mut cover = use_signal(|| {
+        app.settings
+            .peek()
+            .cover_overrides
+            .get(&id)
+            .cloned()
+            .unwrap_or_default()
+    });
+    let mut desc = use_signal(|| {
+        if own.description.is_empty() {
+            auto.description.clone()
+        } else {
+            own.description.clone()
+        }
+    });
     let mut genres = use_signal(|| {
-        let g = if own.genres.is_empty() { auto.genres.clone() } else { own.genres.clone() };
+        let g = if own.genres.is_empty() {
+            auto.genres.clone()
+        } else {
+            own.genres.clone()
+        };
         g.join(", ")
     });
     // Für "Zurücksetzen": Originalname ohne eigene Änderung
@@ -105,9 +134,17 @@ pub fn EditMetaDialog(id: String) -> Element {
             .collect();
         let meta = GameMeta {
             // Nur speichern, was wirklich anders ist als automatisch
-            name: if n == original_name || n.is_empty() { String::new() } else { n.chars().take(120).collect() },
+            name: if n == original_name || n.is_empty() {
+                String::new()
+            } else {
+                n.chars().take(120).collect()
+            },
             hero: hero.peek().trim().trim_matches('"').to_string(),
-            description: if d == auto2.description { String::new() } else { d.chars().take(4000).collect() },
+            description: if d == auto2.description {
+                String::new()
+            } else {
+                d.chars().take(4000).collect()
+            },
             genres: if gs == auto2.genres { Vec::new() } else { gs },
         };
         let c = cover.peek().trim().trim_matches('"').to_string();
@@ -225,13 +262,27 @@ pub fn FolderScanDialog() -> Element {
         busy.set(true);
         searched.set(false);
         // Schon vorhandene Spiele nicht noch einmal anbieten
-        let known: Vec<String> = app.settings.peek().custom_games.iter().map(|c| c.exe.to_lowercase()).collect();
+        let known: Vec<String> = app
+            .settings
+            .peek()
+            .custom_games
+            .iter()
+            .map(|c| c.exe.to_lowercase())
+            .collect();
         spawn(async move {
-            let res = tokio::task::spawn_blocking(move || crate::emulators::scan_game_folder(std::path::Path::new(&dir))).await.unwrap_or_default();
+            let res = tokio::task::spawn_blocking(move || {
+                crate::emulators::scan_game_folder(std::path::Path::new(&dir))
+            })
+            .await
+            .unwrap_or_default();
             let list = res
                 .into_iter()
                 .filter(|(_, exe)| !known.contains(&exe.to_lowercase()))
-                .map(|(name, exe)| Found { name, exe, on: true })
+                .map(|(name, exe)| Found {
+                    name,
+                    exe,
+                    on: true,
+                })
                 .collect();
             found.set(list);
             busy.set(false);
@@ -248,7 +299,13 @@ pub fn FolderScanDialog() -> Element {
         let now = sys::now_secs();
         app.update(|s| {
             for f in picked {
-                s.custom_games.push(CustomGame { id: config::new_id(), name: f.name, exe: f.exe, added: now, ..Default::default() });
+                s.custom_games.push(CustomGame {
+                    id: config::new_id(),
+                    name: f.name,
+                    exe: f.exe,
+                    added: now,
+                    ..Default::default()
+                });
             }
         });
         app.close_modal();
@@ -295,7 +352,7 @@ pub fn FolderScanDialog() -> Element {
                             let exe = f.exe.clone();
                             let fname = f.name.clone();
                             rsx! {
-                                label { key: "{exe}", class: "flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-accent/40",
+                                label { key: "{exe}", class: "flex items-center gap-3 px-4 py-2.5 transition-colors cursor-pointer hover:bg-accent/40",
                                     input {
                                         r#type: "checkbox",
                                         class: "size-4 accent-[var(--primary)] cursor-pointer",

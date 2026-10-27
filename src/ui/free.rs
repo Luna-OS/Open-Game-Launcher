@@ -107,7 +107,11 @@ fn FreeCard(game: FreeGame) -> Element {
     let upcoming = game.upcoming;
     let g_claim = game.clone();
     let url = game.url.clone();
-    let urgent = !upcoming && game.ends.map(|e| e.saturating_sub(sys::now_secs()) < 86_400).unwrap_or(false);
+    let urgent = !upcoming
+        && game
+            .ends
+            .map(|e| e.saturating_sub(sys::now_secs()) < 86_400)
+            .unwrap_or(false);
     let timer_cls = if upcoming {
         "bg-black/70 text-white"
     } else if urgent {
@@ -183,6 +187,7 @@ fn FreeCard(game: FreeGame) -> Element {
 /// Anzahl der aktuell gratis Spiele, die man noch nicht hat (für die Seitenleiste)
 pub fn unclaimed_count(app: App) -> usize {
     let free = app.free.read();
-    free.iter().filter(|g| !g.upcoming && net::owned_game(app, g).is_none()).count()
+    free.iter()
+        .filter(|g| !g.upcoming && net::owned_game(app, g).is_none())
+        .count()
 }
-

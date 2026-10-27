@@ -56,7 +56,11 @@ impl Source {
             Source::Itch => "ITCH".into(),
             Source::Xbox => "XBOX".into(),
             Source::Minecraft => "MINECRAFT".into(),
-            Source::Extension(i) => crate::extensions::name_of(i).to_uppercase().chars().take(14).collect(),
+            Source::Extension(i) => crate::extensions::name_of(i)
+                .to_uppercase()
+                .chars()
+                .take(14)
+                .collect(),
             Source::Emulator => "EMU".into(),
             Source::Custom => crate::i18n::t("badge.custom"),
         }
@@ -116,8 +120,15 @@ impl Source {
     }
 
     /// Weitere Stores (über Steam/Epic/Roblox hinaus)
-    pub const STORES: [Source; 7] =
-        [Source::Gog, Source::Ea, Source::Ubisoft, Source::BattleNet, Source::Amazon, Source::Itch, Source::Xbox];
+    pub const STORES: [Source; 7] = [
+        Source::Gog,
+        Source::Ea,
+        Source::Ubisoft,
+        Source::BattleNet,
+        Source::Amazon,
+        Source::Itch,
+        Source::Xbox,
+    ];
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -135,7 +146,11 @@ pub enum LaunchTarget {
     /// Über einen Link des Store-Programms starten (uplay://, amazon-games:// …)
     Uri(String),
     /// Programm direkt starten (z. B. GOG ohne Galaxy, itch.io, Battle.net-Client mit Parametern)
-    Exe { path: String, args: Vec<String>, dir: String },
+    Exe {
+        path: String,
+        args: Vec<String>,
+        dir: String,
+    },
     /// Microsoft-Store-/Xbox-App
     Appx { family: String, app: String },
 
@@ -333,6 +348,8 @@ pub struct Settings {
     pub extensions: BTreeMap<String, crate::extensions::ExtState>,
     /// Bedienung mit Controller (große Fokus-Rahmen, Steuerkreuz/Stick)
     pub controller_mode: bool,
+    /// NoRisk-Profile zusätzlich als eigene Kacheln (Standard: aus – sonst eine NoRisk-Kachel)
+    pub norisk_profile_tiles: bool,
 
     // Bibliothek verwalten
     /// Im MAZ Launcher gemessene Spielzeit in Minuten
@@ -347,7 +364,6 @@ pub struct Settings {
 
     // Emulatoren
     pub emulators: Vec<Emulator>,
-
 
     // Eigene Spiele
     /// Leer = Standardliste in der gewählten Sprache
@@ -405,6 +421,7 @@ impl Default for Settings {
             extensions_allowed: false,
             extensions: BTreeMap::new(),
             playtime_local: BTreeMap::new(),
+            norisk_profile_tiles: false,
             first_seen: BTreeMap::new(),
             tags: BTreeMap::new(),
             collections: Vec::new(),
@@ -470,7 +487,9 @@ impl Settings {
         self.first_seen.get(id).copied().unwrap_or(0)
     }
     pub fn in_collection(&self, coll: &str, id: &str) -> bool {
-        self.collections.iter().any(|c| c.id == coll && c.games.iter().any(|g| g == id))
+        self.collections
+            .iter()
+            .any(|c| c.id == coll && c.games.iter().any(|g| g == id))
     }
 }
 

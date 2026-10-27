@@ -22,7 +22,12 @@ fn u16le(b: &[u8], i: usize) -> Option<u16> {
     Some(u16::from_le_bytes([*b.get(i)?, *b.get(i + 1)?]))
 }
 fn u32le(b: &[u8], i: usize) -> Option<u32> {
-    Some(u32::from_le_bytes([*b.get(i)?, *b.get(i + 1)?, *b.get(i + 2)?, *b.get(i + 3)?]))
+    Some(u32::from_le_bytes([
+        *b.get(i)?,
+        *b.get(i + 1)?,
+        *b.get(i + 2)?,
+        *b.get(i + 3)?,
+    ]))
 }
 
 /// Ein Eintrag aus dem Inhaltsverzeichnis
@@ -47,10 +52,36 @@ pub fn safe_entry_path(name: &str) -> Result<PathBuf, ZipError> {
         match part {
             "" | "." => continue,
             ".." => return Err(ZipError::Unsafe(name.to_string())),
+            p if windows_reserved(p) => return Err(ZipError::Unsafe(name.to_string())),
             p => out.push(p),
         }
     }
     Ok(out)
+}
+
+/// Namen, die Windows als Gerät behandelt oder stillschweigend verändert
+/// ("CON", "nul.txt", "datei." → "datei") – würden sonst nicht da landen, wo geprüft wurde.
+fn windows_reserved(part: &str) -> bool {
+    if part.ends_with('.')
+        || part.ends_with(' ')
+        || part
+            .chars()
+            .any(|c| matches!(c, '<' | '>' | '"' | '|' | '?' | '*') || (c as u32) < 32)
+    {
+        return true;
+    }
+    let stem = part
+        .split('.')
+        .next()
+        .unwrap_or("")
+        .trim_end()
+        .to_ascii_uppercase();
+    matches!(
+        stem.as_str(),
+        "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$"
+    ) || ((stem.starts_with("COM") || stem.starts_with("LPT"))
+        && stem.len() == 4
+        && stem.as_bytes()[3].is_ascii_digit())
 }
 
 fn entries(data: &[u8]) -> Result<Vec<Entry>, ZipError> {
@@ -81,7 +112,9 @@ fn entries(data: &[u8]) -> Result<Vec<Entry>, ZipError> {
         let comment_len = u16le(data, p + 32).ok_or(ZipError::Format)? as usize;
         let ext_attr = u32le(data, p + 38).ok_or(ZipError::Format)?;
         let local_offset = u32le(data, p + 42).ok_or(ZipError::Format)? as u64;
-        let name_bytes = data.get(p + 46..p + 46 + name_len).ok_or(ZipError::Format)?;
+        let name_bytes = data
+            .get(p + 46..p + 46 + name_len)
+            .ok_or(ZipError::Format)?;
         if flags & 0x1 != 0 {
             return Err(ZipError::Unsupported); // verschlüsselt
         }
@@ -131,7 +164,9 @@ pub fn extract(data: &[u8], dest: &Path) -> Result<Vec<PathBuf>, ZipError> {
         let n = u16le(data, lo + 26).ok_or(ZipError::Format)? as usize;
         let x = u16le(data, lo + 28).ok_or(ZipError::Format)? as usize;
         let start = lo + 30 + n + x;
-        let raw = data.get(start..start + e.comp_size as usize).ok_or(ZipError::Format)?;
+        let raw = data
+            .get(start..start + e.comp_size as usize)
+            .ok_or(ZipError::Format)?;
         let bytes = match e.method {
             0 => raw.to_vec(),
             8 => {
@@ -175,7 +210,8 @@ pub mod tests {
             out.extend_from_slice(&0u16.to_le_bytes());
             out.extend_from_slice(name.as_bytes());
             out.extend_from_slice(data);
-            central.extend_from_slice(&[0x50, 0x4b, 0x01, 0x02, 20, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            central
+                .extend_from_slice(&[0x50, 0x4b, 0x01, 0x02, 20, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
             central.extend_from_slice(&crc.to_le_bytes());
             central.extend_from_slice(&(data.len() as u32).to_le_bytes());
             central.extend_from_slice(&(data.len() as u32).to_le_bytes());
@@ -204,12 +240,28 @@ pub mod tests {
         let files = extract(&ok, &dir).unwrap();
         assert_eq!(files.len(), 2);
         assert_eq!(std::fs::read(dir.join("bin/run")).unwrap(), b"hi");
-        for evil in ["../evil", "/etc/passwd", "C:\\evil", "a/../../evil", "..\\evil"] {
+        for evil in [
+            "../evil",
+            "/etc/passwd",
+            "C:\\evil",
+            "a/../../evil",
+            "..\\evil",
+            "CON",
+            "lib/nul.txt",
+            "com1.dll",
+            "x/datei.",
+            "a ",
+            "a|b",
+        ] {
             let z = make_zip(&[(evil, b"x")]);
-            assert!(matches!(extract(&z, &dir), Err(ZipError::Unsafe(_))), "{evil}");
+            assert!(
+                matches!(extract(&z, &dir), Err(ZipError::Unsafe(_))),
+                "{evil}"
+            );
         }
         assert!(!dir.parent().unwrap().join("evil").exists());
         assert_eq!(extract(b"kein zip", &dir), Err(ZipError::Format));
+        assert!(safe_entry_path("console.txt").is_ok() && safe_entry_path("com10/x").is_ok());
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

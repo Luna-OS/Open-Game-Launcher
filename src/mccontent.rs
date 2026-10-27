@@ -72,30 +72,47 @@ pub struct Target {
     pub loader: Option<String>,
     /// Offizieller Launcher → Fabric kann eingerichtet werden
     pub official: bool,
+    /// NoRisk-Gruppe (leer = keine / offizieller Launcher)
+    pub group: String,
+    /// Andere Profile, die denselben Spielordner nutzen (Mods dort gelten für alle)
+    pub shared_with: usize,
 }
 
 /// Alle Ziele: offizieller Launcher + NoRisk-Profile
 pub fn targets() -> Vec<Target> {
     let mut out = Vec::new();
     if let Some(d) = crate::minecraft::official_game_dir() {
-        out.push(Target { id: "official".into(), label: "Minecraft Launcher (.minecraft)".into(), dir: d, game_version: None, loader: None, official: true });
-    }
-    for p in crate::minecraft::norisk_profiles() {
-        if p.dir.as_os_str().is_empty() {
-            continue;
-        }
-        let gv = (!p.game_version.is_empty()).then(|| p.game_version.clone());
-        let lo = (!p.loader.is_empty() && p.loader != "vanilla").then(|| p.loader.clone());
         out.push(Target {
-            id: format!("norisk:{}", p.id),
-            label: format!("NoRisk · {}", p.name),
-            dir: p.dir,
-            game_version: gv,
-            loader: lo,
-            official: false,
+            id: "official".into(),
+            label: "Minecraft Launcher (.minecraft)".into(),
+            dir: d,
+            game_version: None,
+            loader: None,
+            official: true,
+            group: String::new(),
+            shared_with: 0,
         });
     }
+    out.extend(norisk_targets(&crate::minecraft::norisk::load().profiles));
     out
+}
+
+/// Ziele für NoRisk-Profile (nur mit sicherem Spielordner)
+pub fn norisk_targets(profiles: &[crate::minecraft::NoRiskProfile]) -> Vec<Target> {
+    profiles
+        .iter()
+        .filter(|p| !p.dir.as_os_str().is_empty())
+        .map(|p| Target {
+            id: format!("norisk:{}", p.id),
+            label: format!("NoRisk · {}", p.name),
+            dir: p.dir.clone(),
+            game_version: (!p.game_version.is_empty()).then(|| p.game_version.clone()),
+            loader: (!p.loader.is_empty() && p.loader != "vanilla").then(|| p.loader.clone()),
+            official: false,
+            group: p.group.clone(),
+            shared_with: crate::minecraft::norisk::sharing(profiles, &p.dir).saturating_sub(1),
+        })
+        .collect()
 }
 
 /// Welten im Spielordner (für Datenpakete)
@@ -146,13 +163,20 @@ fn agent() -> ureq::Agent {
     AGENT
         .get_or_init(|| {
             use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
-            let tls = TlsConfig::builder().provider(TlsProvider::NativeTls).root_certs(RootCerts::PlatformVerifier).build();
+            let tls = TlsConfig::builder()
+                .provider(TlsProvider::NativeTls)
+                .root_certs(RootCerts::PlatformVerifier)
+                .build();
             ureq::Agent::config_builder()
                 .tls_config(tls)
                 .timeout_global(Some(Duration::from_secs(60)))
                 .http_status_as_error(false)
                 // Modrinth wünscht einen eindeutigen User-Agent mit Kontakt
-                .user_agent(concat!("MikeAdamRGB/Open-Game-Launcher/", env!("CARGO_PKG_VERSION"), " (https://github.com/MikeAdamRGB/Open-Game-Launcher)"))
+                .user_agent(concat!(
+                    "MikeAdamRGB/Open-Game-Launcher/",
+                    env!("CARGO_PKG_VERSION"),
+                    " (https://github.com/MikeAdamRGB/Open-Game-Launcher)"
+                ))
                 .build()
                 .into()
         })
@@ -164,9 +188,16 @@ fn get_json(url: &str, cf_key: Option<&str>) -> Result<serde_json::Value, String
     if let Some(k) = cf_key {
         req = req.header("x-api-key", k);
     }
-    let mut resp = req.call().map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
+    let mut resp = req
+        .call()
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
     let status = resp.status().as_u16();
-    let text = resp.body_mut().with_config().limit(8 * 1024 * 1024).read_to_string().map_err(|e| e.to_string())?;
+    let text = resp
+        .body_mut()
+        .with_config()
+        .limit(8 * 1024 * 1024)
+        .read_to_string()
+        .map_err(|e| e.to_string())?;
     if status == 401 || status == 403 {
         return Err(crate::i18n::t("mc.err_key"));
     }
@@ -179,14 +210,28 @@ fn get_json(url: &str, cf_key: Option<&str>) -> Result<serde_json::Value, String
     serde_json::from_str(&text).map_err(|e| e.to_string())
 }
 
-fn post_json(url: &str, body: &serde_json::Value, cf_key: Option<&str>) -> Result<serde_json::Value, String> {
-    let mut req = agent().post(url).header("Accept", "application/json").header("Content-Type", "application/json");
+fn post_json(
+    url: &str,
+    body: &serde_json::Value,
+    cf_key: Option<&str>,
+) -> Result<serde_json::Value, String> {
+    let mut req = agent()
+        .post(url)
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/json");
     if let Some(k) = cf_key {
         req = req.header("x-api-key", k);
     }
-    let mut resp = req.send(body.to_string()).map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
+    let mut resp = req
+        .send(body.to_string())
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
     let status = resp.status().as_u16();
-    let text = resp.body_mut().with_config().limit(8 * 1024 * 1024).read_to_string().map_err(|e| e.to_string())?;
+    let text = resp
+        .body_mut()
+        .with_config()
+        .limit(8 * 1024 * 1024)
+        .read_to_string()
+        .map_err(|e| e.to_string())?;
     if status >= 400 {
         return Err(format!("HTTP {status}"));
     }
@@ -202,7 +247,11 @@ fn clip(t: &str, n: usize) -> String {
 }
 
 fn https_img(u: &str) -> String {
-    if u.starts_with("https://") && u.len() < 600 { u.to_string() } else { String::new() }
+    if u.starts_with("https://") && u.len() < 600 {
+        u.to_string()
+    } else {
+        String::new()
+    }
 }
 
 /// Loader-Name → CurseForge-Nummer
@@ -218,7 +267,10 @@ fn cf_loader(l: &str) -> Option<u32> {
 
 /// Erlaubte Minecraft-Version ("1.21.4", "24w14a")
 pub fn valid_version(v: &str) -> bool {
-    !v.is_empty() && v.len() < 24 && v.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+    !v.is_empty()
+        && v.len() < 24
+        && v.chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
 }
 
 pub fn valid_loader(l: &str) -> bool {
@@ -255,7 +307,11 @@ pub fn modrinth_search_url(q: &Query) -> String {
         "{MODRINTH}/search?query={}&limit=24&offset={}&index={}&facets={}",
         crate::sys::url_encode(q.text.trim()),
         q.offset,
-        if q.text.trim().is_empty() { "downloads" } else { "relevance" },
+        if q.text.trim().is_empty() {
+            "downloads"
+        } else {
+            "relevance"
+        },
         crate::sys::url_encode(&facets)
     )
 }
@@ -272,10 +328,25 @@ pub fn parse_modrinth_search(v: &serde_json::Value) -> Vec<Project> {
                         return None;
                     }
                     let kind = s(h, "project_type");
-                    let safe_slug: String = slug.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_')).collect();
+                    let safe_slug: String = slug
+                        .chars()
+                        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
+                        .collect();
                     Some(Project {
                         provider: Some(Provider::Modrinth),
-                        page: format!("https://modrinth.com/{}/{}", if kind.is_empty() { "mod".into() } else { clip(&kind, 20) }, if safe_slug.is_empty() { id.clone() } else { safe_slug.clone() }),
+                        page: format!(
+                            "https://modrinth.com/{}/{}",
+                            if kind.is_empty() {
+                                "mod".into()
+                            } else {
+                                clip(&kind, 20)
+                            },
+                            if safe_slug.is_empty() {
+                                id.clone()
+                            } else {
+                                safe_slug.clone()
+                            }
+                        ),
                         id,
                         slug: safe_slug,
                         title: clip(&s(h, "title"), 100),
@@ -317,7 +388,10 @@ pub fn parse_curseforge_search(v: &serde_json::Value) -> Vec<Project> {
             a.iter()
                 .filter_map(|h| {
                     let id = h.get("id")?.as_u64()?.to_string();
-                    let page = h.get("links").map(|l| s(l, "websiteUrl")).unwrap_or_default();
+                    let page = h
+                        .get("links")
+                        .map(|l| s(l, "websiteUrl"))
+                        .unwrap_or_default();
                     Some(Project {
                         provider: Some(Provider::CurseForge),
                         slug: clip(&s(h, "slug"), 100),
@@ -329,11 +403,24 @@ pub fn parse_curseforge_search(v: &serde_json::Value) -> Vec<Project> {
                             .and_then(|a| a.first())
                             .map(|a| clip(&s(a, "name"), 60))
                             .unwrap_or_default(),
-                        icon: h.get("logo").map(|l| https_img(&s(l, "thumbnailUrl"))).unwrap_or_default(),
-                        downloads: h.get("downloadCount").and_then(|d| d.as_f64()).unwrap_or(0.0) as u64,
-                        page: if page.starts_with("https://www.curseforge.com/") { page } else { format!("https://www.curseforge.com/minecraft/search?search={id}") },
+                        icon: h
+                            .get("logo")
+                            .map(|l| https_img(&s(l, "thumbnailUrl")))
+                            .unwrap_or_default(),
+                        downloads: h
+                            .get("downloadCount")
+                            .and_then(|d| d.as_f64())
+                            .unwrap_or(0.0) as u64,
+                        page: if page.starts_with("https://www.curseforge.com/") {
+                            page
+                        } else {
+                            format!("https://www.curseforge.com/minecraft/search?search={id}")
+                        },
                         // null = unbekannt → wie erlaubt behandeln; false = verboten
-                        distribution_allowed: h.get("allowModDistribution").and_then(|x| x.as_bool()).unwrap_or(true),
+                        distribution_allowed: h
+                            .get("allowModDistribution")
+                            .and_then(|x| x.as_bool())
+                            .unwrap_or(true),
                         id,
                     })
                 })
@@ -344,19 +431,27 @@ pub fn parse_curseforge_search(v: &serde_json::Value) -> Vec<Project> {
 
 pub fn search(provider: Provider, q: &Query, cf_key: &str) -> Result<Vec<Project>, String> {
     match provider {
-        Provider::Modrinth => Ok(parse_modrinth_search(&get_json(&modrinth_search_url(q), None)?)),
+        Provider::Modrinth => Ok(parse_modrinth_search(&get_json(
+            &modrinth_search_url(q),
+            None,
+        )?)),
         Provider::CurseForge => {
             if cf_key.trim().is_empty() {
                 return Err(crate::i18n::t("mc.err_no_key"));
             }
-            Ok(parse_curseforge_search(&get_json(&curseforge_search_url(q), Some(cf_key.trim()))?))
+            Ok(parse_curseforge_search(&get_json(
+                &curseforge_search_url(q),
+                Some(cf_key.trim()),
+            )?))
         }
     }
 }
 
 /// Minecraft-Versionen (nur Vollversionen) von Modrinth
 pub fn game_versions() -> Vec<String> {
-    let Ok(v) = get_json(&format!("{MODRINTH}/tag/game_version"), None) else { return Vec::new() };
+    let Ok(v) = get_json(&format!("{MODRINTH}/tag/game_version"), None) else {
+        return Vec::new();
+    };
     v.as_array()
         .map(|a| {
             a.iter()
@@ -378,7 +473,12 @@ fn modrinth_loaders(kind: Kind, loader: &str) -> Vec<String> {
         Kind::Mod if valid_loader(loader) => vec![loader.to_string()],
         Kind::Mod => Vec::new(),
         Kind::ResourcePack => vec!["minecraft".into()],
-        Kind::Shader => vec!["iris".into(), "optifine".into(), "canvas".into(), "vanilla".into()],
+        Kind::Shader => vec![
+            "iris".into(),
+            "optifine".into(),
+            "canvas".into(),
+            "vanilla".into(),
+        ],
         Kind::DataPack => vec!["datapack".into()],
     }
 }
@@ -386,7 +486,10 @@ fn modrinth_loaders(kind: Kind, loader: &str) -> Vec<String> {
 pub fn parse_modrinth_versions(v: &serde_json::Value) -> Option<FileRef> {
     let ver = v.as_array()?.first()?;
     let files = ver.get("files")?.as_array()?;
-    let f = files.iter().find(|f| f.get("primary").and_then(|p| p.as_bool()) == Some(true)).or_else(|| files.first())?;
+    let f = files
+        .iter()
+        .find(|f| f.get("primary").and_then(|p| p.as_bool()) == Some(true))
+        .or_else(|| files.first())?;
     let hashes = f.get("hashes");
     Some(FileRef {
         url: s(f, "url"),
@@ -413,7 +516,10 @@ pub fn parse_curseforge_files(v: &serde_json::Value) -> Option<FileRef> {
     let sha1 = f
         .get("hashes")
         .and_then(|h| h.as_array())
-        .and_then(|a| a.iter().find(|h| h.get("algo").and_then(|x| x.as_u64()) == Some(1)))
+        .and_then(|a| {
+            a.iter()
+                .find(|h| h.get("algo").and_then(|x| x.as_u64()) == Some(1))
+        })
         .map(|h| s(h, "value"))
         .unwrap_or_default();
     Some(FileRef {
@@ -428,14 +534,25 @@ pub fn parse_curseforge_files(v: &serde_json::Value) -> Option<FileRef> {
             .map(|d| {
                 d.iter()
                     .filter(|x| x.get("relationType").and_then(|r| r.as_u64()) == Some(3))
-                    .filter_map(|x| x.get("modId").and_then(|m| m.as_u64()).map(|m| m.to_string()))
+                    .filter_map(|x| {
+                        x.get("modId")
+                            .and_then(|m| m.as_u64())
+                            .map(|m| m.to_string())
+                    })
                     .collect()
             })
             .unwrap_or_default(),
     })
 }
 
-pub fn find_file(provider: Provider, project: &str, kind: Kind, game_version: &str, loader: &str, cf_key: &str) -> Result<FileRef, String> {
+pub fn find_file(
+    provider: Provider,
+    project: &str,
+    kind: Kind,
+    game_version: &str,
+    loader: &str,
+    cf_key: &str,
+) -> Result<FileRef, String> {
     let none = || crate::i18n::t("mc.err_no_file");
     match provider {
         Provider::Modrinth => {
@@ -445,11 +562,21 @@ pub fn find_file(provider: Provider, project: &str, kind: Kind, game_version: &s
             let mut url = format!("{MODRINTH}/project/{project}/version?");
             let loaders = modrinth_loaders(kind, loader);
             if !loaders.is_empty() {
-                let list = format!("[{}]", loaders.iter().map(|l| format!("\"{l}\"")).collect::<Vec<_>>().join(","));
+                let list = format!(
+                    "[{}]",
+                    loaders
+                        .iter()
+                        .map(|l| format!("\"{l}\""))
+                        .collect::<Vec<_>>()
+                        .join(",")
+                );
                 url.push_str(&format!("loaders={}&", crate::sys::url_encode(&list)));
             }
             if valid_version(game_version) {
-                url.push_str(&format!("game_versions={}", crate::sys::url_encode(&format!("[\"{game_version}\"]"))));
+                url.push_str(&format!(
+                    "game_versions={}",
+                    crate::sys::url_encode(&format!("[\"{game_version}\"]"))
+                ));
             }
             parse_modrinth_versions(&get_json(&url, None)?).ok_or_else(none)
         }
@@ -477,26 +604,43 @@ pub fn find_file(provider: Provider, project: &str, kind: Kind, game_version: &s
 
 /// SICHERHEIT: nur offizielle Download-Server
 pub fn allowed_download(url: &str) -> bool {
-    let Some(rest) = url.strip_prefix("https://") else { return false };
+    let Some(rest) = url.strip_prefix("https://") else {
+        return false;
+    };
     let host = rest.split(['/', '?', '#']).next().unwrap_or("");
     if host.contains('@') || host.contains(':') {
         return false;
     }
-    matches!(host, "cdn.modrinth.com" | "edge.forgecdn.net" | "mediafilez.forgecdn.net" | "media.forgecdn.net")
+    matches!(
+        host,
+        "cdn.modrinth.com" | "edge.forgecdn.net" | "mediafilez.forgecdn.net" | "media.forgecdn.net"
+    )
 }
 
 /// Einzelner Ordner-/Dateiname ohne Pfadteile
 pub fn safe_component(n: &str) -> bool {
-    !n.is_empty() && n.len() < 200 && n != "." && n != ".." && !n.contains(['/', '\\', ':', '\0']) && !n.starts_with('.')
+    !n.is_empty()
+        && n.len() < 200
+        && n != "."
+        && n != ".."
+        && !n.contains(['/', '\\', ':', '\0'])
+        && !n.starts_with('.')
 }
 
 /// Dateiname säubern; nur .jar und .zip
 pub fn clean_file_name(name: &str) -> Option<String> {
     let base = name.rsplit(['/', '\\']).next().unwrap_or("");
-    let clean: String = base.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '+' | ' ' | '(' | ')' | '[' | ']')).collect();
+    let clean: String = base
+        .chars()
+        .filter(|c| {
+            c.is_ascii_alphanumeric()
+                || matches!(c, '.' | '-' | '_' | '+' | ' ' | '(' | ')' | '[' | ']')
+        })
+        .collect();
     let clean = clean.trim().to_string();
     let lower = clean.to_lowercase();
-    (safe_component(&clean) && (lower.ends_with(".jar") || lower.ends_with(".zip"))).then_some(clean)
+    (safe_component(&clean) && (lower.ends_with(".jar") || lower.ends_with(".zip")))
+        .then_some(clean)
 }
 
 /// Prüfsumme kontrollieren (SHA-512 bevorzugt, sonst SHA-1). Ohne Prüfsumme kein Install.
@@ -518,11 +662,19 @@ fn download(f: &FileRef) -> Result<Vec<u8>, String> {
     if f.size > MAX_FILE {
         return Err(crate::i18n::t("mc.err_size"));
     }
-    let mut resp = agent().get(&f.url).call().map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
+    let mut resp = agent()
+        .get(&f.url)
+        .call()
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
     if resp.status().as_u16() >= 400 {
         return Err(format!("HTTP {}", resp.status().as_u16()));
     }
-    let data = resp.body_mut().with_config().limit(MAX_FILE).read_to_vec().map_err(|e| e.to_string())?;
+    let data = resp
+        .body_mut()
+        .with_config()
+        .limit(MAX_FILE)
+        .read_to_vec()
+        .map_err(|e| e.to_string())?;
     if !verify(&data, f) {
         return Err(crate::i18n::t("mc.err_hash"));
     }
@@ -540,16 +692,11 @@ pub fn dest_dir(game_dir: &Path, kind: Kind, world: &str) -> Option<PathBuf> {
     Some(game_dir.join(kind.folder()))
 }
 
-/// Datei sicher schreiben (erst .part, dann umbenennen)
+/// Datei sicher schreiben (Zwischendatei, dann umbenennen – nie halb geschrieben)
 fn write_into(dir: &Path, name: &str, data: &[u8]) -> Result<PathBuf, String> {
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let dest = dir.join(name);
-    let tmp = dir.join(format!("{name}.part"));
-    std::fs::write(&tmp, data).map_err(|e| e.to_string())?;
-    std::fs::rename(&tmp, &dest).map_err(|e| {
-        let _ = std::fs::remove_file(&tmp);
-        e.to_string()
-    })?;
+    crate::sys::write_atomic(&dest, data).map_err(|e| e.to_string())?;
     Ok(dest)
 }
 
@@ -581,7 +728,10 @@ fn records_path() -> PathBuf {
 type Records = std::collections::BTreeMap<String, std::collections::BTreeMap<String, Vec<String>>>;
 
 fn load_records() -> Records {
-    std::fs::read_to_string(records_path()).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+    std::fs::read_to_string(records_path())
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or_default()
 }
 
 /// Über den Launcher installierte Dateien merken (pro Zielordner)
@@ -595,13 +745,17 @@ pub fn remember(dest: &Path, records: &[(String, String)]) {
         }
     }
     if let Ok(text) = serde_json::to_string(&all) {
-        let _ = crate::sys::write_private(&records_path(), text.as_bytes());
+        let _ = crate::sys::write_atomic(&records_path(), text.as_bytes());
     }
 }
 
 /// CurseForge-Fingerabdruck: MurmurHash2 (Seed 1) über die Datei ohne Leerraum-Bytes
 pub fn cf_fingerprint(data: &[u8]) -> u32 {
-    let bytes: Vec<u8> = data.iter().copied().filter(|b| !matches!(b, 9 | 10 | 13 | 32)).collect();
+    let bytes: Vec<u8> = data
+        .iter()
+        .copied()
+        .filter(|b| !matches!(b, 9 | 10 | 13 | 32))
+        .collect();
     const M: u32 = 0x5bd1_e995;
     let len = bytes.len() as u32;
     let mut h: u32 = 1 ^ len;
@@ -628,18 +782,33 @@ pub fn cf_fingerprint(data: &[u8]) -> u32 {
 
 /// Projekte, die im Zielordner schon liegen. Erkennt auch Dateien, die nicht über den Launcher
 /// kamen: Modrinth über SHA-1, CurseForge (mit Schlüssel) über den Fingerabdruck.
-pub fn installed_projects(game_dir: &Path, kind: Kind, world: &str, cf_key: &str) -> std::collections::BTreeSet<String> {
+pub fn installed_projects(
+    game_dir: &Path,
+    kind: Kind,
+    world: &str,
+    cf_key: &str,
+) -> std::collections::BTreeSet<String> {
     let mut out = std::collections::BTreeSet::new();
-    let Some(dir) = dest_dir(game_dir, kind, world) else { return out };
+    let Some(dir) = dest_dir(game_dir, kind, world) else {
+        return out;
+    };
     let files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .into_iter()
         .flatten()
         .flatten()
         .map(|e| e.path())
-        .filter(|p| p.is_file() && p.extension().map(|x| x == "jar" || x == "zip").unwrap_or(false))
+        .filter(|p| {
+            p.is_file()
+                && p.extension()
+                    .map(|x| x == "jar" || x == "zip")
+                    .unwrap_or(false)
+        })
         .take(400)
         .collect();
-    let names: std::collections::BTreeSet<String> = files.iter().filter_map(|p| p.file_name().map(|n| n.to_string_lossy().to_string())).collect();
+    let names: std::collections::BTreeSet<String> = files
+        .iter()
+        .filter_map(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
+        .collect();
     // 1. Eigene Liste (über den Launcher installiert und Datei noch da)
     if let Some(entry) = load_records().get(&dir.to_string_lossy().to_string()) {
         for (key, fs) in entry {
@@ -655,7 +824,10 @@ pub fn installed_projects(game_dir: &Path, kind: Kind, world: &str, cf_key: &str
     let mut sha1s = Vec::new();
     let mut fps = Vec::new();
     for p in &files {
-        if std::fs::metadata(p).map(|m| m.len() > MAX_FILE).unwrap_or(true) {
+        if std::fs::metadata(p)
+            .map(|m| m.len() > MAX_FILE)
+            .unwrap_or(true)
+        {
             continue;
         }
         let Ok(data) = std::fs::read(p) else { continue };
@@ -664,7 +836,11 @@ pub fn installed_projects(game_dir: &Path, kind: Kind, world: &str, cf_key: &str
             fps.push(cf_fingerprint(&data));
         }
     }
-    if let Ok(v) = post_json(&format!("{MODRINTH}/version_files"), &serde_json::json!({ "hashes": sha1s, "algorithm": "sha1" }), None) {
+    if let Ok(v) = post_json(
+        &format!("{MODRINTH}/version_files"),
+        &serde_json::json!({ "hashes": sha1s, "algorithm": "sha1" }),
+        None,
+    ) {
         if let Some(map) = v.as_object() {
             for ver in map.values() {
                 let id = s(ver, "project_id");
@@ -675,8 +851,17 @@ pub fn installed_projects(game_dir: &Path, kind: Kind, world: &str, cf_key: &str
         }
     }
     if !fps.is_empty() {
-        if let Ok(v) = post_json(&format!("{CURSEFORGE}/fingerprints/{MC_GAME_ID}"), &serde_json::json!({ "fingerprints": fps }), Some(cf_key.trim())) {
-            for m in v.pointer("/data/exactMatches").and_then(|x| x.as_array()).into_iter().flatten() {
+        if let Ok(v) = post_json(
+            &format!("{CURSEFORGE}/fingerprints/{MC_GAME_ID}"),
+            &serde_json::json!({ "fingerprints": fps }),
+            Some(cf_key.trim()),
+        ) {
+            for m in v
+                .pointer("/data/exactMatches")
+                .and_then(|x| x.as_array())
+                .into_iter()
+                .flatten()
+            {
                 if let Some(id) = m.get("id").and_then(|x| x.as_u64()) {
                     out.insert(project_key(Provider::CurseForge, &id.to_string()));
                 }
@@ -699,7 +884,8 @@ pub struct InstallRequest<'a> {
 
 /// Projekt + benötigte Abhängigkeiten installieren (max. 20 Dateien)
 pub fn install(r: &InstallRequest) -> Result<Installed, String> {
-    let dir = dest_dir(r.game_dir, r.kind, r.world).ok_or_else(|| crate::i18n::t("mc.err_world"))?;
+    let dir =
+        dest_dir(r.game_dir, r.kind, r.world).ok_or_else(|| crate::i18n::t("mc.err_world"))?;
     let mut done = Installed::default();
     let mut queue: Vec<(String, Kind)> = vec![(r.project.to_string(), r.kind)];
     let mut seen: Vec<String> = Vec::new();
@@ -709,7 +895,14 @@ pub fn install(r: &InstallRequest) -> Result<Installed, String> {
         }
         seen.push(project.clone());
         let is_main = project == r.project;
-        let f = match find_file(r.provider, &project, kind, r.game_version, r.loader, r.cf_key) {
+        let f = match find_file(
+            r.provider,
+            &project,
+            kind,
+            r.game_version,
+            r.loader,
+            r.cf_key,
+        ) {
             Ok(f) => f,
             Err(e) if is_main => return Err(e),
             Err(_) => {
@@ -731,7 +924,11 @@ pub fn install(r: &InstallRequest) -> Result<Installed, String> {
             }
             continue;
         };
-        let target = if kind == r.kind { dir.clone() } else { r.game_dir.join(kind.folder()) };
+        let target = if kind == r.kind {
+            dir.clone()
+        } else {
+            r.game_dir.join(kind.folder())
+        };
         // Schon da (gleiche Datei)? Dann nicht erneut laden
         if !target.join(&name).is_file() {
             let data = match download(&f) {
@@ -745,9 +942,13 @@ pub fn install(r: &InstallRequest) -> Result<Installed, String> {
             write_into(&target, &name, &data)?;
         }
         if kind == r.kind {
-            done.records.push((project_key(r.provider, &project), name.clone()));
+            done.records
+                .push((project_key(r.provider, &project), name.clone()));
         } else {
-            remember(&target, &[(project_key(r.provider, &project), name.clone())]);
+            remember(
+                &target,
+                &[(project_key(r.provider, &project), name.clone())],
+            );
         }
         done.files.push(name);
         // Abhängigkeiten sind immer Mods
@@ -780,9 +981,17 @@ pub fn fabric_installed(game_dir: &Path, game_version: &str) -> bool {
 }
 
 /// Profil im launcher_profiles.json ergänzen (alles andere bleibt unverändert)
-pub fn add_launcher_profile(json: &str, version_id: &str, name: &str, now_iso: &str) -> Option<String> {
+pub fn add_launcher_profile(
+    json: &str,
+    version_id: &str,
+    name: &str,
+    now_iso: &str,
+) -> Option<String> {
     let mut v: serde_json::Value = serde_json::from_str(json).ok()?;
-    let profiles = v.as_object_mut()?.entry("profiles").or_insert_with(|| serde_json::json!({}));
+    let profiles = v
+        .as_object_mut()?
+        .entry("profiles")
+        .or_insert_with(|| serde_json::json!({}));
     let map = profiles.as_object_mut()?;
     map.insert(
         name.to_string(),
@@ -802,15 +1011,32 @@ pub fn install_fabric(game_dir: &Path, game_version: &str) -> Result<String, Str
     if !valid_version(game_version) {
         return Err(crate::i18n::t("mc.err_version"));
     }
-    let loaders = get_json(&format!("https://meta.fabricmc.net/v2/versions/loader/{game_version}"), None)?;
+    let loaders = get_json(
+        &format!("https://meta.fabricmc.net/v2/versions/loader/{game_version}"),
+        None,
+    )?;
     let loader = loaders
         .as_array()
-        .and_then(|a| a.iter().find(|l| l.get("loader").and_then(|x| x.get("stable")).and_then(|s| s.as_bool()) == Some(true)).or_else(|| a.first()))
+        .and_then(|a| {
+            a.iter()
+                .find(|l| {
+                    l.get("loader")
+                        .and_then(|x| x.get("stable"))
+                        .and_then(|s| s.as_bool())
+                        == Some(true)
+                })
+                .or_else(|| a.first())
+        })
         .and_then(|l| l.get("loader"))
         .map(|l| s(l, "version"))
         .filter(|v| valid_version(v))
         .ok_or_else(|| crate::i18n::t("mc.err_version"))?;
-    let profile = get_json(&format!("https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader}/profile/json"), None)?;
+    let profile = get_json(
+        &format!(
+            "https://meta.fabricmc.net/v2/versions/loader/{game_version}/{loader}/profile/json"
+        ),
+        None,
+    )?;
     let id = s(&profile, "id");
     if !safe_component(&id) || !id.starts_with("fabric-loader-") {
         return Err(crate::i18n::t("mc.err_version"));
@@ -824,10 +1050,17 @@ pub fn install_fabric(game_dir: &Path, game_version: &str) -> Result<String, Str
     }
     let now = iso_now();
     let name = fabric_profile_name(game_version);
-    for file in ["launcher_profiles.json", "launcher_profiles_microsoft_store.json"] {
+    for file in [
+        "launcher_profiles.json",
+        "launcher_profiles_microsoft_store.json",
+    ] {
         let p = game_dir.join(file);
-        let Ok(json) = std::fs::read_to_string(&p) else { continue };
-        let Some(new) = add_launcher_profile(&json, &id, &name, &now) else { continue };
+        let Ok(json) = std::fs::read_to_string(&p) else {
+            continue;
+        };
+        let Some(new) = add_launcher_profile(&json, &id, &name, &now) else {
+            continue;
+        };
         // Sicherung, dann ersetzen
         let _ = std::fs::copy(&p, game_dir.join(format!("{file}.maz-backup")));
         write_into(game_dir, file, new.as_bytes())?;
@@ -844,13 +1077,20 @@ fn iso_now() -> String {
 /// weg, ein mitkopiertes „x-api-key:“ entfernen. None = sieht nicht wie ein Schlüssel aus.
 pub fn clean_cf_key(raw: &str) -> Option<String> {
     let mut k: String = raw.chars().filter(|c| !c.is_whitespace()).collect();
-    for prefix in ["x-api-key:", "X-Api-Key:", "x-api-key=", "apikey:", "apikey="] {
+    for prefix in [
+        "x-api-key:",
+        "X-Api-Key:",
+        "x-api-key=",
+        "apikey:",
+        "apikey=",
+    ] {
         if let Some(rest) = k.strip_prefix(prefix) {
             k = rest.to_string();
         }
     }
     let k = k.trim_matches(|c| matches!(c, '"' | '\'' | '`' | '“' | '”' | '„'));
-    (k.len() >= 20 && k.len() < 200 && k.chars().all(|c| c.is_ascii_graphic())).then(|| k.to_string())
+    (k.len() >= 20 && k.len() < 200 && k.chars().all(|c| c.is_ascii_graphic()))
+        .then(|| k.to_string())
 }
 
 #[cfg(test)]
@@ -871,20 +1111,41 @@ mod tests {
     fn cf_key_cleaning() {
         let real = "$2a$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV12";
         assert_eq!(clean_cf_key(real).as_deref(), Some(real));
-        assert_eq!(clean_cf_key(&format!("  \"{real}\"\n")).as_deref(), Some(real));
-        assert_eq!(clean_cf_key(&format!("x-api-key: {real}")).as_deref(), Some(real));
-        assert_eq!(clean_cf_key(&format!("{}\n{}", &real[..20], &real[20..])).as_deref(), Some(real));
+        assert_eq!(
+            clean_cf_key(&format!("  \"{real}\"\n")).as_deref(),
+            Some(real)
+        );
+        assert_eq!(
+            clean_cf_key(&format!("x-api-key: {real}")).as_deref(),
+            Some(real)
+        );
+        assert_eq!(
+            clean_cf_key(&format!("{}\n{}", &real[..20], &real[20..])).as_deref(),
+            Some(real)
+        );
         assert!(clean_cf_key("zu kurz").is_none());
         assert!(clean_cf_key("äöüäöüäöüäöüäöüäöüäöüäöü").is_none());
     }
 
     #[test]
     fn urls_and_parsing() {
-        let q = Query { text: "sodium", kind: Kind::Mod, game_version: "1.21.4", loader: "fabric", offset: 0 };
+        let q = Query {
+            text: "sodium",
+            kind: Kind::Mod,
+            game_version: "1.21.4",
+            loader: "fabric",
+            offset: 0,
+        };
         let u = modrinth_search_url(&q);
         assert!(u.starts_with("https://api.modrinth.com/v2/search?query=sodium"));
         assert!(u.contains("versions%3A1.21.4"));
-        let bad = Query { text: "x", kind: Kind::Mod, game_version: "1.21\"]],[\"x", loader: "evil", offset: 0 };
+        let bad = Query {
+            text: "x",
+            kind: Kind::Mod,
+            game_version: "1.21\"]],[\"x",
+            loader: "evil",
+            offset: 0,
+        };
         let u2 = modrinth_search_url(&bad);
         assert!(!u2.contains("evil") && !u2.contains("versions"));
         let cf = curseforge_search_url(&q);
@@ -908,18 +1169,32 @@ mod tests {
     #[test]
     fn safety() {
         assert!(allowed_download("https://cdn.modrinth.com/data/x/y.jar"));
-        assert!(allowed_download("https://edge.forgecdn.net/files/1/2/a.jar"));
+        assert!(allowed_download(
+            "https://edge.forgecdn.net/files/1/2/a.jar"
+        ));
         assert!(!allowed_download("https://evil.com/cdn.modrinth.com/a.jar"));
         assert!(!allowed_download("https://cdn.modrinth.com.evil.com/a.jar"));
         assert!(!allowed_download("http://cdn.modrinth.com/a.jar"));
         assert!(!allowed_download("https://user@cdn.modrinth.com/a.jar"));
-        assert_eq!(clean_file_name("../../evil.jar").as_deref(), Some("evil.jar"));
-        assert_eq!(clean_file_name("C:\\x\\mod.zip").as_deref(), Some("mod.zip"));
+        assert_eq!(
+            clean_file_name("../../evil.jar").as_deref(),
+            Some("evil.jar")
+        );
+        assert_eq!(
+            clean_file_name("C:\\x\\mod.zip").as_deref(),
+            Some("mod.zip")
+        );
         assert_eq!(clean_file_name("run.exe"), None);
         assert_eq!(clean_file_name(".jar"), None);
         assert!(dest_dir(Path::new("/g"), Kind::DataPack, "../x").is_none());
-        assert_eq!(dest_dir(Path::new("/g"), Kind::DataPack, "Welt").unwrap(), PathBuf::from("/g/saves/Welt/datapacks"));
-        let f = FileRef { sha1: crate::util::hex(&crate::util::sha1(b"abc")), ..Default::default() };
+        assert_eq!(
+            dest_dir(Path::new("/g"), Kind::DataPack, "Welt").unwrap(),
+            PathBuf::from("/g/saves/Welt/datapacks")
+        );
+        let f = FileRef {
+            sha1: crate::util::hex(&crate::util::sha1(b"abc")),
+            ..Default::default()
+        };
         assert!(verify(b"abc", &f));
         assert!(!verify(b"abd", &f));
         assert!(!verify(b"abc", &FileRef::default()));
@@ -928,10 +1203,19 @@ mod tests {
     #[test]
     fn launcher_profiles() {
         let j = r#"{"profiles":{"a":{"name":"Latest"}},"settings":{"x":1}}"#;
-        let out = add_launcher_profile(j, "fabric-loader-0.16.9-1.21.4", "fabric-loader-1.21.4", "2026-01-01T00:00:00.000Z").unwrap();
+        let out = add_launcher_profile(
+            j,
+            "fabric-loader-0.16.9-1.21.4",
+            "fabric-loader-1.21.4",
+            "2026-01-01T00:00:00.000Z",
+        )
+        .unwrap();
         let v: serde_json::Value = serde_json::from_str(&out).unwrap();
         assert_eq!(v["profiles"]["a"]["name"], "Latest");
-        assert_eq!(v["profiles"]["fabric-loader-1.21.4"]["lastVersionId"], "fabric-loader-0.16.9-1.21.4");
+        assert_eq!(
+            v["profiles"]["fabric-loader-1.21.4"]["lastVersionId"],
+            "fabric-loader-0.16.9-1.21.4"
+        );
         assert_eq!(v["settings"]["x"], 1);
         assert!(add_launcher_profile("kaputt", "a", "b", "c").is_none());
     }

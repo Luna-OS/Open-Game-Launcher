@@ -55,7 +55,10 @@ pub fn place_id_from(input: &str) -> Option<u64> {
 fn windows_player() -> Option<PathBuf> {
     let base = crate::sys::env_path("LOCALAPPDATA")?;
     let mut best: Option<(std::time::SystemTime, PathBuf)> = None;
-    for root in [base.join("Roblox").join("Versions"), base.join("Bloxstrap").join("Versions")] {
+    for root in [
+        base.join("Roblox").join("Versions"),
+        base.join("Bloxstrap").join("Versions"),
+    ] {
         for e in std::fs::read_dir(&root).into_iter().flatten().flatten() {
             let exe = e.path().join("RobloxPlayerBeta.exe");
             if let Ok(m) = std::fs::metadata(&exe) {
@@ -77,7 +80,9 @@ fn store_app() -> Option<crate::appx::Package> {
 
 #[cfg(windows)]
 fn bloxstrap() -> Option<PathBuf> {
-    let p = crate::sys::env_path("LOCALAPPDATA")?.join("Bloxstrap").join("Bloxstrap.exe");
+    let p = crate::sys::env_path("LOCALAPPDATA")?
+        .join("Bloxstrap")
+        .join("Bloxstrap.exe");
     p.exists().then_some(p)
 }
 
@@ -126,7 +131,11 @@ fn location() -> Option<String> {
     #[cfg(windows)]
     {
         windows_player()
-            .and_then(|p| p.parent().and_then(|v| v.parent()).map(|v| v.to_string_lossy().to_string()))
+            .and_then(|p| {
+                p.parent()
+                    .and_then(|v| v.parent())
+                    .map(|v| v.to_string_lossy().to_string())
+            })
             .or_else(|| bloxstrap().map(|p| p.to_string_lossy().to_string()))
             .or_else(|| store_app().map(|p| format!("Microsoft Store: {}", p.full_name)))
     }
@@ -147,7 +156,11 @@ fn location() -> Option<String> {
 /// Roblox-App + Experiences als Bibliothekseinträge
 pub fn scan(list: &[RobloxGame]) -> (Vec<Game>, StoreStatus) {
     let ok = installed();
-    let mut status = StoreStatus { found: ok, path: location(), ..Default::default() };
+    let mut status = StoreStatus {
+        found: ok,
+        path: location(),
+        ..Default::default()
+    };
     if !ok {
         status.note = Some(crate::i18n::t("roblox.not_found"));
     }
@@ -180,7 +193,11 @@ pub fn scan(list: &[RobloxGame]) -> (Vec<Game>, StoreStatus) {
         }
         games.push(Game {
             id: format!("roblox:{}", r.place_id),
-            name: if r.name.trim().is_empty() { format!("Roblox {}", r.place_id) } else { r.name.clone() },
+            name: if r.name.trim().is_empty() {
+                format!("Roblox {}", r.place_id)
+            } else {
+                r.name.clone()
+            },
             source: Source::Roblox,
             installed: ok,
             install_dir: None,
@@ -222,13 +239,16 @@ pub fn launch(place: Option<u64>) -> Result<(), Problem> {
     #[cfg(not(target_os = "linux"))]
     {
         if let Some(p) = place {
-            return crate::sys::open_url(&experience_uri(p)).map_err(|c| fail(format!("open roblox:// failed ({c})")));
+            return crate::sys::open_url(&experience_uri(p))
+                .map_err(|c| fail(format!("open roblox:// failed ({c})")));
         }
         #[cfg(windows)]
         {
             // Die Roblox-App öffnen (nicht die Webseite!):
             // 1. offizieller Link "roblox-player:1+launchmode:app" (normaler Installer und Bloxstrap)
-            if crate::sys::protocol_registered("roblox-player") && crate::sys::open_url("roblox-player:1+launchmode:app").is_ok() {
+            if crate::sys::protocol_registered("roblox-player")
+                && crate::sys::open_url("roblox-player:1+launchmode:app").is_ok()
+            {
                 return Ok(());
             }
             // 2. Roblox aus dem Microsoft Store
@@ -246,7 +266,10 @@ pub fn launch(place: Option<u64>) -> Result<(), Problem> {
                     .map_err(|e| fail(e.to_string()));
             }
             if let Some(b) = bloxstrap() {
-                return std::process::Command::new(b).spawn().map(|_| ()).map_err(|e| fail(e.to_string()));
+                return std::process::Command::new(b)
+                    .spawn()
+                    .map(|_| ())
+                    .map_err(|e| fail(e.to_string()));
             }
             Err(Problem::roblox_missing())
         }
@@ -276,14 +299,23 @@ fn get_json(agent: &ureq::Agent, url: &str) -> Option<serde_json::Value> {
 
 /// Lädt Name, Icon und Vorschaubild. Fehlt etwas, bleibt das Feld leer.
 pub fn fetch_info(place_id: u64) -> RobloxGame {
-    let mut g = RobloxGame { place_id, added: crate::sys::now_secs(), ..Default::default() };
+    let mut g = RobloxGame {
+        place_id,
+        added: crate::sys::now_secs(),
+        ..Default::default()
+    };
     let agent = crate::steam::http_agent();
-    let Some(universe) = get_json(&agent, &format!("https://apis.roblox.com/universes/v1/places/{place_id}/universe"))
-        .and_then(|v| v.get("universeId").and_then(|u| u.as_u64()))
-    else {
+    let Some(universe) = get_json(
+        &agent,
+        &format!("https://apis.roblox.com/universes/v1/places/{place_id}/universe"),
+    )
+    .and_then(|v| v.get("universeId").and_then(|u| u.as_u64())) else {
         return g;
     };
-    if let Some(v) = get_json(&agent, &format!("https://games.roblox.com/v1/games?universeIds={universe}")) {
+    if let Some(v) = get_json(
+        &agent,
+        &format!("https://games.roblox.com/v1/games?universeIds={universe}"),
+    ) {
         if let Some(name) = v.pointer("/data/0/name").and_then(|n| n.as_str()) {
             g.name = name.chars().take(80).collect();
         }
@@ -313,8 +345,14 @@ mod tests {
 
     #[test]
     fn place_ids() {
-        assert_eq!(place_id_from("https://www.roblox.com/games/920587237/Adopt-Me"), Some(920587237));
-        assert_eq!(place_id_from("roblox://experiences/start?placeId=606849621"), Some(606849621));
+        assert_eq!(
+            place_id_from("https://www.roblox.com/games/920587237/Adopt-Me"),
+            Some(920587237)
+        );
+        assert_eq!(
+            place_id_from("roblox://experiences/start?placeId=606849621"),
+            Some(606849621)
+        );
         assert_eq!(place_id_from(" 2753915549 "), Some(2753915549));
         assert_eq!(place_id_from("hallo"), None);
         assert_eq!(place_id_from("0"), None);

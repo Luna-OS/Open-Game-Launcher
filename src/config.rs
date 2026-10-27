@@ -30,7 +30,11 @@ pub fn load() -> Settings {
 pub fn parse(text: &str) -> Option<Settings> {
     let mut s = serde_json::from_str::<Settings>(text).ok()?;
     // Alte deutsche Standardliste → übersetzte Standardliste verwenden
-    if s.checklist.iter().map(|x| x.as_str()).eq(crate::model::OLD_GERMAN_CHECKLIST.iter().copied()) {
+    if s.checklist
+        .iter()
+        .map(|x| x.as_str())
+        .eq(crate::model::OLD_GERMAN_CHECKLIST.iter().copied())
+    {
         s.checklist.clear();
     }
     // Unsinnige Werte aus Handarbeit an der Datei abfangen
@@ -50,12 +54,9 @@ pub fn parse(text: &str) -> Option<Settings> {
 pub fn save(settings: &Settings) -> std::io::Result<()> {
     let dir = sys::roaming_dir();
     fs::create_dir_all(&dir)?;
-    let json = serde_json::to_string_pretty(settings)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let json = serde_json::to_string_pretty(settings).map_err(std::io::Error::other)?;
     // Erst in eine Temp-Datei schreiben, dann umbenennen → nie halb geschriebene Datei.
-    let tmp = dir.join("config.json.tmp");
-    sys::write_private(&tmp, json.as_bytes())?;
-    fs::rename(&tmp, config_path())
+    sys::write_atomic(&config_path(), json.as_bytes())
 }
 
 /// Kleine eindeutige ID für eigene Spiele.
@@ -107,17 +108,32 @@ mod tests {
 
     #[test]
     fn roundtrip_new_fields() {
-        let mut s = Settings::default();
-        s.stores_off = vec!["ea".into(), "ea".into()];
-        s.tags.insert("steam:570".into(), vec!["Koop".into(), " ".into()]);
-        s.collections.push(crate::model::Collection { id: "c1".into(), name: "Mit Freunden".into(), games: vec!["steam:570".into()] });
-        s.emulators.push(crate::model::Emulator { id: "e1".into(), name: "Dolphin".into(), extensions: vec!["iso".into()], ..Default::default() });
+        let mut s = Settings {
+            stores_off: vec!["ea".into(), "ea".into()],
+            ..Default::default()
+        };
+        s.tags
+            .insert("steam:570".into(), vec!["Koop".into(), " ".into()]);
+        s.collections.push(crate::model::Collection {
+            id: "c1".into(),
+            name: "Mit Freunden".into(),
+            games: vec!["steam:570".into()],
+        });
+        s.emulators.push(crate::model::Emulator {
+            id: "e1".into(),
+            name: "Dolphin".into(),
+            extensions: vec!["iso".into()],
+            ..Default::default()
+        });
         s.playtime_local.insert("gog:1".into(), 42);
         s.card_size = 9;
         let back = parse(&serde_json::to_string(&s).unwrap()).unwrap();
         assert_eq!(back.stores_off, vec!["ea"]);
         assert!(!back.store_on(crate::model::Source::Ea));
-        assert_eq!(back.tags.get("steam:570").unwrap(), &vec!["Koop".to_string()]);
+        assert_eq!(
+            back.tags.get("steam:570").unwrap(),
+            &vec!["Koop".to_string()]
+        );
         assert!(back.in_collection("c1", "steam:570"));
         assert_eq!(back.emulators[0].extensions, vec!["iso"]);
         assert_eq!(back.playtime_local.get("gog:1"), Some(&42));

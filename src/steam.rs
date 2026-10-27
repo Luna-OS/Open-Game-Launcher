@@ -12,10 +12,15 @@ use std::path::{Path, PathBuf};
 const CDN: &str = "https://cdn.cloudflare.steamstatic.com/steam/apps";
 
 /// AppIDs, die keine Spiele sind (Redistributables, Proton, Laufzeiten …)
-const NOT_GAMES: &[u32] = &[228980, 1070560, 1391110, 1628350, 1493710, 1826330, 1161040, 1580130, 961940, 1887720, 2180100, 250820, 365670, 223850];
+const NOT_GAMES: &[u32] = &[
+    228980, 1070560, 1391110, 1628350, 1493710, 1826330, 1161040, 1580130, 961940, 1887720,
+    2180100, 250820, 365670, 223850,
+];
 
 pub fn find_steam_root() -> Option<PathBuf> {
-    let p = steam_roots().into_iter().find(|p| p.join("steamapps").exists())?;
+    let p = steam_roots()
+        .into_iter()
+        .find(|p| p.join("steamapps").exists())?;
     // Linux: ~/.steam/steam ist meist nur ein Verweis → echten Pfad nehmen (keine doppelten Ordner)
     if cfg!(windows) {
         Some(p)
@@ -30,9 +35,21 @@ fn steam_roots() -> Vec<PathBuf> {
     #[cfg(windows)]
     {
         for c in [
-            sys::reg_str(sys::Hive::CurrentUser, "Software\\Valve\\Steam", "SteamPath"),
-            sys::reg_str(sys::Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\Valve\\Steam", "InstallPath"),
-            sys::reg_str(sys::Hive::LocalMachine, "SOFTWARE\\Valve\\Steam", "InstallPath"),
+            sys::reg_str(
+                sys::Hive::CurrentUser,
+                "Software\\Valve\\Steam",
+                "SteamPath",
+            ),
+            sys::reg_str(
+                sys::Hive::LocalMachine,
+                "SOFTWARE\\WOW6432Node\\Valve\\Steam",
+                "InstallPath",
+            ),
+            sys::reg_str(
+                sys::Hive::LocalMachine,
+                "SOFTWARE\\Valve\\Steam",
+                "InstallPath",
+            ),
         ]
         .into_iter()
         .flatten()
@@ -47,7 +64,12 @@ fn steam_roots() -> Vec<PathBuf> {
     }
     #[cfg(target_os = "macos")]
     {
-        out.push(sys::home_dir().join("Library").join("Application Support").join("Steam"));
+        out.push(
+            sys::home_dir()
+                .join("Library")
+                .join("Application Support")
+                .join("Steam"),
+        );
     }
     #[cfg(not(any(windows, target_os = "macos")))]
     {
@@ -65,10 +87,17 @@ fn steam_roots() -> Vec<PathBuf> {
 /// Alle Steam-Bibliotheksordner (C:\…\Steam, D:\SteamLibrary, …)
 pub fn library_folders(root: &Path) -> Vec<PathBuf> {
     let mut out = vec![root.to_path_buf()];
-    for file in [root.join("steamapps").join("libraryfolders.vdf"), root.join("config").join("libraryfolders.vdf")] {
-        let Ok(text) = fs::read_to_string(&file) else { continue };
+    for file in [
+        root.join("steamapps").join("libraryfolders.vdf"),
+        root.join("config").join("libraryfolders.vdf"),
+    ] {
+        let Ok(text) = fs::read_to_string(&file) else {
+            continue;
+        };
         let v = vdf::parse(&text);
-        let Some(lf) = v.get("libraryfolders") else { continue };
+        let Some(lf) = v.get("libraryfolders") else {
+            continue;
+        };
         for (key, entry) in lf.entries() {
             let path = match entry {
                 vdf::Vdf::Obj(_) => entry.str("path").map(|s| s.to_string()),
@@ -137,7 +166,11 @@ pub fn art_for(root: Option<&Path>, appid: u32) -> Art {
             }
             None
         };
-        if let Some(u) = pick(&["library_600x900_2x.jpg", "library_600x900.jpg", "library_capsule.jpg"]) {
+        if let Some(u) = pick(&[
+            "library_600x900_2x.jpg",
+            "library_600x900.jpg",
+            "library_capsule.jpg",
+        ]) {
             art.cover.push(u);
         }
         if let Some(u) = pick(&["library_hero.jpg", "library_hero_2x.jpg"]) {
@@ -164,7 +197,8 @@ pub fn art_for(root: Option<&Path>, appid: u32) -> Art {
             }
         }
     }
-    art.cover.push(format!("{CDN}/{appid}/library_600x900_2x.jpg"));
+    art.cover
+        .push(format!("{CDN}/{appid}/library_600x900_2x.jpg"));
     art.cover.push(format!("{CDN}/{appid}/library_600x900.jpg"));
     art.hero.push(format!("{CDN}/{appid}/library_hero.jpg"));
     art.logo.push(format!("{CDN}/{appid}/logo.png"));
@@ -187,7 +221,11 @@ pub fn scan(api_key: &str, steam_id_setting: &str, show_uninstalled: bool) -> St
     let mut status = StoreStatus::default();
     let Some(root) = find_steam_root() else {
         status.note = Some(crate::i18n::t("store.steam_not_found"));
-        return SteamScan { games: Vec::new(), status, warning: None };
+        return SteamScan {
+            games: Vec::new(),
+            status,
+            warning: None,
+        };
     };
     status.found = true;
     status.path = Some(root.to_string_lossy().to_string());
@@ -200,17 +238,29 @@ pub fn scan(api_key: &str, steam_id_setting: &str, show_uninstalled: bool) -> St
     let mut games: Vec<Game> = Vec::new();
     for lib in library_folders(&root) {
         let apps = lib.join("steamapps");
-        let Ok(rd) = fs::read_dir(&apps) else { continue };
+        let Ok(rd) = fs::read_dir(&apps) else {
+            continue;
+        };
         for e in rd.flatten() {
             let p = e.path();
-            let fname = p.file_name().and_then(|s| s.to_str()).unwrap_or("").to_string();
+            let fname = p
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string();
             if !(fname.starts_with("appmanifest_") && fname.ends_with(".acf")) {
                 continue;
             }
-            let Ok(text) = fs::read_to_string(&p) else { continue };
+            let Ok(text) = fs::read_to_string(&p) else {
+                continue;
+            };
             let v = vdf::parse(&text);
-            let Some(st) = v.get("AppState") else { continue };
-            let Some(appid) = st.str("appid").and_then(|s| s.parse::<u32>().ok()) else { continue };
+            let Some(st) = v.get("AppState") else {
+                continue;
+            };
+            let Some(appid) = st.str("appid").and_then(|s| s.parse::<u32>().ok()) else {
+                continue;
+            };
             if NOT_GAMES.contains(&appid) || games.iter().any(|g| g.steam_appid == Some(appid)) {
                 continue;
             }
@@ -225,8 +275,12 @@ pub fn scan(api_key: &str, steam_id_setting: &str, show_uninstalled: bool) -> St
             {
                 continue;
             }
+            // Leerer/unsinniger Ordnername würde auf "common" selbst zeigen → jedes Steam-Spiel
+            // würde dann als dieses Spiel gezählt (Spielzeit, Absturz-Erkennung)
             let install_dir = st
                 .str("installdir")
+                .map(str::trim)
+                .filter(|d| !d.is_empty() && !d.contains("..") && !Path::new(d).is_absolute())
                 .map(|d| apps.join("common").join(d).to_string_lossy().to_string());
             let size = st.str("SizeOnDisk").and_then(|s| s.parse::<u64>().ok());
             games.push(Game {
@@ -331,7 +385,11 @@ pub fn scan(api_key: &str, steam_id_setting: &str, show_uninstalled: bool) -> St
         status.owned = owned;
     }
 
-    SteamScan { games, status, warning }
+    SteamScan {
+        games,
+        status,
+        warning,
+    }
 }
 
 /// Spiele der Steam-Bibliothek aus lokalen Dateien: (AppID, Name, Spielzeit in Minuten).
@@ -351,8 +409,15 @@ fn local_library(root: &Path, steam_id64: Option<&str>) -> Vec<(u32, String, u64
     }
 
     // 2) Alle jemals gestarteten Spiele + Spielzeit
-    if let Some(account) = steam_id64.and_then(|s| s.parse::<u64>().ok()).map(|v| v & 0xFFFF_FFFF) {
-        let cfg = root.join("userdata").join(account.to_string()).join("config").join("localconfig.vdf");
+    if let Some(account) = steam_id64
+        .and_then(|s| s.parse::<u64>().ok())
+        .map(|v| v & 0xFFFF_FFFF)
+    {
+        let cfg = root
+            .join("userdata")
+            .join(account.to_string())
+            .join("config")
+            .join("localconfig.vdf");
         if let Ok(text) = fs::read_to_string(cfg) {
             let v = vdf::parse(&text);
             let apps = v
@@ -364,7 +429,10 @@ fn local_library(root: &Path, steam_id64: Option<&str>) -> Vec<(u32, String, u64
             if let Some(apps) = apps {
                 for (k, app) in apps.entries() {
                     if let Ok(id) = k.parse::<u32>() {
-                        let pt = app.str("Playtime").and_then(|p| p.parse::<u64>().ok()).unwrap_or(0);
+                        let pt = app
+                            .str("Playtime")
+                            .and_then(|p| p.parse::<u64>().ok())
+                            .unwrap_or(0);
                         let e = ids.entry(id).or_insert(0);
                         *e = (*e).max(pt);
                     }
@@ -388,7 +456,7 @@ fn local_library(root: &Path, steam_id64: Option<&str>) -> Vec<(u32, String, u64
             (m.kind == "game").then(|| (id, m.name.clone(), pt))
         })
         .collect();
-    out.sort_by(|a, b| a.1.to_lowercase().cmp(&b.1.to_lowercase()));
+    out.sort_by_cached_key(|a| a.1.to_lowercase());
     out
 }
 
@@ -425,7 +493,9 @@ fn owned_games(key: &str, steam_id: &str) -> Result<Vec<OwnedGame>, Problem> {
             .body_mut()
             .read_json()
             .map_err(|e| Problem::steam_api(None, &e.to_string()))?,
-        Err(ureq::Error::StatusCode(code)) => return Err(Problem::steam_api(Some(code), "access denied")),
+        Err(ureq::Error::StatusCode(code)) => {
+            return Err(Problem::steam_api(Some(code), "access denied"))
+        }
         Err(e) => return Err(Problem::steam_api(None, &e.to_string())),
     };
     let list = value
@@ -434,7 +504,12 @@ fn owned_games(key: &str, steam_id: &str) -> Result<Vec<OwnedGame>, Problem> {
         .and_then(|g| g.as_array())
         .cloned()
         .unwrap_or_default();
-    if list.is_empty() && value.get("response").and_then(|r| r.get("game_count")).is_none() {
+    if list.is_empty()
+        && value
+            .get("response")
+            .and_then(|r| r.get("game_count"))
+            .is_none()
+    {
         return Err(Problem::steam_api(
             None,
             "Empty response - profile or game details are probably set to private.",
@@ -443,7 +518,7 @@ fn owned_games(key: &str, steam_id: &str) -> Result<Vec<OwnedGame>, Problem> {
     Ok(list
         .iter()
         .filter_map(|g| {
-            let appid = g.get("appid")?.as_u64()? as u32;
+            let appid = u32::try_from(g.get("appid")?.as_u64()?).ok()?;
             let name = g.get("name").and_then(|n| n.as_str()).unwrap_or("").to_string();
             if name.is_empty() {
                 return None;
@@ -474,7 +549,11 @@ pub fn store_lookup(agent: &ureq::Agent, name: &str) -> Option<u32> {
     let items = value.get("items")?.as_array()?;
     for it in items {
         let n = it.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        let id = it.get("id").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+        let id = it
+            .get("id")
+            .and_then(|v| v.as_u64())
+            .and_then(|v| u32::try_from(v).ok())
+            .unwrap_or(0);
         let norm = normalize_name(n);
         if id != 0 && (norm == wanted || norm.trim_end_matches("goty") == wanted) {
             return Some(id);

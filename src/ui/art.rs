@@ -42,6 +42,7 @@ fn ArtImageInner(srcs: Vec<String>, class: String, alt: String, fallback: Elemen
                     class: "{class}",
                     alt: "{alt}",
                     "loading": "lazy",
+                    "decoding": "async",
                     "draggable": "false",
                     onerror: move |_| idx.set(i + 1),
                 }
@@ -67,8 +68,20 @@ pub fn gradient_for(name: &str) -> &'static str {
 }
 
 pub fn initials(name: &str) -> String {
-    let words: Vec<&str> = name.split_whitespace().filter(|w| w.chars().next().map(|c| c.is_alphanumeric()).unwrap_or(false)).collect();
-    let mut s: String = words.iter().take(2).filter_map(|w| w.chars().next()).collect();
+    let words: Vec<&str> = name
+        .split_whitespace()
+        .filter(|w| {
+            w.chars()
+                .next()
+                .map(|c| c.is_alphanumeric())
+                .unwrap_or(false)
+        })
+        .collect();
+    let mut s: String = words
+        .iter()
+        .take(2)
+        .filter_map(|w| w.chars().next())
+        .collect();
     if s.is_empty() {
         s = "?".into();
     }
@@ -107,7 +120,11 @@ pub fn CoverFallback(game: Game, #[props(default = true)] show_name: bool) -> El
 /// Kleines Original-Icon des Spiels (für Listen)
 #[component]
 pub fn GameIcon(game: Game, #[props(into, default)] class: String) -> Element {
-    let cls = if class.is_empty() { "size-5".to_string() } else { class };
+    let cls = if class.is_empty() {
+        "size-5".to_string()
+    } else {
+        class
+    };
     let grad = gradient_for(&game.name);
     let ini = initials(&game.name);
     let icons = game.art.icon.clone();
@@ -126,5 +143,9 @@ pub fn GameIcon(game: Game, #[props(into, default)] class: String) -> Element {
 
 /// Schlüssel, damit ein Bild neu geladen wird, wenn sich die Bildliste ändert
 pub fn art_key(srcs: &[String]) -> String {
-    format!("{}:{}", srcs.len(), srcs.first().map(|s| s.as_str()).unwrap_or(""))
+    format!(
+        "{}:{}",
+        srcs.len(),
+        srcs.first().map(|s| s.as_str()).unwrap_or("")
+    )
 }

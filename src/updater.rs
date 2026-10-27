@@ -16,8 +16,10 @@ use std::time::Duration;
 
 const API: &str = "https://api.github.com/repos/MikeAdamRGB/Open-Game-Launcher/releases/latest";
 /// Liste der letzten Releases (inkl. Test-Versionen)
-const API_ALL: &str = "https://api.github.com/repos/MikeAdamRGB/Open-Game-Launcher/releases?per_page=15";
-const DOWNLOAD_PREFIX: &str = "https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/";
+const API_ALL: &str =
+    "https://api.github.com/repos/MikeAdamRGB/Open-Game-Launcher/releases?per_page=15";
+const DOWNLOAD_PREFIX: &str =
+    "https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/";
 /// Früherer Name des Repositorys (bis 1.8) – GitHub leitet weiter
 const OLD_DOWNLOAD_PREFIX: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/";
 
@@ -63,11 +65,16 @@ impl InstallKind {
     pub fn detect() -> InstallKind {
         let exe = std::env::current_exe().ok();
         if cfg!(windows) {
-            return exe.map(InstallKind::WindowsExe).unwrap_or(InstallKind::Manual);
+            return exe
+                .map(InstallKind::WindowsExe)
+                .unwrap_or(InstallKind::Manual);
         }
         if cfg!(target_os = "macos") {
             // …/MAZ Launcher.app/Contents/MacOS/maz-launcher
-            if let Some(app) = exe.as_ref().and_then(|e| e.ancestors().find(|a| a.extension().map(|x| x == "app").unwrap_or(false))) {
+            if let Some(app) = exe.as_ref().and_then(|e| {
+                e.ancestors()
+                    .find(|a| a.extension().map(|x| x == "app").unwrap_or(false))
+            }) {
                 return InstallKind::MacApp(app.to_path_buf());
             }
             return InstallKind::Manual;
@@ -85,12 +92,20 @@ impl InstallKind {
             return InstallKind::Deb;
         }
         if std::fs::read_dir("/var/lib/pacman/local")
-            .map(|rd| rd.flatten().any(|e| e.file_name().to_string_lossy().starts_with("maz-launcher-")))
+            .map(|rd| {
+                rd.flatten()
+                    .any(|e| e.file_name().to_string_lossy().starts_with("maz-launcher-"))
+            })
             .unwrap_or(false)
         {
             return InstallKind::Pacman;
         }
-        if std::process::Command::new(sys::unix_tool("rpm")).args(["-q", "maz-launcher"]).output().map(|o| o.status.success()).unwrap_or(false) {
+        if std::process::Command::new(sys::unix_tool("rpm"))
+            .args(["-q", "maz-launcher"])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
             return InstallKind::Rpm;
         }
         InstallKind::Manual
@@ -134,9 +149,11 @@ pub fn pick_asset<'a>(kind: &InstallKind, assets: &'a [Asset]) -> Option<&'a Ass
         InstallKind::WindowsExe(_) => {
             // Neuer Name zuerst, alter Name (bis 1.7) als Ausweich
             if cfg!(target_arch = "aarch64") {
-                find(&|n| n == "Open-Game-Launcher-arm64.exe").or_else(|| find(&|n| n == "MAZ-Launcher-arm64.exe"))
+                find(&|n| n == "Open-Game-Launcher-arm64.exe")
+                    .or_else(|| find(&|n| n == "MAZ-Launcher-arm64.exe"))
             } else {
-                find(&|n| n == "Open-Game-Launcher.exe").or_else(|| find(&|n| n == "MAZ-Launcher.exe"))
+                find(&|n| n == "Open-Game-Launcher.exe")
+                    .or_else(|| find(&|n| n == "MAZ-Launcher.exe"))
             }
         }
         InstallKind::AppImage(_) => find(&|n| n.ends_with(&format!("-{a}.AppImage"))),
@@ -155,7 +172,11 @@ pub fn parse_version(v: &str) -> Option<(u32, u32, u32)> {
     let v = v.trim().trim_start_matches(['v', 'V']);
     let core = v.split(['-', '+']).next()?;
     let mut it = core.split('.').map(|p| p.parse::<u32>().ok());
-    Some((it.next()??, it.next().flatten().unwrap_or(0), it.next().flatten().unwrap_or(0)))
+    Some((
+        it.next()??,
+        it.next().flatten().unwrap_or(0),
+        it.next().flatten().unwrap_or(0),
+    ))
 }
 
 pub fn is_newer(remote: &str, local: &str) -> bool {
@@ -193,7 +214,11 @@ pub fn parse_release(v: &serde_json::Value) -> Option<Release> {
     if v.get("draft").and_then(|d| d.as_bool()).unwrap_or(false) {
         return None;
     }
-    let tag = v.get("tag_name").and_then(|t| t.as_str()).unwrap_or("").to_string();
+    let tag = v
+        .get("tag_name")
+        .and_then(|t| t.as_str())
+        .unwrap_or("")
+        .to_string();
     parse_version(&tag)?;
     let assets = v
         .get("assets")
@@ -217,7 +242,13 @@ pub fn parse_release(v: &serde_json::Value) -> Option<Release> {
         .unwrap_or_default();
     Some(Release {
         version: tag.trim_start_matches(['v', 'V']).to_string(),
-        notes: v.get("body").and_then(|b| b.as_str()).unwrap_or("").chars().take(6000).collect(),
+        notes: v
+            .get("body")
+            .and_then(|b| b.as_str())
+            .unwrap_or("")
+            .chars()
+            .take(6000)
+            .collect(),
         page: v
             .get("html_url")
             .and_then(|b| b.as_str())
@@ -225,7 +256,10 @@ pub fn parse_release(v: &serde_json::Value) -> Option<Release> {
             .unwrap_or(sys::GITHUB_URL)
             .to_string(),
         assets,
-        prerelease: v.get("prerelease").and_then(|p| p.as_bool()).unwrap_or(false),
+        prerelease: v
+            .get("prerelease")
+            .and_then(|p| p.as_bool())
+            .unwrap_or(false),
     })
 }
 
@@ -239,7 +273,11 @@ pub fn newest(list: &serde_json::Value) -> Option<Release> {
 
 /// Neuestes Release von GitHub lesen. `test` = auch Test-Versionen berücksichtigen.
 pub fn latest(test: bool) -> Result<Release, String> {
-    let r = if test { newest(&get_json(API_ALL)?) } else { parse_release(&get_json(API)?) };
+    let r = if test {
+        newest(&get_json(API_ALL)?)
+    } else {
+        parse_release(&get_json(API)?)
+    };
     r.ok_or_else(|| "GitHub: no valid release".into())
 }
 
@@ -253,7 +291,10 @@ fn download(asset: &Asset, progress: &Arc<AtomicU64>) -> Result<Vec<u8>, String>
     if !allowed_url(&asset.url) {
         return Err("Invalid download URL".into());
     }
-    let mut resp = agent(900).get(&asset.url).call().map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
+    let mut resp = agent(900)
+        .get(&asset.url)
+        .call()
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("common.err_network")))?;
     let mut reader = resp.body_mut().with_config().limit(MAX_SIZE).reader();
     let mut data = Vec::with_capacity(asset.size.min(MAX_SIZE) as usize);
     let mut buf = [0u8; 64 * 1024];
@@ -294,19 +335,34 @@ pub enum Outcome {
 }
 
 /// Lädt die passende Datei, prüft sie und installiert sie.
-pub fn install(release: &Release, kind: &InstallKind, progress: Arc<AtomicU64>) -> Result<Outcome, String> {
-    let asset = pick_asset(kind, &release.assets).ok_or_else(|| crate::i18n::t("update.err_no_file"))?;
-    let sums_asset = release.assets.iter().find(|a| a.name == "SHA256SUMS.txt").ok_or_else(|| crate::i18n::t("update.err_no_sums"))?;
-    let sums = String::from_utf8_lossy(&download(sums_asset, &Arc::new(AtomicU64::new(0)))?).to_string();
-    let want = expected_hash(&sums, &asset.name).ok_or_else(|| crate::i18n::t("update.err_no_sums"))?;
+pub fn install(
+    release: &Release,
+    kind: &InstallKind,
+    progress: Arc<AtomicU64>,
+) -> Result<Outcome, String> {
+    let asset =
+        pick_asset(kind, &release.assets).ok_or_else(|| crate::i18n::t("update.err_no_file"))?;
+    let sums_asset = release
+        .assets
+        .iter()
+        .find(|a| a.name == "SHA256SUMS.txt")
+        .ok_or_else(|| crate::i18n::t("update.err_no_sums"))?;
+    let sums =
+        String::from_utf8_lossy(&download(sums_asset, &Arc::new(AtomicU64::new(0)))?).to_string();
+    let want =
+        expected_hash(&sums, &asset.name).ok_or_else(|| crate::i18n::t("update.err_no_sums"))?;
     let data = download(asset, &progress)?;
     let got = hex(&crate::util::sha256(&data));
     if got != want {
         return Err(crate::i18n::t("update.err_hash"));
     }
     match kind {
-        InstallKind::WindowsExe(exe) | InstallKind::AppImage(exe) => replace_file(exe, &data).map(|_| Outcome::Restart(exe.clone())),
-        InstallKind::MacApp(app) => replace_mac_app(app, &data).map(|_| Outcome::Restart(app.clone())),
+        InstallKind::WindowsExe(exe) | InstallKind::AppImage(exe) => {
+            replace_file(exe, &data).map(|_| Outcome::Restart(exe.clone()))
+        }
+        InstallKind::MacApp(app) => {
+            replace_mac_app(app, &data).map(|_| Outcome::Restart(app.clone()))
+        }
         InstallKind::Manual => Err(crate::i18n::t("update.err_no_file")),
         _ => install_package(kind, &asset.name, &data),
     }
@@ -315,10 +371,15 @@ pub fn install(release: &Release, kind: &InstallKind, progress: Arc<AtomicU64>) 
 /// Laufende Datei ersetzen: Windows und Linux erlauben das Umbenennen einer laufenden Datei.
 fn replace_file(target: &Path, data: &[u8]) -> Result<(), String> {
     let dir = target.parent().ok_or("No folder")?;
-    let name = target.file_name().ok_or("No name")?.to_string_lossy().to_string();
+    let name = target
+        .file_name()
+        .ok_or("No name")?
+        .to_string_lossy()
+        .to_string();
     let new = dir.join(format!("{name}.new"));
     let old = dir.join(format!("{name}.alt-{}", sys::now_secs()));
-    std::fs::write(&new, data).map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
+    std::fs::write(&new, data)
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -362,9 +423,14 @@ fn replace_mac_app(app: &Path, data: &[u8]) -> Result<(), String> {
         .find(|p| p.extension().map(|x| x == "app").unwrap_or(false))
         .ok_or_else(|| crate::i18n::t("update.err_write"))?;
     let old = app.with_extension(format!("app.alt-{}", sys::now_secs()));
-    std::fs::rename(app, &old).map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
+    std::fs::rename(app, &old)
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
     if let Err(e) = std::fs::rename(&new_app, app).or_else(|_| {
-        std::process::Command::new("/usr/bin/ditto").arg(&new_app).arg(app).status().map(|_| ())
+        std::process::Command::new("/usr/bin/ditto")
+            .arg(&new_app)
+            .arg(app)
+            .status()
+            .map(|_| ())
     }) {
         let _ = std::fs::rename(&old, app);
         return Err(format!("{}: {e}", crate::i18n::t("update.err_write")));
@@ -380,29 +446,83 @@ fn install_package(kind: &InstallKind, name: &str, data: &[u8]) -> Result<Outcom
     // damit niemand die geprüfte Datei austauschen kann, bevor sie installiert wird.
     let dir = sys::local_dir().join("update");
     // Nur einfache Dateinamen aus dem Release übernehmen
-    let safe_name: String = name.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')).collect();
+    let safe_name: String = name
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+        .collect();
     if safe_name.is_empty() || safe_name.starts_with('.') {
         return Err(crate::i18n::t("update.err_no_file"));
     }
     let file = dir.join(safe_name);
-    sys::write_private(&file, data).map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
+    sys::write_private(&file, data)
+        .map_err(|e| format!("{}: {e}", crate::i18n::t("update.err_write")))?;
     let f = file.to_string_lossy().to_string();
     let (prog, args): (&str, Vec<String>) = match kind {
-        InstallKind::Deb => ("pkexec", vec!["apt-get".into(), "install".into(), "-y".into(), f.clone()]),
+        InstallKind::Deb => (
+            "pkexec",
+            vec!["apt-get".into(), "install".into(), "-y".into(), f.clone()],
+        ),
         InstallKind::Rpm => {
             if Path::new("/usr/bin/zypper").exists() {
-                ("pkexec", vec!["zypper".into(), "--non-interactive".into(), "install".into(), "--allow-unsigned-rpm".into(), f.clone()])
+                (
+                    "pkexec",
+                    vec![
+                        "zypper".into(),
+                        "--non-interactive".into(),
+                        "install".into(),
+                        "--allow-unsigned-rpm".into(),
+                        f.clone(),
+                    ],
+                )
             } else {
-                ("pkexec", vec!["dnf".into(), "install".into(), "-y".into(), f.clone()])
+                (
+                    "pkexec",
+                    vec!["dnf".into(), "install".into(), "-y".into(), f.clone()],
+                )
             }
         }
-        InstallKind::Pacman => ("pkexec", vec!["pacman".into(), "-U".into(), "--noconfirm".into(), f.clone()]),
-        InstallKind::Snap => ("pkexec", vec!["snap".into(), "install".into(), "--dangerous".into(), "--classic".into(), f.clone()]),
-        InstallKind::Flatpak => ("flatpak", vec!["install".into(), "--user".into(), "-y".into(), "--noninteractive".into(), "--reinstall".into(), f.clone()]),
+        InstallKind::Pacman => (
+            "pkexec",
+            vec![
+                "pacman".into(),
+                "-U".into(),
+                "--noconfirm".into(),
+                f.clone(),
+            ],
+        ),
+        InstallKind::Snap => (
+            "pkexec",
+            vec![
+                "snap".into(),
+                "install".into(),
+                "--dangerous".into(),
+                "--classic".into(),
+                f.clone(),
+            ],
+        ),
+        InstallKind::Flatpak => (
+            "flatpak",
+            vec![
+                "install".into(),
+                "--user".into(),
+                "-y".into(),
+                "--noninteractive".into(),
+                "--reinstall".into(),
+                f.clone(),
+            ],
+        ),
         _ => return Err(crate::i18n::t("update.err_no_file")),
     };
-    let command = if prog == "pkexec" { format!("sudo {}", args.join(" ")) } else { format!("{prog} {}", args.join(" ")) };
-    let ok = sys::host_command(prog).args(&args).status().map(|s| s.success()).unwrap_or(false);
+    let command = if prog == "pkexec" {
+        format!("sudo {}", args.join(" "))
+    } else {
+        format!("{prog} {}", args.join(" "))
+    };
+    let ok = sys::host_command(prog)
+        .args(&args)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
     if ok {
         Ok(Outcome::Installed)
     } else {
@@ -413,7 +533,10 @@ fn install_package(kind: &InstallKind, name: &str, data: &[u8]) -> Result<Outcom
 /// Nach dem Update neu starten
 pub fn restart(target: &Path) {
     if cfg!(target_os = "macos") {
-        let _ = std::process::Command::new("/usr/bin/open").arg("-n").arg(target).spawn();
+        let _ = std::process::Command::new("/usr/bin/open")
+            .arg("-n")
+            .arg(target)
+            .spawn();
     } else {
         let _ = std::process::Command::new(target).spawn();
     }
@@ -422,9 +545,13 @@ pub fn restart(target: &Path) {
 
 /// Alte Dateien von früheren Updates aufräumen (Windows: *.alt-*)
 pub fn cleanup_old() {
-    let Some(exe) = std::env::current_exe().ok() else { return };
+    let Some(exe) = std::env::current_exe().ok() else {
+        return;
+    };
     let Some(dir) = exe.parent() else { return };
-    let Some(name) = exe.file_name().map(|n| n.to_string_lossy().to_string()) else { return };
+    let Some(name) = exe.file_name().map(|n| n.to_string_lossy().to_string()) else {
+        return;
+    };
     for e in std::fs::read_dir(dir).into_iter().flatten().flatten() {
         let n = e.file_name().to_string_lossy().to_string();
         if n.starts_with(&format!("{name}.alt-")) || n == format!("{name}.new") {
@@ -449,7 +576,11 @@ mod tests {
 
     #[test]
     fn assets_and_hashes() {
-        let a = |n: &str| Asset { name: n.into(), url: format!("{DOWNLOAD_PREFIX}v1/{n}"), size: 1 };
+        let a = |n: &str| Asset {
+            name: n.into(),
+            url: format!("{DOWNLOAD_PREFIX}v1/{n}"),
+            size: 1,
+        };
         let list = vec![
             a("MAZ-Launcher.exe"),
             a("MAZ-Launcher-arm64.exe"),
@@ -462,34 +593,71 @@ mod tests {
             a("SHA256SUMS.txt"),
         ];
         if cfg!(target_arch = "x86_64") {
-            assert_eq!(pick_asset(&InstallKind::Deb, &list).unwrap().name, "maz-launcher_1.4.0_amd64.deb");
-            assert_eq!(pick_asset(&InstallKind::AppImage(PathBuf::new()), &list).unwrap().name, "MAZ-Launcher-1.4.0-x86_64.AppImage");
-            assert_eq!(pick_asset(&InstallKind::Rpm, &list).unwrap().name, "maz-launcher-1.4.0-1.x86_64.rpm");
-            assert_eq!(pick_asset(&InstallKind::Pacman, &list).unwrap().name, "maz-launcher-1.4.0-1-x86_64.pkg.tar.zst");
-            assert_eq!(pick_asset(&InstallKind::WindowsExe(PathBuf::new()), &list).unwrap().name, "MAZ-Launcher.exe");
+            assert_eq!(
+                pick_asset(&InstallKind::Deb, &list).unwrap().name,
+                "maz-launcher_1.4.0_amd64.deb"
+            );
+            assert_eq!(
+                pick_asset(&InstallKind::AppImage(PathBuf::new()), &list)
+                    .unwrap()
+                    .name,
+                "MAZ-Launcher-1.4.0-x86_64.AppImage"
+            );
+            assert_eq!(
+                pick_asset(&InstallKind::Rpm, &list).unwrap().name,
+                "maz-launcher-1.4.0-1.x86_64.rpm"
+            );
+            assert_eq!(
+                pick_asset(&InstallKind::Pacman, &list).unwrap().name,
+                "maz-launcher-1.4.0-1-x86_64.pkg.tar.zst"
+            );
+            assert_eq!(
+                pick_asset(&InstallKind::WindowsExe(PathBuf::new()), &list)
+                    .unwrap()
+                    .name,
+                "MAZ-Launcher.exe"
+            );
         }
-        assert_eq!(pick_asset(&InstallKind::MacApp(PathBuf::new()), &list).unwrap().name, "MAZ-Launcher-1.4.0-macOS.app.zip");
+        assert_eq!(
+            pick_asset(&InstallKind::MacApp(PathBuf::new()), &list)
+                .unwrap()
+                .name,
+            "MAZ-Launcher-1.4.0-macOS.app.zip"
+        );
         assert!(pick_asset(&InstallKind::Manual, &list).is_none());
-        assert!(allowed_url("https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/v1/x.exe"));
-        assert!(allowed_url("https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/v1/x.exe"));
-        assert!(!allowed_url("https://github.com/someone/else/releases/download/v1/x.exe"));
+        assert!(allowed_url(
+            "https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/v1/x.exe"
+        ));
+        assert!(allowed_url(
+            "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/v1/x.exe"
+        ));
+        assert!(!allowed_url(
+            "https://github.com/someone/else/releases/download/v1/x.exe"
+        ));
         let sums = "ab12  other.exe\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef  MAZ-Launcher.exe\n";
         assert_eq!(expected_hash(sums, "MAZ-Launcher.exe").unwrap().len(), 64);
         // Neuer Name hat Vorrang vor dem alten
         if cfg!(target_arch = "x86_64") {
             let mut both = list.clone();
             both.push(a("Open-Game-Launcher.exe"));
-            assert_eq!(pick_asset(&InstallKind::WindowsExe(PathBuf::new()), &both).unwrap().name, "Open-Game-Launcher.exe");
+            assert_eq!(
+                pick_asset(&InstallKind::WindowsExe(PathBuf::new()), &both)
+                    .unwrap()
+                    .name,
+                "Open-Game-Launcher.exe"
+            );
         }
         assert!(expected_hash(sums, "other.exe").is_none());
     }
 
     #[test]
     fn test_versions() {
-        let rel = |tag: &str, pre: bool, draft: bool| {
-            serde_json::json!({"tag_name": tag, "prerelease": pre, "draft": draft, "body": "", "assets": []})
-        };
-        let list = serde_json::json!([rel("v1.8.0", false, true), rel("v1.7.0", true, false), rel("v1.6.0", false, false)]);
+        let rel = |tag: &str, pre: bool, draft: bool| serde_json::json!({"tag_name": tag, "prerelease": pre, "draft": draft, "body": "", "assets": []});
+        let list = serde_json::json!([
+            rel("v1.8.0", false, true),
+            rel("v1.7.0", true, false),
+            rel("v1.6.0", false, false)
+        ]);
         let r = newest(&list).unwrap();
         assert_eq!(r.version, "1.7.0");
         assert!(r.prerelease);

@@ -184,7 +184,15 @@ unsafe fn read_bits(hbm: HANDLE, w: i32, h: i32) -> Option<Vec<u8>> {
     bmi.header.compression = 0; // BI_RGB
     let mut buf = vec![0u8; (w as usize) * (h as usize) * 4];
     let dc = GetDC(null_mut());
-    let lines = GetDIBits(dc, hbm, 0, h as u32, buf.as_mut_ptr() as *mut c_void, &mut bmi, 0);
+    let lines = GetDIBits(
+        dc,
+        hbm,
+        0,
+        h as u32,
+        buf.as_mut_ptr() as *mut c_void,
+        &mut bmi,
+        0,
+    );
     ReleaseDC(null_mut(), dc);
     if lines == 0 {
         None
@@ -325,7 +333,11 @@ pub fn process_names() -> Vec<String> {
         e.size = size_of::<ProcessEntry32W>() as u32;
         if Process32FirstW(snap, &mut e) != 0 {
             loop {
-                let len = e.exe_file.iter().position(|c| *c == 0).unwrap_or(e.exe_file.len());
+                let len = e
+                    .exe_file
+                    .iter()
+                    .position(|c| *c == 0)
+                    .unwrap_or(e.exe_file.len());
                 out.push(String::from_utf16_lossy(&e.exe_file[..len]).to_lowercase());
                 if Process32NextW(snap, &mut e) == 0 {
                     break;
@@ -467,8 +479,15 @@ pub fn process_ids() -> Vec<(u32, String)> {
         e.size = size_of::<ProcessEntry32W>() as u32;
         if Process32FirstW(snap, &mut e) != 0 {
             loop {
-                let len = e.exe_file.iter().position(|c| *c == 0).unwrap_or(e.exe_file.len());
-                out.push((e.process_id, String::from_utf16_lossy(&e.exe_file[..len]).to_lowercase()));
+                let len = e
+                    .exe_file
+                    .iter()
+                    .position(|c| *c == 0)
+                    .unwrap_or(e.exe_file.len());
+                out.push((
+                    e.process_id,
+                    String::from_utf16_lossy(&e.exe_file[..len]).to_lowercase(),
+                ));
                 if Process32NextW(snap, &mut e) == 0 {
                     break;
                 }
@@ -523,14 +542,39 @@ fn dpapi(data: &[u8], protect: bool) -> Option<Vec<u8>> {
     if data.is_empty() || data.len() > 1 << 20 {
         return None;
     }
-    let input = DataBlob { cb: data.len() as u32, pb: data.as_ptr() as *mut u8 };
-    let entropy = DataBlob { cb: ENTROPY.len() as u32, pb: ENTROPY.as_ptr() as *mut u8 };
-    let mut out = DataBlob { cb: 0, pb: null_mut() };
+    let input = DataBlob {
+        cb: data.len() as u32,
+        pb: data.as_ptr() as *mut u8,
+    };
+    let entropy = DataBlob {
+        cb: ENTROPY.len() as u32,
+        pb: ENTROPY.as_ptr() as *mut u8,
+    };
+    let mut out = DataBlob {
+        cb: 0,
+        pb: null_mut(),
+    };
     let ok = unsafe {
         if protect {
-            CryptProtectData(&input, null(), &entropy, null_mut(), null_mut(), CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+            CryptProtectData(
+                &input,
+                null(),
+                &entropy,
+                null_mut(),
+                null_mut(),
+                CRYPTPROTECT_UI_FORBIDDEN,
+                &mut out,
+            )
         } else {
-            CryptUnprotectData(&input, null_mut(), &entropy, null_mut(), null_mut(), CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+            CryptUnprotectData(
+                &input,
+                null_mut(),
+                &entropy,
+                null_mut(),
+                null_mut(),
+                CRYPTPROTECT_UI_FORBIDDEN,
+                &mut out,
+            )
         }
     };
     if ok == 0 || out.pb.is_null() {
@@ -634,7 +678,12 @@ impl Job {
             }
             let mut info = JobExtendedLimit::default();
             info.basic.limit_flags = 0x2000; // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
-            let ok = SetInformationJobObject(h, 9, &info as *const _ as *const c_void, size_of::<JobExtendedLimit>() as u32);
+            let ok = SetInformationJobObject(
+                h,
+                9,
+                &info as *const _ as *const c_void,
+                size_of::<JobExtendedLimit>() as u32,
+            );
             if ok == 0 {
                 CloseHandle(h);
                 return None;

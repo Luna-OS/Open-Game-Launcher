@@ -3,12 +3,14 @@
 
 // Kein schwarzes Konsolenfenster im Release-Build
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
+// `Problem` ist absichtlich ein großer Fehlertyp (Erklärung + Lösungen); die Pfade sind nicht heiß.
+#![allow(clippy::result_large_err)]
 
 mod appinfo;
 mod appx;
 mod config;
-mod epic;
 mod emulators;
+mod epic;
 mod epicacct;
 mod extensions;
 mod freegames;
@@ -16,9 +18,9 @@ mod i18n;
 mod icons;
 mod install;
 mod launch;
-mod metadata;
 mod library;
 mod mccontent;
+mod metadata;
 mod minecraft;
 mod model;
 mod notes;
@@ -70,7 +72,11 @@ fn main() {
     let installer = matches!(mode, install::StartMode::Installer { .. });
     let _ = START.set(mode);
 
-    let (w, h) = if installer { (920.0, 640.0) } else { (1320.0, 840.0) };
+    let (w, h) = if installer {
+        (920.0, 640.0)
+    } else {
+        (1320.0, 840.0)
+    };
     let window = WindowBuilder::new()
         .with_title(sys::APP_NAME)
         .with_inner_size(LogicalSize::new(w, h))
@@ -90,7 +96,10 @@ fn main() {
     #[cfg(target_os = "macos")]
     let window = {
         use dioxus::desktop::tao::platform::macos::WindowBuilderExtMacOS;
-        window.with_titlebar_transparent(true).with_fullsize_content_view(true).with_title_hidden(true)
+        window
+            .with_titlebar_transparent(true)
+            .with_fullsize_content_view(true)
+            .with_title_hidden(true)
     };
 
     let mut cfg = Config::new()
@@ -150,7 +159,10 @@ fn install_panic_hook() {
         let msg = info.to_string();
         let log = sys::local_dir().join("absturz.log");
         let _ = std::fs::create_dir_all(sys::local_dir());
-        let _ = std::fs::write(&log, format!("{} {}\n{}\n", sys::APP_NAME, sys::VERSION, msg));
+        let _ = std::fs::write(
+            &log,
+            format!("{} {}\n{}\n", sys::APP_NAME, sys::VERSION, msg),
+        );
         let p = problem::Problem::app_crashed(
             &log.display().to_string(),
             &msg,

@@ -7,6 +7,15 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [Unreleased]
+
+### Neu
+- **NoRisk Client: eine Kachel statt vieler.** Statt einer Kachel pro Profil gibt es jetzt genau eine „NoRisk Client“-Kachel. „Spielen“ startet das zuletzt gespielte Profil. Ein Klick auf die Kachel öffnet den **NoRisk-Hub** direkt im Launcher: alle Profile mit Version, Loader und Spielzeit, dazu Spielen, Öffnen und „Neues Profil“ (Profile werden immer vom NoRisk Launcher selbst angelegt, OG schreibt nie in dessen Daten).
+- **Design `lu_hub`:** OG öffnet den NoRisk Launcher mit dem neuen Design `lu_hub` (`open --theme lu_hub`). Der NoRisk Launcher versteht dafür die neuen Befehle `open --profile/--theme/--create`; die Schnittstelle steht in `nrc/docs/OGL_INTEROP.md`.
+
+### Verbessert
+- **Qualitätsprüfung:** Neuer CI-Ablauf (`ci.yml`) prüft bei jedem Push `rustfmt`, `clippy -D warnings` und alle Tests unter Windows, Linux und macOS. Neue Tests für den VDF-Parser (Steam `libraryfolders.vdf`, abgeschnittene und kaputte Dateien).
+
 ## [1.8.1] – 2026-10-26
 
 Die erste fertige Version als **Open Game Launcher (OG)** – früher MAZ Launcher. Sie enthält

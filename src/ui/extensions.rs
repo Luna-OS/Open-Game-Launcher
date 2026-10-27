@@ -29,13 +29,21 @@ fn reload(app: App) {
 
 fn pick_and_stage(app: App, folder: bool) {
     let picked = if folder {
-        rfd::FileDialog::new().set_title(t("ext.install")).pick_folder()
+        rfd::FileDialog::new()
+            .set_title(t("ext.install"))
+            .pick_folder()
     } else {
-        rfd::FileDialog::new().set_title(t("ext.install")).add_filter("OG Extension", &["ogext", "mazext", "zip"]).pick_file()
+        rfd::FileDialog::new()
+            .set_title(t("ext.install"))
+            .add_filter("OG Extension", &["ogext", "mazext", "zip"])
+            .pick_file()
     };
     let Some(path) = picked else { return };
     spawn(async move {
-        match tokio::task::spawn_blocking(move || ext::stage(&path)).await.unwrap_or_else(|_| Err(t("common.err_unknown"))) {
+        match tokio::task::spawn_blocking(move || ext::stage(&path))
+            .await
+            .unwrap_or_else(|_| Err(t("common.err_unknown")))
+        {
             Ok(staged) => app.open(Modal::ExtInstall(staged)),
             Err(e) => app.show_problem(crate::problem::Problem::extension_failed(&e), None),
         }
@@ -176,18 +184,32 @@ pub fn ExtInstallDialog(staged: Staged) -> Element {
     let kinds: Vec<String> = m
         .kinds
         .iter()
-        .map(|k| t(match k {
-            crate::extensions::manifest::ExtKind::Library => "ext.kind.library",
-            crate::extensions::manifest::ExtKind::Metadata => "ext.kind.metadata",
-            crate::extensions::manifest::ExtKind::Action => "ext.kind.action",
-        }))
+        .map(|k| {
+            t(match k {
+                crate::extensions::manifest::ExtKind::Library => "ext.kind.library",
+                crate::extensions::manifest::ExtKind::Metadata => "ext.kind.metadata",
+                crate::extensions::manifest::ExtKind::Action => "ext.kind.action",
+            })
+        })
         .collect();
     let paths = m.permissions.read_paths.clone();
     let schemes = m.permissions.uri_schemes.clone();
     let network = m.permissions.network;
-    let in_root = staged.dir.starts_with(ext::root()) && !staged.dir.file_name().map(|n| n.to_string_lossy().starts_with(".staging")).unwrap_or(false);
+    let in_root = staged.dir.starts_with(ext::root())
+        && !staged
+            .dir
+            .file_name()
+            .map(|n| n.to_string_lossy().starts_with(".staging"))
+            .unwrap_or(false);
     let (s_ok, s_cancel) = (staged.clone(), staged.clone());
-    let title = tf(if staged.update { "ext.dialog.update" } else { "ext.dialog.install" }, &[("name", &m.name)]);
+    let title = tf(
+        if staged.update {
+            "ext.dialog.update"
+        } else {
+            "ext.dialog.install"
+        },
+        &[("name", &m.name)],
+    );
     let hash = staged.hash.clone();
     let run_hash = staged.run_hash.clone();
     let is_update = staged.update;
@@ -262,8 +284,16 @@ pub fn ExtInstallDialog(staged: Staged) -> Element {
 }
 
 #[component]
-fn Row(#[props(into)] label: String, #[props(into)] value: String, #[props(default = false)] mono: bool) -> Element {
-    let vcls = if mono { "font-mono text-[11px] break-all" } else { "whitespace-pre-line" };
+fn Row(
+    #[props(into)] label: String,
+    #[props(into)] value: String,
+    #[props(default = false)] mono: bool,
+) -> Element {
+    let vcls = if mono {
+        "font-mono text-[11px] break-all"
+    } else {
+        "whitespace-pre-line"
+    };
     rsx! {
         div { class: "flex gap-4 px-4 py-2.5",
             span { class: "w-36 shrink-0 text-muted-foreground", "{label}" }
@@ -284,7 +314,9 @@ pub fn ExtActions(game: Game, #[props(default)] class: String) -> Element {
             return;
         }
         spawn(async move {
-            let list = tokio::task::spawn_blocking(move || ext::actions(&g0)).await.unwrap_or_default();
+            let list = tokio::task::spawn_blocking(move || ext::actions(&g0))
+                .await
+                .unwrap_or_default();
             actions.set(list);
         });
     });

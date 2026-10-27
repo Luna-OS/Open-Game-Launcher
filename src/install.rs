@@ -50,7 +50,9 @@ fn is_own_dir_name(dir: &Path) -> bool {
 
 fn is_own_file_name(name: &str) -> bool {
     let n = name.to_lowercase();
-    n.starts_with(&sys::EXE_NAME.to_lowercase()) || n.starts_with(&sys::OLD_EXE_NAME.to_lowercase()) || n == "portable.txt"
+    n.starts_with(&sys::EXE_NAME.to_lowercase())
+        || n.starts_with(&sys::OLD_EXE_NAME.to_lowercase())
+        || n == "portable.txt"
 }
 
 /// Nach einem Update (und nach der Umbenennung in 1.8): Eintrag in „Apps & Features“,
@@ -58,7 +60,9 @@ fn is_own_file_name(name: &str) -> bool {
 pub fn migrate_names() {
     #[cfg(windows)]
     {
-        let Some(loc) = installed_location() else { return };
+        let Some(loc) = installed_location() else {
+            return;
+        };
         let Some(exe) = current_exe() else { return };
         if !exe.parent().map(|d| same_dir(d, &loc)).unwrap_or(false) {
             return;
@@ -93,7 +97,9 @@ pub fn migrate_names() {
 pub fn decide(args: &[String]) -> StartMode {
     let has = |a: &str| args.iter().any(|x| x.eq_ignore_ascii_case(a));
     let exe = current_exe();
-    let exe_dir = exe.as_ref().and_then(|e| e.parent().map(|p| p.to_path_buf()));
+    let exe_dir = exe
+        .as_ref()
+        .and_then(|e| e.parent().map(|p| p.to_path_buf()));
     if has("--installer") {
         return StartMode::Installer {
             existing: installed_location().map(|p| p.to_string_lossy().to_string()),
@@ -102,7 +108,9 @@ pub fn decide(args: &[String]) -> StartMode {
     if has("--portable") {
         return StartMode::Launcher;
     }
-    let Some(dir) = exe_dir else { return StartMode::Launcher };
+    let Some(dir) = exe_dir else {
+        return StartMode::Launcher;
+    };
     if dir.join("portable.txt").exists() {
         return StartMode::Launcher;
     }
@@ -146,7 +154,10 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
     // damit Programmdateien nicht zwischen anderen Dateien landen.
     let own = is_own_dir_name(&dir);
     let has_other_files = fs::read_dir(&dir)
-        .map(|rd| rd.flatten().any(|e| !is_own_file_name(&e.file_name().to_string_lossy())))
+        .map(|rd| {
+            rd.flatten()
+                .any(|e| !is_own_file_name(&e.file_name().to_string_lossy()))
+        })
         .unwrap_or(false);
     if !own && has_other_files {
         dir = dir.join(sys::APP_NAME);
@@ -172,7 +183,10 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
         if sys::OLD_EXE_NAME != sys::EXE_NAME {
             let old_exe = dir.join(sys::OLD_EXE_NAME);
             if old_exe.exists() && fs::remove_file(&old_exe).is_err() {
-                let _ = fs::rename(&old_exe, dir.join(format!("{}.alt-{}", sys::OLD_EXE_NAME, sys::now_secs())));
+                let _ = fs::rename(
+                    &old_exe,
+                    dir.join(format!("{}.alt-{}", sys::OLD_EXE_NAME, sys::now_secs())),
+                );
             }
         }
     }
@@ -197,7 +211,11 @@ pub fn install(opts: &InstallOptions) -> Result<InstallReport, Problem> {
             warnings.push(Problem::shortcut_failed(&exe_s, &e));
         }
     }
-    Ok(InstallReport { exe: exe_s, dir: dir_s, warnings })
+    Ok(InstallReport {
+        exe: exe_s,
+        dir: dir_s,
+        warnings,
+    })
 }
 
 fn register_uninstall(dir: &str, exe: &str) {
@@ -206,7 +224,9 @@ fn register_uninstall(dir: &str, exe: &str) {
         use winreg::enums::HKEY_CURRENT_USER;
         let hkcu = winreg::RegKey::predef(HKEY_CURRENT_USER);
         if let Ok((key, _)) = hkcu.create_subkey(UNINSTALL_KEY) {
-            let size_kb = fs::metadata(exe).map(|m| (m.len() / 1024) as u32).unwrap_or(0);
+            let size_kb = fs::metadata(exe)
+                .map(|m| (m.len() / 1024) as u32)
+                .unwrap_or(0);
             let _ = key.set_value("DisplayName", &sys::APP_NAME.to_string());
             let _ = key.set_value("DisplayVersion", &sys::VERSION.to_string());
             let _ = key.set_value("Publisher", &"MikeAdamRGB".to_string());
@@ -229,10 +249,20 @@ fn register_uninstall(dir: &str, exe: &str) {
 pub fn create_shortcut(lnk: &Path, target: &Path) -> Result<(), String> {
     // SICHERHEIT: Pfade nie in den Befehl einbauen (Anführungszeichen-Tricks), sondern als
     // Umgebungsvariablen übergeben. PowerShell mit absolutem Pfad starten.
-    let workdir = target.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+    let workdir = target
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
     let script = "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:MAZ_LNK);$s.TargetPath=$env:MAZ_TARGET;$s.WorkingDirectory=$env:MAZ_WORKDIR;$s.IconLocation=($env:MAZ_TARGET + ',0');$s.Description=$env:MAZ_DESC;$s.Save()";
     let ps = sys::quiet_command(sys::system_program("powershell.exe"))
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script])
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            script,
+        ])
         .env("MAZ_LNK", lnk.as_os_str())
         .env("MAZ_TARGET", target.as_os_str())
         .env("MAZ_WORKDIR", &workdir)
@@ -310,14 +340,25 @@ pub fn uninstall_interactive() {
             // Den (leeren) Ordner nur entfernen, wenn er wirklich wie der Launcher heißt –
             // nie z. B. einen leeren Downloads- oder Desktop-Ordner.
             let own_dir = is_own_dir_name(&dir);
-            let rmdir = if own_dir { format!(" & rmdir \"{d}\"") } else { String::new() };
+            let rmdir = if own_dir {
+                format!(" & rmdir \"{d}\"")
+            } else {
+                String::new()
+            };
             let cmd = format!(
                 "ping 127.0.0.1 -n 3 > nul & del /f /q \"{d}\\{exe}\" \"{d}\\{exe}.alt-*\" \"{d}\\{old}\" \"{d}\\{old}.alt-*\" \"{d}\\portable.txt\"{rmdir}",
                 exe = sys::EXE_NAME,
                 old = sys::OLD_EXE_NAME
             );
             use std::os::windows::process::CommandExt;
-            let _ = sys::quiet_command(sys::system_program("cmd.exe")).raw_arg(format!("/C {cmd}")).current_dir(sys::system_program("cmd.exe").parent().unwrap_or(Path::new("C:\\"))).spawn();
+            let _ = sys::quiet_command(sys::system_program("cmd.exe"))
+                .raw_arg(format!("/C {cmd}"))
+                .current_dir(
+                    sys::system_program("cmd.exe")
+                        .parent()
+                        .unwrap_or(Path::new("C:\\")),
+                )
+                .spawn();
         }
         MessageDialog::new()
             .set_level(MessageLevel::Info)

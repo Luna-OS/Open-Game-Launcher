@@ -1,5 +1,5 @@
-//! Minecraft-Inhalte: Mods, Texturenpakete, Shader und Datenpakete von Modrinth und
-//! CurseForge suchen und mit einem Klick installieren.
+//! Minecraft-Seite: NoRisk-Übersicht (Profile, Spielen, Launcher) und Minecraft-Inhalte
+//! (Mods, Texturenpakete, Shader und Datenpakete von Modrinth und CurseForge mit einem Klick).
 
 use super::art::ArtImage;
 use super::components::*;
@@ -10,6 +10,64 @@ use crate::mccontent::{self as mc, Kind, Project, Provider, Target};
 use crate::sys;
 use dioxus::prelude::*;
 use std::collections::BTreeMap;
+
+mod norisk;
+
+/// Welche Ansicht der Minecraft-Seite offen ist
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum View {
+    Hub,
+    Content,
+}
+
+static VIEW: GlobalSignal<View> = Signal::global(|| View::Hub);
+
+/// NoRisk-Übersicht öffnen (Klick auf die NoRisk-Kachel)
+pub fn open_hub(app: App) {
+    *VIEW.write() = View::Hub;
+    app.close_modal();
+    app.go(Page::Minecraft);
+}
+
+/// Inhalte (Mods …) für ein Ziel öffnen ("official" oder "norisk:<id>")
+pub fn open_content(app: App, target: String) {
+    let mut t = app.mc_target;
+    t.set(target);
+    *VIEW.write() = View::Content;
+    app.go(Page::Minecraft);
+}
+
+#[component]
+pub fn MinecraftPage() -> Element {
+    let view = *VIEW.read();
+    let tab = |v: View, icon: &'static str, label: String| {
+        let cls = if view == v {
+            "h-9 px-4 rounded-full text-sm font-medium bg-primary text-primary-foreground flex items-center gap-2 cursor-pointer"
+        } else {
+            "h-9 px-4 rounded-full text-sm font-medium bg-secondary/70 text-secondary-foreground hover:bg-accent flex items-center gap-2 cursor-pointer"
+        };
+        rsx! {
+            button { class: "{cls}", onclick: move |_| *VIEW.write() = v,
+                Icon { name: icon, class: "size-4" }
+                "{label}"
+            }
+        }
+    };
+    rsx! {
+        div { class: "h-full flex flex-col",
+            div { class: "shrink-0 px-8 pt-5 flex gap-2 max-w-[1600px] w-full mx-auto",
+                {tab(View::Hub, "home", t("nr.tab_hub"))}
+                {tab(View::Content, "package", t("nr.tab_content"))}
+            }
+            div { class: "flex-1 min-h-0",
+                match view {
+                    View::Hub => rsx! { norisk::NoRiskHub {} },
+                    View::Content => rsx! { ContentBrowser {} },
+                }
+            }
+        }
+    }
+}
 
 #[derive(Clone, PartialEq)]
 enum InstallState {
@@ -27,6 +85,40 @@ fn kind_label(k: Kind) -> String {
     })
 }
 
+/// Ziele für die Auswahl: offizieller Launcher ohne Gruppe, NoRisk-Profile nach Gruppe
+fn target_groups(list: &[Target]) -> Vec<(String, Vec<Target>)> {
+    let mut out: Vec<(String, Vec<Target>)> = Vec::new();
+    for x in list {
+        let g = if x.official {
+            String::new()
+        } else {
+            match crate::minecraft::norisk::group_kind(&x.group) {
+                crate::minecraft::norisk::GroupKind::Custom => {
+                    format!("NoRisk · {}", norisk::pretty_label(&x.group))
+                }
+                crate::minecraft::norisk::GroupKind::NoRiskClient => "NoRisk Client".to_string(),
+                crate::minecraft::norisk::GroupKind::Own => {
+                    format!("NoRisk · {}", t("nr.group_own"))
+                }
+                crate::minecraft::norisk::GroupKind::Modpacks => {
+                    format!("NoRisk · {}", t("nr.group_modpacks"))
+                }
+                crate::minecraft::norisk::GroupKind::Server => {
+                    format!("NoRisk · {}", t("nr.group_server"))
+                }
+            }
+        };
+        match out
+            .iter_mut()
+            .find(|(k, _)| k.to_lowercase() == g.to_lowercase())
+        {
+            Some((_, v)) => v.push(x.clone()),
+            None => out.push((g, vec![x.clone()])),
+        }
+    }
+    out
+}
+
 fn format_count(n: u64) -> String {
     match n {
         0..=999 => n.to_string(),
@@ -35,8 +127,9 @@ fn format_count(n: u64) -> String {
     }
 }
 
+/// Inhalte suchen und installieren
 #[component]
-pub fn MinecraftPage() -> Element {
+fn ContentBrowser() -> Element {
     let app = use_app();
     let mut targets = use_signal(Vec::<Target>::new);
     let mut versions = use_signal(Vec::<String>::new);
@@ -57,13 +150,27 @@ pub fn MinecraftPage() -> Element {
     let mut key_input = use_signal(String::new);
     // Schon installierte Projekte im aktuellen Zielordner ("modrinth:…", "curseforge:…")
     let mut installed = use_signal(std::collections::BTreeSet::<String>::new);
-    let mut refresh_installed = move || {
-        let Some(tgt) = targets.peek().iter().find(|x| x.id == *target_id.peek()).cloned() else { return };
+    let refresh_installed = move || {
+        let Some(tgt) = targets
+            .peek()
+            .iter()
+            .find(|x| x.id == *target_id.peek())
+            .cloned()
+        else {
+            return;
+        };
         let k = *kind.peek();
-        let w = if world.peek().is_empty() { mc::worlds(&tgt.dir).into_iter().next().unwrap_or_default() } else { world.peek().clone() };
+        let w = if world.peek().is_empty() {
+            mc::worlds(&tgt.dir).into_iter().next().unwrap_or_default()
+        } else {
+            world.peek().clone()
+        };
         let key = app.settings.peek().curseforge_key.clone();
         spawn(async move {
-            let set = tokio::task::spawn_blocking(move || mc::installed_projects(&tgt.dir, k, &w, &key)).await.unwrap_or_default();
+            let set =
+                tokio::task::spawn_blocking(move || mc::installed_projects(&tgt.dir, k, &w, &key))
+                    .await
+                    .unwrap_or_default();
             installed.set(set);
         });
     };
@@ -71,7 +178,9 @@ pub fn MinecraftPage() -> Element {
     // Ziele (offizieller Launcher + NoRisk-Profile) und Minecraft-Versionen laden
     use_hook(move || {
         spawn(async move {
-            let (t, v) = tokio::task::spawn_blocking(|| (mc::targets(), mc::game_versions())).await.unwrap_or_default();
+            let (t, v) = tokio::task::spawn_blocking(|| (mc::targets(), mc::game_versions()))
+                .await
+                .unwrap_or_default();
             if version.peek().is_empty() {
                 if let Some(first) = v.first() {
                     version.set(first.clone());
@@ -88,26 +197,58 @@ pub fn MinecraftPage() -> Element {
         });
     });
 
-    let target = targets.read().iter().find(|x| x.id == *target_id.read()).cloned();
+    let target = targets
+        .read()
+        .iter()
+        .find(|x| x.id == *target_id.read())
+        .cloned();
     // NoRisk-Profil: Version und Loader stehen fest
-    let eff_version = target.as_ref().and_then(|t| t.game_version.clone()).unwrap_or_else(|| version());
-    let eff_loader = target.as_ref().and_then(|t| t.loader.clone()).unwrap_or_else(|| loader());
-    let fixed = target.as_ref().map(|t| t.game_version.is_some()).unwrap_or(false);
+    let eff_version = target
+        .as_ref()
+        .and_then(|t| t.game_version.clone())
+        .unwrap_or_else(|| version.cloned());
+    let eff_loader = target
+        .as_ref()
+        .and_then(|t| t.loader.clone())
+        .unwrap_or_else(|| loader.cloned());
+    let fixed = target
+        .as_ref()
+        .map(|t| t.game_version.is_some())
+        .unwrap_or(false);
     let cf_key = app.settings.read().curseforge_key.clone();
-    let worlds = target.as_ref().map(|t| mc::worlds(&t.dir)).unwrap_or_default();
+    let worlds = target
+        .as_ref()
+        .map(|t| mc::worlds(&t.dir))
+        .unwrap_or_default();
     // Ohne Auswahl: erste Welt
-    let eff_world = if world().is_empty() { worlds.first().cloned().unwrap_or_default() } else { world() };
+    let eff_world = if world().is_empty() {
+        worlds.first().cloned().unwrap_or_default()
+    } else {
+        world()
+    };
 
     let mut run_search = move |reset: bool| {
-        let Some(_) = targets.peek().iter().find(|x| x.id == *target_id.peek()) else { return };
+        let Some(_) = targets.peek().iter().find(|x| x.id == *target_id.peek()) else {
+            return;
+        };
         if reset {
             offset.set(0);
             results.set(Vec::new());
         }
         let (p, k, q) = (*provider.peek(), *kind.peek(), query.peek().clone());
-        let tgt = targets.peek().iter().find(|x| x.id == *target_id.peek()).cloned();
-        let gv = tgt.as_ref().and_then(|t| t.game_version.clone()).unwrap_or_else(|| version.peek().clone());
-        let lo = tgt.as_ref().and_then(|t| t.loader.clone()).unwrap_or_else(|| loader.peek().clone());
+        let tgt = targets
+            .peek()
+            .iter()
+            .find(|x| x.id == *target_id.peek())
+            .cloned();
+        let gv = tgt
+            .as_ref()
+            .and_then(|t| t.game_version.clone())
+            .unwrap_or_else(|| version.peek().clone());
+        let lo = tgt
+            .as_ref()
+            .and_then(|t| t.loader.clone())
+            .unwrap_or_else(|| loader.peek().clone());
         let off = *offset.peek();
         let key = app.settings.peek().curseforge_key.clone();
         loading.set(true);
@@ -117,7 +258,13 @@ pub fn MinecraftPage() -> Element {
         }
         spawn(async move {
             let res = tokio::task::spawn_blocking(move || {
-                let q = mc::Query { text: &q, kind: k, game_version: &gv, loader: &lo, offset: off };
+                let q = mc::Query {
+                    text: &q,
+                    kind: k,
+                    game_version: &gv,
+                    loader: &lo,
+                    offset: off,
+                };
                 mc::search(p, &q, &key)
             })
             .await
@@ -142,10 +289,24 @@ pub fn MinecraftPage() -> Element {
     });
 
     let mut install = move |p: Project| {
-        let Some(tgt) = targets.peek().iter().find(|x| x.id == *target_id.peek()).cloned() else { return };
-        let gv = tgt.game_version.clone().unwrap_or_else(|| version.peek().clone());
+        let Some(tgt) = targets
+            .peek()
+            .iter()
+            .find(|x| x.id == *target_id.peek())
+            .cloned()
+        else {
+            return;
+        };
+        let gv = tgt
+            .game_version
+            .clone()
+            .unwrap_or_else(|| version.peek().clone());
         let lo = tgt.loader.clone().unwrap_or_else(|| loader.peek().clone());
-        let w = if world.peek().is_empty() { mc::worlds(&tgt.dir).into_iter().next().unwrap_or_default() } else { world.peek().clone() };
+        let w = if world.peek().is_empty() {
+            mc::worlds(&tgt.dir).into_iter().next().unwrap_or_default()
+        } else {
+            world.peek().clone()
+        };
         let (k, key) = (*kind.peek(), app.settings.peek().curseforge_key.clone());
         let prov = p.provider.unwrap_or(Provider::Modrinth);
         let pid = p.id.clone();
@@ -171,8 +332,16 @@ pub fn MinecraftPage() -> Element {
                 Ok(done) => {
                     let n = done.files.len();
                     installed.write().insert(mc::project_key(prov, &pid));
-                    states.write().insert(pid, InstallState::Done(done.files.join(", ")));
-                    app.toast(&tf("mc.installed_toast", &[("name", &title), ("n", &n.to_string())]), "check-circle");
+                    states
+                        .write()
+                        .insert(pid, InstallState::Done(done.files.join(", ")));
+                    app.toast(
+                        &tf(
+                            "mc.installed_toast",
+                            &[("name", &title), ("n", &n.to_string())],
+                        ),
+                        "check-circle",
+                    );
                 }
                 Err(e) => {
                     states.write().insert(pid, InstallState::Failed(e));
@@ -190,14 +359,22 @@ pub fn MinecraftPage() -> Element {
     let err = error.read().clone();
     let need_key = provider() == Provider::CurseForge && cf_key.trim().is_empty();
     // Schlüssel abgelehnt → Eingabe direkt hier wieder anzeigen, damit man es neu probieren kann
-    let key_bad = provider() == Provider::CurseForge && err.as_deref() == Some(t("mc.err_key").as_str());
+    let key_bad =
+        provider() == Provider::CurseForge && err.as_deref() == Some(t("mc.err_key").as_str());
     let fabric_missing = target.as_ref().map(|t| t.official).unwrap_or(false)
         && kind() == Kind::Mod
         && eff_loader == "fabric"
         && mc::valid_version(&eff_version)
-        && target.as_ref().map(|t| !mc::fabric_installed(&t.dir, &eff_version)).unwrap_or(false);
-    let target_dir = target.as_ref().map(|t| t.dir.to_string_lossy().to_string()).unwrap_or_default();
+        && target
+            .as_ref()
+            .map(|t| !mc::fabric_installed(&t.dir, &eff_version))
+            .unwrap_or(false);
+    let target_dir = target
+        .as_ref()
+        .map(|t| t.dir.to_string_lossy().to_string())
+        .unwrap_or_default();
     let has_more = !list.is_empty() && list.len() % 24 == 0;
+    let shared = target.as_ref().map(|t| t.shared_with).unwrap_or(0);
 
     rsx! {
         div { class: "h-full overflow-y-auto maz-ambient",
@@ -238,10 +415,19 @@ pub fn MinecraftPage() -> Element {
                         select {
                             class: "h-9 rounded-md border border-input bg-background/60 px-3 text-sm outline-none cursor-pointer",
                             onchange: move |e| { target_id.set(e.value()); world.set(String::new()); run_search(true); },
-                            {tlist.iter().map(|x| {
-                                let sel = *target_id.read() == x.id;
-                                let (id, label) = (x.id.clone(), x.label.clone());
-                                rsx! { option { key: "{id}", value: "{id}", selected: sel, "{label}" } }
+                            // Alle Geschwister mit Schlüssel: Ziele ohne Gruppe direkt, sonst je eine optgroup
+                            {target_groups(&tlist).into_iter().flat_map(|(group, items)| {
+                                let sel_id = target_id.read().clone();
+                                let opts: Vec<Element> = items.into_iter().map(|x| {
+                                    let sel = sel_id == x.id;
+                                    let (id, label) = (x.id.clone(), x.label.clone());
+                                    rsx! { option { key: "{id}", value: "{id}", selected: sel, "{label}" } }
+                                }).collect();
+                                if group.is_empty() {
+                                    opts
+                                } else {
+                                    vec![rsx! { optgroup { key: "group:{group}", label: "{group}", {opts.into_iter()} } }]
+                                }
                             })}
                         }
                         div { class: "flex-1" }
@@ -326,6 +512,12 @@ pub fn MinecraftPage() -> Element {
                     }
 
                     // Hinweise
+                    if shared > 0 {
+                        div { class: "mb-5 flex items-center gap-3 rounded-xl border border-border bg-card/60 px-4 py-3 text-sm text-muted-foreground",
+                            Icon { name: "layers", class: "size-4 text-primary" }
+                            {tf("nr.shared_content", &[("n", &shared.to_string())])}
+                        }
+                    }
                     if fabric_missing {
                         div { class: "mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm",
                             Icon { name: "info", class: "size-4 text-warning" }
@@ -482,7 +674,12 @@ pub fn CurseForgeKeyBox(
     #[props(default)] rejected: bool,
     #[props(default)] busy: bool,
     #[props(default)] on_retry: Option<EventHandler<()>>,
-    show_guide: bool, on_toggle: EventHandler<()>, key_input: String, on_input: EventHandler<String>, on_save: EventHandler<()>) -> Element {
+    show_guide: bool,
+    on_toggle: EventHandler<()>,
+    key_input: String,
+    on_input: EventHandler<String>,
+    on_save: EventHandler<()>,
+) -> Element {
     let steps = crate::i18n::tl("mc.key_steps");
     rsx! {
         div { class: "rounded-xl border border-primary/30 bg-primary/5 p-5",

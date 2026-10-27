@@ -5,9 +5,9 @@ use super::components::*;
 use super::icons::{Icon, MazLogo};
 use super::settings::LanguageSelect;
 use super::state::{pick_folder, use_app};
+use crate::i18n::{t, tf};
 use crate::install::{self, InstallOptions, InstallReport};
 use crate::problem::Problem;
-use crate::i18n::{t, tf};
 use crate::sys;
 use dioxus::prelude::*;
 
@@ -19,10 +19,16 @@ enum Step {
     Failed(Problem),
 }
 
+#[allow(clippy::result_large_err)]
 #[component]
-pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: EventHandler<()>) -> Element {
+pub fn InstallerView(
+    #[props(!optional)] existing: Option<String>,
+    on_portable: EventHandler<()>,
+) -> Element {
     let app = use_app();
-    let default_dir = existing.clone().unwrap_or_else(|| sys::default_install_dir().to_string_lossy().to_string());
+    let default_dir = existing
+        .clone()
+        .unwrap_or_else(|| sys::default_install_dir().to_string_lossy().to_string());
     let mut dir = use_signal(|| default_dir);
     let mut desktop = use_signal(|| true);
     let mut start_menu = use_signal(|| true);
@@ -44,7 +50,10 @@ pub fn InstallerView(#[props(!optional)] existing: Option<String>, on_portable: 
             match res {
                 Ok(Ok(report)) => step.set(Step::Done(report)),
                 Ok(Err(p)) => step.set(Step::Failed(p)),
-                Err(e) => step.set(Step::Failed(Problem::install_failed(&dir.peek(), &e.to_string()))),
+                Err(e) => step.set(Step::Failed(Problem::install_failed(
+                    &dir.peek(),
+                    &e.to_string(),
+                ))),
             }
         });
     };

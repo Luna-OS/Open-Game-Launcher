@@ -30,6 +30,7 @@ impl Vdf {
         }
     }
 
+    #[allow(dead_code)] // derzeit ungenutzt
     pub fn as_str(&self) -> Option<&str> {
         match self {
             Vdf::Str(s) => Some(s),
@@ -130,15 +131,22 @@ impl<'a> Lexer<'a> {
     }
 }
 
-fn parse_obj(lx: &mut Lexer, top_level: bool) -> BTreeMap<String, Vdf> {
+/// Höchste Verschachtelungstiefe – schützt vor Stapelüberlauf bei kaputten Dateien ("{{{{…")
+const MAX_DEPTH: usize = 64;
+
+fn parse_obj(lx: &mut Lexer, depth: usize) -> BTreeMap<String, Vdf> {
     let mut map = BTreeMap::new();
+    if depth > MAX_DEPTH {
+        skip_block(lx);
+        return map;
+    }
     loop {
         let key = match lx.next_tok() {
             Some(Tok::Str(k)) => k,
             Some(Tok::Close) | None => return map,
             Some(Tok::Open) => {
                 // Kaputte Datei – verschachtelten Block überspringen
-                let _ = parse_obj(lx, false);
+                let _ = parse_obj(lx, depth + 1);
                 continue;
             }
         };
@@ -147,13 +155,23 @@ fn parse_obj(lx: &mut Lexer, top_level: bool) -> BTreeMap<String, Vdf> {
                 map.insert(key, Vdf::Str(v));
             }
             Some(Tok::Open) => {
-                let child = parse_obj(lx, false);
+                let child = parse_obj(lx, depth + 1);
                 map.insert(key, Vdf::Obj(child));
             }
-            Some(Tok::Close) | None => {
-                let _ = top_level;
-                return map;
-            }
+            Some(Tok::Close) | None => return map,
+        }
+    }
+}
+
+/// Block bis zur passenden "}" überlesen (ohne Rekursion)
+fn skip_block(lx: &mut Lexer) {
+    let mut open = 1usize;
+    while open > 0 {
+        match lx.next_tok() {
+            Some(Tok::Open) => open += 1,
+            Some(Tok::Close) => open -= 1,
+            Some(Tok::Str(_)) => {}
+            None => return,
         }
     }
 }
@@ -164,7 +182,7 @@ pub fn parse(text: &str) -> Vdf {
     let mut lx = Lexer {
         chars: text.chars().peekable(),
     };
-    Vdf::Obj(parse_obj(&mut lx, true))
+    Vdf::Obj(parse_obj(&mut lx, 0))
 }
 
 #[cfg(test)]
@@ -225,5 +243,19 @@ mod tests {
         assert!(v.get("a").is_some());
         let _ = parse("}}}{{{");
         let _ = parse("");
+    }
+
+    #[test]
+    fn deep_nesting_does_not_overflow() {
+        let deep = format!("\"a\" {}{}", "{\"k\" ".repeat(200_000), "}".repeat(200_000));
+        let v = parse(&deep);
+        assert!(v.get("a").is_some());
+        // Nach dem tiefen Block geht es normal weiter
+        let txt = format!(
+            "\"a\" {}{} \"b\" \"1\"",
+            "{\"k\" ".repeat(100),
+            "}".repeat(100)
+        );
+        assert_eq!(parse(&txt).str("b"), Some("1"));
     }
 }

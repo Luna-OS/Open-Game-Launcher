@@ -11,8 +11,16 @@ pub fn manifests_dir() -> Option<PathBuf> {
     #[cfg(windows)]
     {
         let candidates = [
-            sys::reg_str(Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher", "AppDataPath"),
-            sys::reg_str(Hive::LocalMachine, "SOFTWARE\\Epic Games\\EpicGamesLauncher", "AppDataPath"),
+            sys::reg_str(
+                Hive::LocalMachine,
+                "SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher",
+                "AppDataPath",
+            ),
+            sys::reg_str(
+                Hive::LocalMachine,
+                "SOFTWARE\\Epic Games\\EpicGamesLauncher",
+                "AppDataPath",
+            ),
         ];
         for c in candidates.into_iter().flatten() {
             let p = PathBuf::from(c).join("Manifests");
@@ -30,7 +38,8 @@ pub fn manifests_dir() -> Option<PathBuf> {
     }
     #[cfg(target_os = "macos")]
     {
-        let p = sys::home_dir().join("Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests");
+        let p = sys::home_dir()
+            .join("Library/Application Support/Epic/EpicGamesLauncher/Data/Manifests");
         p.exists().then_some(p)
     }
     #[cfg(not(any(windows, target_os = "macos")))]
@@ -50,7 +59,9 @@ pub fn launcher_installed() -> bool {
         ["/Applications/Epic Games Launcher.app"]
             .iter()
             .map(PathBuf::from)
-            .chain(std::iter::once(sys::home_dir().join("Applications/Epic Games Launcher.app")))
+            .chain(std::iter::once(
+                sys::home_dir().join("Applications/Epic Games Launcher.app"),
+            ))
             .any(|p| p.exists())
     }
     #[cfg(not(any(windows, target_os = "macos")))]
@@ -76,32 +87,53 @@ pub fn heroic_dirs() -> Vec<PathBuf> {
     .into_iter()
     .flatten()
     {
-        if p.join("legendaryConfig").exists() || p.join("store_cache").exists() {
-            if !out.contains(&p) {
-                out.push(p);
-            }
+        if (p.join("legendaryConfig").exists() || p.join("store_cache").exists())
+            && !out.contains(&p)
+        {
+            out.push(p);
         }
     }
     out
 }
 
 pub fn heroic_uri(app_name: &str) -> String {
-    format!("heroic://launch?appName={}&runner=legendary", sys::url_encode(app_name))
+    format!(
+        "heroic://launch?appName={}&runner=legendary",
+        sys::url_encode(app_name)
+    )
 }
 
 /// Heroic: installed.json (installierte Spiele) + legendary_library.json (alle Spiele)
 pub fn parse_heroic(installed_json: &str, library_json: &str, show_uninstalled: bool) -> Vec<Game> {
     let mut games: Vec<Game> = Vec::new();
-    let installed: serde_json::Value = serde_json::from_str(installed_json).unwrap_or(serde_json::Value::Null);
-    let library: serde_json::Value = serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
-    let lib_list: Vec<serde_json::Value> = library.get("library").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+    let installed: serde_json::Value =
+        serde_json::from_str(installed_json).unwrap_or(serde_json::Value::Null);
+    let library: serde_json::Value =
+        serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
+    let lib_list: Vec<serde_json::Value> = library
+        .get("library")
+        .and_then(|l| l.as_array())
+        .cloned()
+        .unwrap_or_default();
     let art_for = |app: &str| -> Art {
-        let Some(e) = lib_list.iter().find(|e| jstr(e, "app_name") == app) else { return Art::default() };
+        let Some(e) = lib_list.iter().find(|e| jstr(e, "app_name") == app) else {
+            return Art::default();
+        };
         let pick = |k: &str| -> Vec<String> {
             let u = jstr(e, k);
-            if u.starts_with("https://") { vec![u.to_string()] } else { Vec::new() }
+            if u.starts_with("https://") {
+                vec![u.to_string()]
+            } else {
+                Vec::new()
+            }
         };
-        Art { cover: pick("art_square"), hero: pick("art_cover"), logo: pick("art_logo"), icon: pick("art_square"), header: pick("art_cover") }
+        Art {
+            cover: pick("art_square"),
+            hero: pick("art_cover"),
+            logo: pick("art_logo"),
+            icon: pick("art_square"),
+            header: pick("art_cover"),
+        }
     };
     if let Some(map) = installed.as_object() {
         for (app, v) in map {
@@ -119,11 +151,15 @@ pub fn parse_heroic(installed_json: &str, library_json: &str, show_uninstalled: 
                 name: title,
                 source: Source::Epic,
                 installed: true,
-                exe: (!dir.is_empty() && !exe_rel.is_empty()).then(|| Path::new(&dir).join(&exe_rel).to_string_lossy().to_string()),
+                exe: (!dir.is_empty() && !exe_rel.is_empty())
+                    .then(|| Path::new(&dir).join(&exe_rel).to_string_lossy().to_string()),
                 install_dir: (!dir.is_empty()).then_some(dir),
                 launch: LaunchTarget::Epic(heroic_uri(app)),
                 art: art_for(app),
-                size_bytes: v.get("install_size").and_then(|s| s.as_u64()).filter(|s| *s > 0),
+                size_bytes: v
+                    .get("install_size")
+                    .and_then(|s| s.as_u64())
+                    .filter(|s| *s > 0),
                 playtime_min: None,
                 steam_appid: None,
             });
@@ -133,10 +169,17 @@ pub fn parse_heroic(installed_json: &str, library_json: &str, show_uninstalled: 
         for e in &lib_list {
             let app = jstr(e, "app_name");
             let title = jstr(e, "title").trim().to_string();
-            if app.is_empty() || title.is_empty() || games.iter().any(|g| g.id == format!("epic:{app}")) {
+            if app.is_empty()
+                || title.is_empty()
+                || games.iter().any(|g| g.id == format!("epic:{app}"))
+            {
                 continue;
             }
-            if e.get("install").and_then(|i| i.get("is_dlc")).and_then(|b| b.as_bool()) == Some(true) {
+            if e.get("install")
+                .and_then(|i| i.get("is_dlc"))
+                .and_then(|b| b.as_bool())
+                == Some(true)
+            {
                 continue;
             }
             games.push(Game {
@@ -162,12 +205,17 @@ fn scan_heroic(show_uninstalled: bool) -> EpicScan {
     let dirs = heroic_dirs();
     let Some(dir) = dirs.first() else {
         status.note = Some(crate::i18n::t("store.heroic_not_found"));
-        return EpicScan { games: Vec::new(), status };
+        return EpicScan {
+            games: Vec::new(),
+            status,
+        };
     };
     status.found = true;
     status.path = Some(dir.to_string_lossy().to_string());
-    let installed = fs::read_to_string(dir.join("legendaryConfig/legendary/installed.json")).unwrap_or_default();
-    let library = fs::read_to_string(dir.join("store_cache/legendary_library.json")).unwrap_or_default();
+    let installed = fs::read_to_string(dir.join("legendaryConfig/legendary/installed.json"))
+        .unwrap_or_default();
+    let library =
+        fs::read_to_string(dir.join("store_cache/legendary_library.json")).unwrap_or_default();
     let games = parse_heroic(&installed, &library, show_uninstalled);
     status.installed = games.iter().filter(|g| g.installed).count();
     status.owned = games.len();
@@ -188,18 +236,21 @@ fn jstr<'a>(v: &'a serde_json::Value, key: &str) -> &'a str {
 
 /// Epic-Datenordner (…\EpicGamesLauncher\Data)
 fn data_dir() -> Option<PathBuf> {
-    manifests_dir().and_then(|m| m.parent().map(|p| p.to_path_buf())).or_else(|| {
-        if cfg!(target_os = "macos") {
-            let p = sys::home_dir().join("Library/Application Support/Epic/EpicGamesLauncher/Data");
-            return p.exists().then_some(p);
-        }
-        let p = sys::env_path("ProgramData")
-            .unwrap_or_else(|| PathBuf::from("C:\\ProgramData"))
-            .join("Epic")
-            .join("EpicGamesLauncher")
-            .join("Data");
-        p.exists().then_some(p)
-    })
+    manifests_dir()
+        .and_then(|m| m.parent().map(|p| p.to_path_buf()))
+        .or_else(|| {
+            if cfg!(target_os = "macos") {
+                let p =
+                    sys::home_dir().join("Library/Application Support/Epic/EpicGamesLauncher/Data");
+                return p.exists().then_some(p);
+            }
+            let p = sys::env_path("ProgramData")
+                .unwrap_or_else(|| PathBuf::from("C:\\ProgramData"))
+                .join("Epic")
+                .join("EpicGamesLauncher")
+                .join("Data");
+            p.exists().then_some(p)
+        })
 }
 
 /// Ein Spiel aus Epics lokalem Katalog-Cache (= deine Epic-Bibliothek)
@@ -213,7 +264,9 @@ pub struct CatalogGame {
 }
 
 fn key_image(v: &serde_json::Value, types: &[&str]) -> Vec<String> {
-    let Some(list) = v.get("keyImages").and_then(|k| k.as_array()) else { return Vec::new() };
+    let Some(list) = v.get("keyImages").and_then(|k| k.as_array()) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for t in types {
         for img in list {
@@ -230,13 +283,23 @@ fn key_image(v: &serde_json::Value, types: &[&str]) -> Vec<String> {
 
 /// Liest `Catalog/catcache.bin` (Base64 → JSON-Liste der Katalogeinträge).
 pub fn parse_catalog(raw: &str) -> Vec<CatalogGame> {
-    let Some(bytes) = crate::util::base64_decode(raw.trim()) else { return Vec::new() };
-    let Ok(v) = serde_json::from_slice::<serde_json::Value>(&bytes) else { return Vec::new() };
-    let Some(items) = v.as_array() else { return Vec::new() };
+    let Some(bytes) = crate::util::base64_decode(raw.trim()) else {
+        return Vec::new();
+    };
+    let Ok(v) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return Vec::new();
+    };
+    let Some(items) = v.as_array() else {
+        return Vec::new();
+    };
     let mut out: Vec<CatalogGame> = Vec::new();
     for it in items {
         // DLCs haben ein "mainGameItem"
-        if it.get("mainGameItem").map(|m| !m.is_null()).unwrap_or(false) {
+        if it
+            .get("mainGameItem")
+            .map(|m| !m.is_null())
+            .unwrap_or(false)
+        {
             continue;
         }
         let cats: Vec<String> = it
@@ -247,7 +310,12 @@ pub fn parse_catalog(raw: &str) -> Vec<CatalogGame> {
         if !cats.iter().any(|c| c == "games") {
             continue;
         }
-        if cats.iter().any(|c| matches!(c.as_str(), "addons" | "engines" | "digitalextras" | "software" | "plugins")) {
+        if cats.iter().any(|c| {
+            matches!(
+                c.as_str(),
+                "addons" | "engines" | "digitalextras" | "software" | "plugins"
+            )
+        }) {
             continue;
         }
         let app_name = it
@@ -262,9 +330,15 @@ pub fn parse_catalog(raw: &str) -> Vec<CatalogGame> {
         }
         let art = Art {
             cover: key_image(it, &["DieselGameBoxTall", "OfferImageTall", "Thumbnail"]),
-            hero: key_image(it, &["DieselGameBox", "OfferImageWide", "DieselStoreFrontWide"]),
+            hero: key_image(
+                it,
+                &["DieselGameBox", "OfferImageWide", "DieselStoreFrontWide"],
+            ),
             logo: key_image(it, &["DieselGameBoxLogo"]),
-            icon: key_image(it, &["DieselGameBoxTall"]).into_iter().map(|u| format!("{u}?w=64&h=64&resize=1")).collect(),
+            icon: key_image(it, &["DieselGameBoxTall"])
+                .into_iter()
+                .map(|u| format!("{u}?w=64&h=64&resize=1"))
+                .collect(),
             header: key_image(it, &["DieselGameBox", "OfferImageWide"]),
         };
         out.push(CatalogGame {
@@ -279,10 +353,14 @@ pub fn parse_catalog(raw: &str) -> Vec<CatalogGame> {
 }
 
 fn read_catalog() -> Vec<CatalogGame> {
-    let Some(dir) = data_dir() else { return Vec::new() };
+    let Some(dir) = data_dir() else {
+        return Vec::new();
+    };
     let path = dir.join("Catalog").join("catcache.bin");
     match fs::read(&path) {
-        Ok(bytes) if bytes.len() < 128 * 1024 * 1024 => parse_catalog(&String::from_utf8_lossy(&bytes)),
+        Ok(bytes) if bytes.len() < 128 * 1024 * 1024 => {
+            parse_catalog(&String::from_utf8_lossy(&bytes))
+        }
         _ => Vec::new(),
     }
 }
@@ -335,11 +413,19 @@ pub fn scan(show_uninstalled: bool) -> EpicScan {
     let mut games: Vec<Game> = Vec::new();
     for e in fs::read_dir(&dir).into_iter().flatten().flatten() {
         let p = e.path();
-        if p.extension().and_then(|x| x.to_str()).map(|x| x.eq_ignore_ascii_case("item")) != Some(true) {
+        if p.extension()
+            .and_then(|x| x.to_str())
+            .map(|x| x.eq_ignore_ascii_case("item"))
+            != Some(true)
+        {
             continue;
         }
-        let Ok(text) = fs::read_to_string(&p) else { continue };
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else { continue };
+        let Ok(text) = fs::read_to_string(&p) else {
+            continue;
+        };
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else {
+            continue;
+        };
 
         let app_name = jstr(&v, "AppName");
         let main_app = jstr(&v, "MainGameAppName");
@@ -353,9 +439,16 @@ pub fn scan(show_uninstalled: bool) -> EpicScan {
         let categories: Vec<String> = v
             .get("AppCategories")
             .and_then(|c| c.as_array())
-            .map(|a| a.iter().filter_map(|x| x.as_str().map(|s| s.to_lowercase())).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str().map(|s| s.to_lowercase()))
+                    .collect()
+            })
             .unwrap_or_default();
-        if categories.iter().any(|c| c == "plugins" || c == "engines" || c == "addons" || c == "digitalextras") {
+        if categories
+            .iter()
+            .any(|c| c == "plugins" || c == "engines" || c == "addons" || c == "digitalextras")
+        {
             continue;
         }
         let name = jstr(&v, "DisplayName").trim().to_string();
@@ -367,7 +460,12 @@ pub fn scan(show_uninstalled: bool) -> EpicScan {
         let install = sys::native_path(jstr(&v, "InstallLocation"));
         let exe_rel = sys::native_path(jstr(&v, "LaunchExecutable"));
         let exe = if !install.is_empty() && !exe_rel.is_empty() {
-            Some(Path::new(&install).join(&exe_rel).to_string_lossy().to_string())
+            Some(
+                Path::new(&install)
+                    .join(&exe_rel)
+                    .to_string_lossy()
+                    .to_string(),
+            )
         } else {
             None
         };
@@ -385,7 +483,11 @@ pub fn scan(show_uninstalled: bool) -> EpicScan {
             install_dir: (!install.is_empty()).then_some(install),
             exe,
             launch: LaunchTarget::Epic(uri),
-            art: catalog.iter().find(|c| c.app_name == app_name).map(|c| c.art.clone()).unwrap_or_default(),
+            art: catalog
+                .iter()
+                .find(|c| c.app_name == app_name)
+                .map(|c| c.art.clone())
+                .unwrap_or_default(),
             size_bytes: size.filter(|s| *s > 0),
             playtime_min: None,
             steam_appid: None,
@@ -414,7 +516,12 @@ fn add_uninstalled(games: &mut Vec<Game>, catalog: &[CatalogGame], show: bool) {
             installed: false,
             install_dir: None,
             exe: None,
-            launch: LaunchTarget::EpicInstall(epic_uri(&c.namespace, &c.item_id, &c.app_name, "install")),
+            launch: LaunchTarget::EpicInstall(epic_uri(
+                &c.namespace,
+                &c.item_id,
+                &c.app_name,
+                "install",
+            )),
             art: c.art.clone(),
             size_bytes: None,
             playtime_min: None,
@@ -438,11 +545,14 @@ mod tests {
           {"id":"i4","namespace":"ns4","title":"No App","categories":[{"path":"games"}]}
         ]"#;
         let b64 = {
-            const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            const T: &[u8; 64] =
+                b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
             let d = json.as_bytes();
             let mut s = String::new();
             for ch in d.chunks(3) {
-                let n = ((ch[0] as u32) << 16) | ((*ch.get(1).unwrap_or(&0) as u32) << 8) | *ch.get(2).unwrap_or(&0) as u32;
+                let n = ((ch[0] as u32) << 16)
+                    | ((*ch.get(1).unwrap_or(&0) as u32) << 8)
+                    | *ch.get(2).unwrap_or(&0) as u32;
                 for i in 0..4 {
                     if i <= ch.len() {
                         s.push(T[((n >> (18 - 6 * i)) & 63) as usize] as char);

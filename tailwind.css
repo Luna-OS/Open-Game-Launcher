@@ -282,6 +282,24 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 @keyframes toast-progress { from { width: 100% } to { width: 0% } }
 .toast-progress { animation: toast-progress 5s linear forwards; }
 
+/* Tastatur-Fokus für alles Klickbare ohne eigenen Fokus-Stil (Utilities gewinnen weiterhin) */
+@layer base {
+  :where(button, a, summary, select, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--ring) 75%, transparent);
+    outline-offset: 2px;
+  }
+  [data-dialog]:focus { outline: none; }
+}
+
+/* System-Einstellung "Animationen reduzieren" respektieren */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Controller-Modus: deutlicher Fokus-Rahmen */
 .controller-mode :focus,
 .controller-mode :focus-visible {
