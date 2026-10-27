@@ -7,13 +7,23 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
-## [Unreleased]
+## [1.9.0] – 2026-10-27
 
 ### Neu
 - **NoRisk Client: eine Kachel statt vieler.** Statt einer Kachel pro Profil gibt es jetzt genau eine „NoRisk Client“-Kachel. „Spielen“ startet das zuletzt gespielte Profil. Ein Klick auf die Kachel öffnet den **NoRisk-Hub** direkt im Launcher: alle Profile mit Version, Loader und Spielzeit, dazu Spielen, Öffnen und „Neues Profil“ (Profile werden immer vom NoRisk Launcher selbst angelegt, OG schreibt nie in dessen Daten).
 - **Design `lu_hub`:** OG öffnet den NoRisk Launcher mit dem neuen Design `lu_hub` (`open --theme lu_hub`). Der NoRisk Launcher versteht dafür die neuen Befehle `open --profile/--theme/--create`; die Schnittstelle steht in `nrc/docs/OGL_INTEROP.md`.
 
+### Behoben
+- **Einstellungen gehen nicht mehr kaputt:** `config.json`, Metadaten- und Epic-Cache werden atomar gespeichert (vorher konnte ein Absturz sie halb geschrieben zurücklassen).
+- **Steam-Spielzeit:** Spiele mit leerem Installordner bekamen die Spielzeit aller Steam-Spiele zugerechnet.
+- **Abstürze:** Umlaute vor „.exe“ in Deinstallations-Pfaden und extrem verschachtelte VDF-/appinfo-Dateien ließen OG abstürzen.
+- **NoRisk „Zuletzt gespielt“** war falsch (Nanosekunden wurden als Sekunden gelesen).
+- **Erweiterungen:** Programmpfade müssen absolut sein, entzogene Rechte wirken sofort, zwei Installationen in derselben Sekunde löschen sich nicht mehr gegenseitig, Windows-Gerätenamen (`CON`, `nul.txt` …) werden abgelehnt.
+- **Dialoge:** Escape schließt sie sofort; Kacheln sind per Tastatur bedienbar, das „nicht installiert“-Badge überdeckt den Favoriten-Stern nicht mehr.
+
 ### Verbessert
+- GOG-Bibliotheken mit vielen Spielen laden deutlich schneller.
+- Sichtbarer Tastatur-Fokus, weniger Animation bei „Bewegung reduzieren“, Übersetzungen in allen 9 Sprachen vollständig.
 - **Qualitätsprüfung:** Neuer CI-Ablauf (`ci.yml`) prüft bei jedem Push `rustfmt`, `clippy -D warnings` und alle Tests unter Windows, Linux und macOS. Neue Tests für den VDF-Parser (Steam `libraryfolders.vdf`, abgeschnittene und kaputte Dateien).
 
 ## [1.8.1] – 2026-10-26
