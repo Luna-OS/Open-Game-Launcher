@@ -1,6 +1,7 @@
-//! Selbst gezeichnete Bilder für die NoRisk-Kachel (keine fremden Grafiken): Nachthimmel mit
-//! Leuchten, Block-Landschaft, ein Würfel und "NORISK CLIENT" in Block-Schrift. Als PNG im Cache,
-//! weil die Oberfläche aus Sicherheitsgründen nur Rasterbilder lädt.
+//! Selbst gezeichnete Bilder für die Minecraft-Kacheln (keine fremden Grafiken): Himmel mit
+//! Leuchten, Block-Landschaft, ein Würfel und zwei Zeilen Block-Schrift ("NORISK CLIENT",
+//! "MINECRAFT LAUNCHER" …). Als PNG im Cache, weil die Oberfläche aus Sicherheitsgründen nur
+//! Rasterbilder lädt.
 
 use image::{Rgba, RgbaImage};
 use std::path::PathBuf;
@@ -10,40 +11,83 @@ const VERSION: u32 = 2;
 
 type Rgb = (u8, u8, u8);
 
-const SKY: [Rgb; 3] = [(11, 15, 42), (59, 29, 110), (226, 68, 92)];
-const GLOW: Rgb = (255, 90, 110);
+/// Farben und Text einer Kachel
+pub struct Style {
+    /// Name im Cache (Dateien heißen `<key>-cover-v<VERSION>.png` …)
+    pub key: &'static str,
+    pub sky: [Rgb; 3],
+    pub glow: Rgb,
+    /// Würfel: oben, links, rechts
+    pub cube: [Rgb; 3],
+    pub title: &'static str,
+    pub subtitle: &'static str,
+    pub accent: Rgb,
+}
+
+pub const NORISK: Style = Style {
+    key: "norisk",
+    sky: [(11, 15, 42), (59, 29, 110), (226, 68, 92)],
+    glow: (255, 90, 110),
+    cube: [(255, 90, 110), (184, 36, 58), (122, 20, 48)],
+    title: "NORISK",
+    subtitle: "CLIENT",
+    accent: (255, 210, 216),
+};
+
+/// Grasblock: oben grün, Seiten Erde
+const GRASS_BLOCK: [Rgb; 3] = [(106, 190, 72), (134, 96, 67), (101, 71, 48)];
+
+pub const JAVA: Style = Style {
+    key: "mc-java",
+    sky: [(14, 30, 62), (40, 96, 160), (128, 196, 232)],
+    glow: (255, 226, 150),
+    cube: GRASS_BLOCK,
+    title: "MINECRAFT",
+    subtitle: "LAUNCHER",
+    accent: (206, 242, 186),
+};
+
+pub const BEDROCK: Style = Style {
+    key: "mc-bedrock",
+    sky: [(9, 22, 38), (22, 72, 92), (64, 156, 142)],
+    glow: (120, 255, 200),
+    cube: GRASS_BLOCK,
+    title: "MINECRAFT",
+    subtitle: "BEDROCK",
+    accent: (186, 246, 222),
+};
+
 const GRASS: Rgb = (63, 163, 77);
 const GRASS_DARK: Rgb = (47, 125, 58);
 const DIRT: Rgb = (107, 74, 47);
 const DIRT_DARK: Rgb = (88, 60, 38);
-const CUBE: [Rgb; 3] = [(255, 90, 110), (184, 36, 58), (122, 20, 48)];
 const WHITE: Rgb = (255, 255, 255);
-const PINK: Rgb = (255, 210, 216);
 
-/// Cover (600×900), Hero (1920×620), Banner (460×215) in den Cache schreiben
-pub fn artwork() -> Option<(PathBuf, PathBuf, PathBuf)> {
+/// Cover (600×900), Hero (1920×420), Banner (460×215) in den Cache schreiben
+pub fn artwork(st: &Style) -> Option<(PathBuf, PathBuf, PathBuf)> {
+    let key = st.key;
     let dir = crate::sys::local_dir().join("art");
     std::fs::create_dir_all(&dir).ok()?;
     // Alte Fassungen aufräumen
     for e in std::fs::read_dir(&dir).into_iter().flatten().flatten() {
         let n = e.file_name().to_string_lossy().to_string();
-        if n.starts_with("norisk-") && !n.ends_with(&format!("-v{VERSION}.png")) {
+        if n.starts_with(&format!("{key}-")) && !n.ends_with(&format!("-v{VERSION}.png")) {
             let _ = std::fs::remove_file(e.path());
         }
     }
     let mut out = Vec::new();
     for (name, draw) in [
-        ("cover", cover as fn() -> RgbaImage),
+        ("cover", cover as fn(&Style) -> RgbaImage),
         ("hero", hero),
         ("header", header),
     ] {
-        let p = dir.join(format!("norisk-{name}-v{VERSION}.png"));
+        let p = dir.join(format!("{key}-{name}-v{VERSION}.png"));
         if !p.is_file() {
             let tmp = dir.join(format!(
-                "norisk-{name}-v{VERSION}.{}.tmp.png",
+                "{key}-{name}-v{VERSION}.{}.tmp.png",
                 std::process::id()
             ));
-            draw()
+            draw(st)
                 .save_with_format(&tmp, image::ImageFormat::Png)
                 .ok()?;
             if std::fs::rename(&tmp, &p).is_err() {
@@ -67,16 +111,17 @@ fn mix(a: Rgb, b: Rgb, t: f32) -> Rgb {
 }
 
 /// Himmel: Verlauf von oben nach unten + rötliches Leuchten um (gx, gy)
-fn sky(w: u32, h: u32, gx: f32, gy: f32, gr: f32) -> RgbaImage {
+fn sky(st: &Style, w: u32, h: u32, gx: f32, gy: f32, gr: f32) -> RgbaImage {
+    let (sk, glow) = (st.sky, st.glow);
     RgbaImage::from_fn(w, h, |x, y| {
         let t = y as f32 / h as f32;
         let base = if t < 0.55 {
-            mix(SKY[0], SKY[1], t / 0.55)
+            mix(sk[0], sk[1], t / 0.55)
         } else {
-            mix(SKY[1], SKY[2], (t - 0.55) / 0.45)
+            mix(sk[1], sk[2], (t - 0.55) / 0.45)
         };
         let d = ((x as f32 - gx).powi(2) + (y as f32 - gy).powi(2)).sqrt() / gr;
-        px(mix(base, GLOW, (1.0 - d).max(0.0) * 0.55))
+        px(mix(base, glow, (1.0 - d).max(0.0) * 0.55))
     })
 }
 
@@ -151,7 +196,7 @@ fn polygon(img: &mut RgbaImage, pts: &[(f32, f32)], c: Rgb) {
 }
 
 /// Isometrischer Würfel mit weißem Rand
-fn cube(img: &mut RgbaImage, cx: f32, cy: f32, r: f32) {
+fn cube(img: &mut RgbaImage, colors: [Rgb; 3], cx: f32, cy: f32, r: f32) {
     let h = r / 2.0;
     let faces = |r: f32, h: f32| {
         [
@@ -165,7 +210,7 @@ fn cube(img: &mut RgbaImage, cx: f32, cy: f32, r: f32) {
     for f in faces(b, b / 2.0) {
         polygon(img, &f, WHITE);
     }
-    for (f, c) in faces(r, h).iter().zip(CUBE) {
+    for (f, c) in faces(r, h).iter().zip(colors) {
         polygon(img, f, c);
     }
     // Feine Kanten
@@ -215,6 +260,27 @@ fn glyph(ch: char) -> [u8; 7] {
         'T' => [
             0b11111, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100, 0b00100,
         ],
+        'M' => [
+            0b10001, 0b11011, 0b10101, 0b10101, 0b10001, 0b10001, 0b10001,
+        ],
+        'A' => [
+            0b01110, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001,
+        ],
+        'F' => [
+            0b11111, 0b10000, 0b10000, 0b11110, 0b10000, 0b10000, 0b10000,
+        ],
+        'U' => [
+            0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b01110,
+        ],
+        'H' => [
+            0b10001, 0b10001, 0b10001, 0b11111, 0b10001, 0b10001, 0b10001,
+        ],
+        'B' => [
+            0b11110, 0b10001, 0b10001, 0b11110, 0b10001, 0b10001, 0b11110,
+        ],
+        'D' => [
+            0b11110, 0b10001, 0b10001, 0b10001, 0b10001, 0b10001, 0b11110,
+        ],
         _ => [0; 7],
     }
 }
@@ -252,28 +318,49 @@ fn centered(img: &mut RgbaImage, s: &str, cy: i64, scale: i64, c: Rgb) {
     text(img, s, x, cy, scale, c);
 }
 
-pub fn cover() -> RgbaImage {
-    let mut img = sky(600, 900, 300.0, 330.0, 420.0);
+/// Größte Schriftgröße bis `max`, bei der `s` in `width` Pixel passt
+fn fit(s: &str, max: i64, width: i64) -> i64 {
+    (1..=max)
+        .rev()
+        .find(|k| text_width(s, *k) <= width)
+        .unwrap_or(1)
+}
+
+pub fn cover(st: &Style) -> RgbaImage {
+    let mut img = sky(st, 600, 900, 300.0, 330.0, 420.0);
     terrain(&mut img, 50, 100);
-    cube(&mut img, 300.0, 320.0, 120.0);
-    centered(&mut img, "NORISK", 490, 14, WHITE);
-    centered(&mut img, "CLIENT", 605, 8, PINK);
+    cube(&mut img, st.cube, 300.0, 320.0, 120.0);
+    centered(&mut img, st.title, 490, fit(st.title, 14, 560), WHITE);
+    centered(
+        &mut img,
+        st.subtitle,
+        605,
+        fit(st.subtitle, 8, 560),
+        st.accent,
+    );
     img
 }
 
-pub fn hero() -> RgbaImage {
-    let mut img = sky(1920, 420, 1500.0, 190.0, 600.0);
+pub fn hero(st: &Style) -> RgbaImage {
+    let mut img = sky(st, 1920, 420, 1500.0, 190.0, 600.0);
     terrain(&mut img, 48, 0);
-    cube(&mut img, 1500.0, 175.0, 95.0);
+    cube(&mut img, st.cube, 1500.0, 175.0, 95.0);
     img
 }
 
-pub fn header() -> RgbaImage {
-    let mut img = sky(460, 215, 100.0, 100.0, 220.0);
+pub fn header(st: &Style) -> RgbaImage {
+    let mut img = sky(st, 460, 215, 100.0, 100.0, 220.0);
     terrain(&mut img, 24, 8);
-    cube(&mut img, 92.0, 92.0, 52.0);
-    text(&mut img, "NORISK", 180, 62, 6, WHITE);
-    text(&mut img, "CLIENT", 182, 118, 4, PINK);
+    cube(&mut img, st.cube, 92.0, 92.0, 52.0);
+    text(&mut img, st.title, 180, 62, fit(st.title, 6, 270), WHITE);
+    text(
+        &mut img,
+        st.subtitle,
+        182,
+        118,
+        fit(st.subtitle, 4, 270),
+        st.accent,
+    );
     img
 }
 
@@ -283,14 +370,22 @@ mod tests {
 
     #[test]
     fn draws() {
-        let c = cover();
-        assert_eq!((c.width(), c.height()), (600, 900));
-        // Würfel-Mitte ist rot, Boden grün/braun, Himmel oben dunkel
-        assert_eq!(c.get_pixel(300, 300).0[0], CUBE[0].0);
-        assert!(c.get_pixel(5, 5).0[0] < 40);
-        assert_ne!(*c.get_pixel(5, 895), px(SKY[2]));
-        assert_eq!((hero().width(), header().height()), (1920, 215));
-        assert_eq!(hero().height(), 420);
+        for st in [&NORISK, &JAVA, &BEDROCK] {
+            let c = cover(st);
+            assert_eq!((c.width(), c.height()), (600, 900));
+            // Würfel-Oberseite in Würfelfarbe, Boden grün/braun, Himmel oben dunkel
+            assert_eq!(c.get_pixel(300, 300).0[0], st.cube[0].0);
+            assert!(c.get_pixel(5, 5).0[0] < 40);
+            assert_ne!(*c.get_pixel(5, 895), px(st.sky[2]));
+            assert_eq!((hero(st).width(), header(st).height()), (1920, 215));
+            assert_eq!(hero(st).height(), 420);
+        }
         assert_eq!(text_width("NORISK", 1), 35);
+        // Lange Titel werden kleiner, damit sie aufs Cover passen
+        assert_eq!(fit("NORISK", 14, 560), 14);
+        assert!(text_width("MINECRAFT", fit("MINECRAFT", 14, 560)) <= 560);
+        for ch in "NORISKCLIENTMINECRAFTLAUNCHERBEDROCK".chars() {
+            assert_ne!(glyph(ch), [0; 7], "Buchstabe {ch} fehlt");
+        }
     }
 }

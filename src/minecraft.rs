@@ -259,6 +259,38 @@ pub fn norisk_tile(nr: &norisk::NoRisk) -> Option<Game> {
     Some(g)
 }
 
+/// Selbst gezeichnete Cover für Kacheln ohne Bild: offizieller Launcher (Java) und
+/// "Minecraft for Windows" (Bedrock) aus dem Store. Die NoRisk-Kachel hat eigene Bilder.
+pub fn own_art(g: &mut Game) {
+    if !g.art.cover.is_empty() {
+        return;
+    }
+    let style = if g.id == "minecraft:launcher" {
+        &art::JAVA
+    } else if is_bedrock_name(&g.name) {
+        &art::BEDROCK
+    } else {
+        return;
+    };
+    if let Some((cover, hero, header)) = art::artwork(style) {
+        g.art.cover.push(sys::file_url(&cover));
+        if g.art.hero.is_empty() {
+            g.art.hero.push(sys::file_url(&hero));
+        }
+        if g.art.header.is_empty() {
+            g.art.header.push(sys::file_url(&header));
+        }
+    }
+}
+
+fn is_bedrock_name(name: &str) -> bool {
+    let n = name.trim().to_lowercase();
+    matches!(
+        n.as_str(),
+        "minecraft for windows" | "minecraft: bedrock edition" | "minecraft bedrock" | "minecraft"
+    )
+}
+
 /// Ist das die NoRisk-Kachel (Klick öffnet die Übersicht statt der Detailansicht)?
 pub fn is_norisk_tile(id: &str) -> bool {
     id == norisk::TILE_ID
@@ -297,6 +329,14 @@ pub fn scan_with(profile_tiles: bool) -> (Vec<Game>, StoreStatus) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bedrock_names() {
+        assert!(is_bedrock_name("Minecraft for Windows"));
+        assert!(is_bedrock_name(" Minecraft "));
+        assert!(!is_bedrock_name("Minecraft Dungeons II"));
+        assert!(!is_bedrock_name("Minecraft Legends"));
+    }
 
     #[test]
     fn labels() {

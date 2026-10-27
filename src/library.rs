@@ -133,10 +133,12 @@ pub fn scan(settings: &Settings) -> ScanResult {
                     }
                 }
                 apply_lookup(g, &settings.art_lookup);
+                // Minecraft (Bedrock) aus dem Store: auf Steam gibt es kein Cover
+                crate::minecraft::own_art(g);
             }
             Source::Emulator => apply_lookup(g, &settings.art_lookup),
-            // Minecraft-Cover aus dem Steam-Store gibt es nicht → eigenes Bild in der Oberfläche
-            Source::Minecraft => {}
+            // Minecraft-Cover aus dem Steam-Store gibt es nicht → selbst gezeichnete Bilder
+            Source::Minecraft => crate::minecraft::own_art(g),
             Source::Extension(_) => {
                 if g.art.cover.is_empty() {
                     apply_lookup(g, &settings.art_lookup);

@@ -7,6 +7,12 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [1.9.1] – 2026-10-27
+
+### Behoben
+- **Fehlende Cover bei neueren Steam-Spielen:** Steam legt deren Bilder nur noch unter Pfaden mit Hash ab, die alten Adressen liefern 404 – die Kachel zeigte dann nur Initialen. OG holt die echten Pfade jetzt über Steams öffentliche Store-API (ohne Schlüssel), speichert sie in `steam-assets.json` und lädt Fehlendes im Hintergrund nach. Das hilft auch Epic- und eigenen Spielen, die über ihren Namen auf Steam gefunden werden.
+- **Minecraft-Kacheln ohne Bild:** Der offizielle Minecraft Launcher und „Minecraft for Windows“ (Bedrock) bekommen eigene, selbst gezeichnete Cover statt der Initialen.
+
 ## [1.9.0] – 2026-10-27
 
 ### Neu
