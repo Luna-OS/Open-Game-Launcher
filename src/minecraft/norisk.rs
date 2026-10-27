@@ -707,7 +707,7 @@ pub fn open_args(starter: &Starter, what: &Open) -> Vec<String> {
 
 /// Selbst gezeichnete Bilder der NoRisk-Kachel → (cover, hero, header)
 pub fn artwork() -> Option<(PathBuf, PathBuf, PathBuf)> {
-    super::art::artwork()
+    super::art::artwork(&super::art::NORISK)
 }
 
 #[cfg(test)]

@@ -32,6 +32,7 @@ mod problem;
 mod roblox;
 mod runners;
 mod steam;
+mod steamassets;
 mod stores;
 mod sys;
 mod theme;

@@ -357,6 +357,10 @@ pub fn rescan(app: App) {
         loaded.set(true);
         scanning.set(false);
 
+        // Echte Steam-Bildpfade (neuere Spiele) – sofort aus dem Cache
+        let mut assets = crate::steamassets::load();
+        apply_steam_assets(app, &assets);
+
         // Phase 2: schöne Cover für Epic- und eigene Spiele aus dem Steam-Store
         if settings.online_art {
             let names: Vec<String> = games
@@ -381,9 +385,38 @@ pub fn rescan(app: App) {
                     }
                 }
             }
+            // Phase 3: fehlende Steam-Bildpfade online nachladen (alte CDN-Pfade liefern
+            // bei neueren Spielen 404 → sonst bleibt die Kachel ohne Cover)
+            let ids = {
+                let list = games.peek();
+                let ids = list.iter().filter_map(|g| meta_appid(app, g));
+                crate::steamassets::missing(ids, &assets, sys::now_secs())
+            };
+            if !ids.is_empty() {
+                if let Ok(found) =
+                    tokio::task::spawn_blocking(move || crate::steamassets::fetch(&ids)).await
+                {
+                    assets.extend(found);
+                    crate::steamassets::save(&assets);
+                    apply_steam_assets(app, &assets);
+                }
+            }
             fill_metadata(app).await;
         }
     });
+}
+
+/// Steam-Bildpfade aus dem Cache in die Kacheln übernehmen
+fn apply_steam_assets(app: App, assets: &crate::steamassets::Cache) {
+    if assets.is_empty() {
+        return;
+    }
+    let mut games = app.games;
+    for g in games.write().iter_mut() {
+        if let Some(a) = meta_appid(app, g).and_then(|id| assets.get(&id)) {
+            crate::steamassets::apply(&mut g.art, a);
+        }
+    }
 }
 
 /// Steam-AppID für Spiel-Infos (eigene oder über den Namen gefunden). ROMs nie über Steam.
