@@ -53,6 +53,8 @@ pub struct OwnedEpic {
     pub cover: Vec<String>,
     pub hero: Vec<String>,
     pub logo: Vec<String>,
+    /// Store-Slug (für Infos wie Systemanforderungen), leer = unbekannt
+    pub slug: String,
 }
 
 impl OwnedEpic {
@@ -357,6 +359,16 @@ pub fn fetch_library(
 }
 
 /// Titel und Bilder für einige Einträge eines Namespaces
+/// Store-Slug aus dem Katalog ("customAttributes" → "com.epicgames.app.productSlug")
+fn product_slug(info: &serde_json::Value) -> String {
+    info.get("customAttributes")
+        .and_then(|c| c.get("com.epicgames.app.productSlug"))
+        .and_then(|s| s.get("value"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
+        .unwrap_or_else(|| jstr(info, "productSlug"))
+}
+
 fn catalog_items(
     auth: &EpicAuth,
     ns: &str,
@@ -429,6 +441,7 @@ fn catalog_items(
                 &["DieselGameBox", "OfferImageWide", "DieselStoreFrontWide"],
             )),
             logo: https(key_images(info, &["DieselGameBoxLogo"])),
+            slug: product_slug(info),
         });
     }
     out
