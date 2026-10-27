@@ -224,7 +224,7 @@ fn agent() -> ureq::Agent {
                 .user_agent(concat!(
                     "Open-Game-Launcher/",
                     env!("CARGO_PKG_VERSION"),
-                    " (https://github.com/MikeAdamRGB/Open-Game-Launcher)"
+                    " (https://github.com/Luna-OS/Open-Game-Launcher)"
                 ))
                 .build()
                 .into()

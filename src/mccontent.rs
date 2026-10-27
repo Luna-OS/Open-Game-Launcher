@@ -173,9 +173,9 @@ fn agent() -> ureq::Agent {
                 .http_status_as_error(false)
                 // Modrinth wünscht einen eindeutigen User-Agent mit Kontakt
                 .user_agent(concat!(
-                    "MikeAdamRGB/Open-Game-Launcher/",
+                    "Luna-OS/Open-Game-Launcher/",
                     env!("CARGO_PKG_VERSION"),
-                    " (https://github.com/MikeAdamRGB/Open-Game-Launcher)"
+                    " (https://github.com/Luna-OS/Open-Game-Launcher)"
                 ))
                 .build()
                 .into()
