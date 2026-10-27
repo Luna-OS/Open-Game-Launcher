@@ -1,0 +1,111 @@
+[1m[92m   Compiling[0m maz-launcher v1.9.3 (/home/runner/work/Open-Game-Launcher/Open-Game-Launcher)
+[1m[92m    Finished[0m `release` profile [optimized] target(s) in 28.21s
+[1m[92m     Running[0m unittests src/main.rs (target/release/deps/Open_Game_Launcher-5033c5e7cd5b0f0d)
+
+running 87 tests
+test appinfo::tests::parses_v40_inline_keys ... ok
+test appinfo::tests::parses_v41_with_string_table ... ok
+test appx::tests::family_names ... ok
+test emulators::tests::args_and_names ... ok
+test config::tests::migrate_old_config ... ok
+test config::tests::roundtrip_new_fields ... ok
+test epic::tests::catalog_filters_dlc_and_engines ... ok
+test epicacct::tests::code_extraction ... ok
+test appinfo::tests::survives_garbage ... ok
+test extensions::manifest::tests::run_must_stay_inside ... ok
+test extensions::manifest::tests::invalid_manifests ... ok
+test extensions::manifest::tests::valid_manifest ... ok
+test extensions::process::tests::limited_lines ... ok
+test extensions::tests::game_validation ... ok
+test extensions::tests::actions_validated ... ok
+test extensions::zipread::tests::extract_and_zip_slip ... ok
+test freegames::tests::epic_free_and_upcoming ... ok
+test freegames::tests::steam_search_rows ... ok
+test extensions::tests::hash_pinning ... ok
+test i18n::tests::parses_lines ... ok
+test launch::tests::uninstall_command_split ... ok
+test library::tests::duplicates_prefer_installed ... ok
+test mccontent::tests::cf_key_cleaning ... ok
+test i18n::tests::all_languages_have_all_german_keys ... ok
+test mccontent::tests::curseforge_fingerprint ... ok
+test mccontent::tests::launcher_profiles ... ok
+test mccontent::tests::safety ... ok
+test mccontent::tests::urls_and_parsing ... ok
+test metadata::tests::appdetails ... ok
+test metadata::tests::epic_requirements ... ok
+test metadata::tests::refetch_only_steam_without_requirements ... ok
+test metadata::tests::requirements_all_forms ... ok
+test metadata::tests::wikipedia ... ok
+test minecraft::norisk::tests::commands ... ok
+test minecraft::norisk::tests::config ... ok
+test minecraft::norisk::tests::grouping ... ok
+test minecraft::norisk::tests::instance_paths ... ok
+test minecraft::norisk::tests::old_schema ... ok
+test minecraft::norisk::tests::reads_profiles ... ok
+test minecraft::norisk::tests::standard_versions ... ok
+test minecraft::norisk::tests::timestamps ... ok
+test minecraft::tests::bedrock_names ... ok
+test minecraft::tests::labels ... ok
+test minecraft::tests::one_tile ... ok
+test minecraft::tests::profile_tiles ... ok
+test notes::tests::markdown ... ok
+test playtime::tests::matching ... ok
+test problem::tests::drive_detection ... ok
+test problem::tests::problems_are_translated ... ok
+test roblox::tests::place_ids ... ok
+test runners::tests::prefixes_are_safe ... ok
+test steamassets::tests::apply_keeps_local_first ... ok
+test steamassets::tests::missing_retries_only_old_failures ... ok
+test steamassets::tests::parses_assets ... ok
+test steamassets::tests::rejects_foreign_urls ... ok
+test stores::tests::amazon_ids ... ok
+test stores::tests::battlenet_codes ... ok
+test stores::tests::ea_installerdata ... ok
+test stores::tests::heroic_gog ... ok
+test stores::tests::icon_paths ... ok
+test stores::tests::itch_receipt ... ok
+test stores::tests::itch_urls ... ok
+test stores::tests::owned_from_databases ... ok
+test stores::tests::xbox_config ... ok
+test sys::safety_tests::only_safe_links_and_images ... ok
+test sys::tests::env_expansion ... ok
+test sys::tests::file_url_roundtrip ... ok
+test sys::tests::formatting ... ok
+test sys::tests::old_folder_moves_to_new_name ... ok
+test theme::tests::colors ... ok
+test theme::tests::presets_and_codes ... ok
+test updater::tests::assets_and_hashes ... ok
+test updater::tests::test_versions ... ok
+test updater::tests::versions ... ok
+test util::hash_tests::sha1_sha512_vectors ... ok
+test util::tests::base64_roundtrip ... ok
+test util::tests::misc ... ok
+test util::tests::pkce_rfc7636_example ... ok
+test util::tests::sha256_vectors ... ok
+test minecraft::art::tests::draws ... ok
+test vdf::tests::parses_appmanifest ... ok
+test vdf::tests::parses_library_folders_new_format ... ok
+test vdf::tests::parses_old_format_and_comments ... ok
+test vdf::tests::survives_garbage ... ok
+test vdf::tests::deep_nesting_does_not_overflow ... ok
+test extensions::process::tests::protocol_failures ... ok
+test extensions::tests::example_extension_end_to_end ... ok
+
+test result: ok. 87 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.97s
+
+[1m[92m     Running[0m tests/vdf_parser.rs (target/release/deps/vdf_parser-a0a7a46b1fca0d75)
+
+running 10 tests
+test escaped_quotes_and_backslashes_are_unescaped ... ok
+test crlf_line_endings_parse_like_lf ... ok
+test libraryfolders_fixture_lists_all_libraries_and_apps ... ok
+test lookup_is_case_insensitive_and_str_on_object_is_none ... ok
+test vdf::tests::parses_library_folders_new_format ... ok
+test vdf::tests::parses_appmanifest ... ok
+test vdf::tests::parses_old_format_and_comments ... ok
+test truncated_and_garbage_inputs_never_panic ... ok
+test vdf::tests::survives_garbage ... ok
+test vdf::tests::deep_nesting_does_not_overflow ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

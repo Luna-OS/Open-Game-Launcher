@@ -1,0 +1,87 @@
+::group::deb
+dpkg-deb: building package 'maz-launcher' in '/home/runner/work/Open-Game-Launcher/Open-Game-Launcher/dist/maz-launcher_1.9.3_amd64.deb'.
+::endgroup::
+::group::rpm
+Building target platforms: x86_64
+Building for target x86_64
+Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.VrXaC0
++ umask 022
++ cd /tmp/tmp.8rXBAx19py/rpm/BUILD
++ /bin/rm -rf /tmp/tmp.8rXBAx19py/rpm/BUILDROOT/maz-launcher-1.9.3-1.x86_64
++ /bin/mkdir -p /tmp/tmp.8rXBAx19py/rpm/BUILDROOT
++ /bin/mkdir /tmp/tmp.8rXBAx19py/rpm/BUILDROOT/maz-launcher-1.9.3-1.x86_64
++ mkdir -p /tmp/tmp.8rXBAx19py/rpm/BUILDROOT/maz-launcher-1.9.3-1.x86_64
++ cp -a /tmp/tmp.8rXBAx19py/rpm/stage/usr /tmp/tmp.8rXBAx19py/rpm/BUILDROOT/maz-launcher-1.9.3-1.x86_64/
++ /usr/lib/rpm/brp-compress /usr
++ /usr/lib/rpm/brp-elfperms
++ /usr/lib/rpm/brp-strip /usr/bin/strip
++ /usr/lib/rpm/brp-strip-static-archive /usr/bin/strip
++ /usr/lib/rpm/brp-strip-comment-note /usr/bin/strip /usr/bin/objdump
++ /usr/lib/rpm/brp-remove-la-files
+Processing files: maz-launcher-1.9.3-1.x86_64
+Provides: maz-launcher = 1.9.3-1 maz-launcher(x86-64) = 1.9.3-1
+Requires(rpmlib): rpmlib(CompressedFileNames) <= 3.0.4-1 rpmlib(FileDigests) <= 4.6.0-1 rpmlib(PayloadFilesHavePrefix) <= 4.0-1
+Checking for unpackaged file(s): /usr/lib/rpm/check-files /tmp/tmp.8rXBAx19py/rpm/BUILDROOT/maz-launcher-1.9.3-1.x86_64
+Wrote: /tmp/tmp.8rXBAx19py/rpm/RPMS/x86_64/maz-launcher-1.9.3-1.x86_64.rpm
+Executing(%clean): /bin/sh -e /var/tmp/rpm-tmp.CVCzl6
++ umask 022
++ cd /tmp/tmp.8rXBAx19py/rpm/BUILD
++ /bin/rm -rf /tmp/tmp.8rXBAx19py/rpm/BUILDROOT/maz-launcher-1.9.3-1.x86_64
++ RPM_EC=0
++ jobs -p
++ exit 0
+::endgroup::
+::group::pacman
+::endgroup::
+::group::appimage
+appimagetool, continuous build (git version 854e19e), build 313 built on 2026-10-04 14:58:08 UTC
+Using architecture x86_64
+/tmp/tmp.8rXBAx19py/AppDir should be packaged as /home/runner/work/Open-Game-Launcher/Open-Game-Launcher/dist/Open-Game-Launcher-1.9.3-x86_64.AppImage
+Generating squashfs...
+Downloading runtime file from https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+Downloaded runtime binary of size 944632
+Parallel mksquashfs: Using 4 processors
+Creating 4.0 filesystem on /home/runner/work/Open-Game-Launcher/Open-Game-Launcher/dist/Open-Game-Launcher-1.9.3-x86_64.AppImage, block size 131072.
+[=================================================================|] 74/74 100%
+
+Exportable Squashfs 4.0 filesystem, zstd compressed, data block size 131072
+	compressed data, compressed metadata, compressed fragments,
+	compressed xattrs, compressed ids
+	duplicates are removed
+Filesystem size 2939.73 Kbytes (2.87 Mbytes)
+	35.01% of uncompressed filesystem size (8395.96 Kbytes)
+Inode table size 437 bytes (0.43 Kbytes)
+	42.43% of uncompressed inode table size (1030 bytes)
+Directory table size 334 bytes (0.33 Kbytes)
+	46.98% of uncompressed directory table size (711 bytes)
+Number of duplicate files found 3
+Number of inodes 24
+Number of files 10
+Number of fragments 1
+Number of symbolic links 0
+Number of device nodes 0
+Number of fifo nodes 0
+Number of socket nodes 0
+Number of directories 14
+Number of hard-links 0
+Number of ids (unique uids + gids) 1
+Number of uids 1
+	root (0)
+Number of gids 1
+	root (0)
+Embedding ELF...
+Marking the AppImage as executable...
+Embedding MD5 digest
+Success
+
+Please consider submitting your AppImage to AppImageHub, the crowd-sourced
+central directory of available AppImages, by opening a pull request
+at https://github.com/AppImage/appimage.github.io
+::endgroup::
+total 12352
+drwxr-xr-x  2 runner runner    4096 Oct 27 15:49 .
+drwxr-xr-x 18 runner runner    4096 Oct 27 15:49 ..
+-rwxr-xr-x  1 runner runner 3955192 Oct 27 15:49 Open-Game-Launcher-1.9.3-x86_64.AppImage
+-rw-r--r--  1 runner runner 2705690 Oct 27 15:49 maz-launcher-1.9.3-1-x86_64.pkg.tar.zst
+-rw-r--r--  1 runner runner 3239430 Oct 27 15:49 maz-launcher-1.9.3-1.x86_64.rpm
+-rw-r--r--  1 runner runner 2735870 Oct 27 15:49 maz-launcher_1.9.3_amd64.deb

@@ -1,0 +1,66 @@
+::group::flatpak
+Installing runtime/org.freedesktop.Platform.GL.default/x86_64/25.08
+Installing runtime/org.freedesktop.Platform.GL.default/x86_64/25.08-extra
+Installing runtime/org.freedesktop.Platform.GL.default/x86_64/26.08
+Installing runtime/org.freedesktop.Platform.GL.default/x86_64/26.08-extra
+Installing runtime/org.freedesktop.Platform.codecs-extra/x86_64/25.08-extra
+Installing runtime/org.freedesktop.Platform.codecs-extra/x86_64/26.08-extra
+Installing runtime/org.freedesktop.Sdk.Locale/x86_64/26.08
+Installing runtime/org.freedesktop.Sdk/x86_64/26.08
+Installing app/org.flatpak.Builder/x86_64/stable
+Installing runtime/org.gnome.Platform.Locale/x86_64/49
+Installing runtime/org.gnome.Platform/x86_64/49
+Installing runtime/org.gnome.Sdk.Locale/x86_64/49
+Installing runtime/org.gnome.Sdk/x86_64/49
+dbus-daemon[5220]: [session uid=1001 pid=5220] Activating service name='org.freedesktop.Flatpak' requested by ':1.0' (uid=1001 pid=5221 comm="flatpak run org.flatpak.Builder --user --disable-r" label="unconfined")
+dbus-daemon[5220]: [session uid=1001 pid=5220] Successfully activated service 'org.freedesktop.Flatpak'
+dbus-daemon[5220]: [session uid=1001 pid=5220] Activating service name='org.freedesktop.portal.Documents' requested by ':1.0' (uid=1001 pid=5221 comm="flatpak run org.flatpak.Builder --user --disable-r" label="unconfined")
+dbus-daemon[5220]: [session uid=1001 pid=5220] Activating service name='org.freedesktop.impl.portal.PermissionStore' requested by ':1.2' (uid=1001 pid=5235 comm="/usr/libexec/xdg-document-portal " label="unconfined")
+dbus-daemon[5220]: [session uid=1001 pid=5220] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+dbus-daemon[5220]: [session uid=1001 pid=5220] Successfully activated service 'org.freedesktop.portal.Documents'
+Downloading sources
+Initializing build dir
+Committing stage init to cache
+Starting build of io.github.mikeadamrgb.MAZLauncher
+========================================================================
+Building module maz-launcher in /home/runner/work/Open-Game-Launcher/Open-Game-Launcher/.flatpak-work/.flatpak-builder/build/maz-launcher-1
+========================================================================
+Running: install -Dm755 maz-launcher /app/bin/maz-launcher
+Running: install -Dm644 io.github.mikeadamrgb.MAZLauncher.desktop /app/share/applications/io.github.mikeadamrgb.MAZLauncher.desktop
+Running: install -Dm644 io.github.mikeadamrgb.MAZLauncher.metainfo.xml /app/share/metainfo/io.github.mikeadamrgb.MAZLauncher.metainfo.xml
+Running: install -Dm644 icon-256.png /app/share/icons/hicolor/256x256/apps/io.github.mikeadamrgb.MAZLauncher.png
+Running: install -Dm644 icon-512.png /app/share/icons/hicolor/512x512/apps/io.github.mikeadamrgb.MAZLauncher.png
+Committing stage build-maz-launcher to cache
+Cleaning up
+Running appstreamcli compose
+Only accepting components: io.github.mikeadamrgb.MAZLauncher, io.github.mikeadamrgb.MAZLauncher.desktop
+Processing directory: /home/runner/work/Open-Game-Launcher/Open-Game-Launcher/.flatpak-work/build/files
+Composing metadata...
+dbus-daemon[5220]: [session uid=1001 pid=5220] Activating service name='org.freedesktop.portal.Flatpak' requested by ':1.13' (uid=1001 pid=5251 comm="xdg-dbus-proxy --args=40 " label="unconfined")
+dbus-daemon[5220]: [session uid=1001 pid=5220] Successfully activated service 'org.freedesktop.portal.Flatpak'
+Success!
+Committing stage cleanup to cache
+Finishing app
+Exporting share/applications/io.github.mikeadamrgb.MAZLauncher.desktop
+Exporting share/icons/hicolor/512x512/apps/io.github.mikeadamrgb.MAZLauncher.png
+Exporting share/icons/hicolor/256x256/apps/io.github.mikeadamrgb.MAZLauncher.png
+Exporting share/metainfo/io.github.mikeadamrgb.MAZLauncher.metainfo.xml
+Please review the exported files and the metadata
+Committing stage finish to cache
+Exporting io.github.mikeadamrgb.MAZLauncher to repo
+Commit: 3e734fd77ee3fcc7ae9043ec653936bd8d1fd62c0e79b3b9e3f9f818a2f310b5
+Metadata Total: 57
+Metadata Written: 22
+Content Total: 14
+Content Written: 10
+Content Bytes Written: 8571014 (8.6 MB)
+Pruning cache
+::endgroup::
+total 14836
+drwxr-xr-x  2 runner runner    4096 Oct 27 15:50 .
+drwxr-xr-x 19 runner runner    4096 Oct 27 15:49 ..
+-rwxr-xr-x  1 runner runner 3955192 Oct 27 15:49 Open-Game-Launcher-1.9.3-x86_64.AppImage
+-rw-r--r--  1 runner runner 2705690 Oct 27 15:49 maz-launcher-1.9.3-1-x86_64.pkg.tar.zst
+-rw-r--r--  1 runner runner 3239430 Oct 27 15:49 maz-launcher-1.9.3-1.x86_64.rpm
+-rw-r--r--  1 runner runner 2540160 Oct 27 15:50 maz-launcher-1.9.3-x86_64.flatpak
+-rw-r--r--  1 runner runner 2735870 Oct 27 15:49 maz-launcher_1.9.3_amd64.deb
