@@ -473,11 +473,30 @@ fn run_meta_with_ext(
     id: String,
     lang: String,
 ) -> Option<crate::metadata::Info> {
-    let info = run_meta_job(job, name.clone(), lang);
-    match info {
+    let info = run_meta_job(job, name.clone(), lang.clone());
+    let mut info = match info {
         Some(i) if i.fetched > 0 => Some(i),
         other => crate::extensions::metadata(&name, &id).or(other),
+    };
+    // Epic-Spiele ohne Steam-Treffer: Systemanforderungen aus dem Epic Store
+    let no_reqs = info
+        .as_ref()
+        .is_none_or(|i| i.req_min.is_empty() && i.req_rec.is_empty());
+    if let Some(app_name) = id.strip_prefix("epic:").filter(|_| no_reqs) {
+        if let Some((min, rec)) = crate::metadata::fetch_epic_requirements(app_name, &name, &lang) {
+            let i = info.get_or_insert_with(|| crate::metadata::Info {
+                source: "epic".into(),
+                version: crate::metadata::VERSION,
+                ..Default::default()
+            });
+            i.req_min = min;
+            i.req_rec = rec;
+            if i.fetched == 0 {
+                i.fetched = sys::now_secs();
+            }
+        }
     }
+    info
 }
 
 /// Bild aus den Spiel-Infos übernehmen, wenn das Spiel sonst kein Cover hat (z. B. ROMs)

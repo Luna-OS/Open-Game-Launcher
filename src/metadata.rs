@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// Version des Cache-Formats – ältere Einträge werden einmal neu geladen
-pub const VERSION: u32 = 2;
+pub const VERSION: u32 = 3;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 #[serde(default)]
@@ -39,7 +39,10 @@ pub struct Info {
 
 impl Info {
     pub fn is_current(&self) -> bool {
-        self.version >= VERSION
+        // Version 3 liest Steam-Anforderungen in mehr Formen und fragt bei Ländersperren den
+        // US-Store. Ältere Einträge ohne Anforderungen werden deshalb einmal neu geladen.
+        let no_reqs = self.req_min.is_empty() && self.req_rec.is_empty();
+        self.version >= VERSION || (self.version >= 2 && self.fetched > 0 && !no_reqs)
     }
 }
 
@@ -88,23 +91,69 @@ pub fn plain(s: &str) -> String {
 }
 
 /// Steam-Anforderungen (HTML-Liste) → [(„Betriebssystem“, „Windows 10“), …]
+///
+/// Steam liefert das in mehreren Formen:
+/// - `<li><strong>OS:</strong> Windows 10</li>` (üblich)
+/// - `<li><strong>OS: Windows 10</strong></li>` (Bezeichnung und Wert fett, z. B. Terraria)
+/// - ohne Liste: `<strong>Minimum:</strong><br>OS: Windows 10<br>Memory: 4 GB`
 pub fn parse_requirements(html: &str) -> Vec<(String, String)> {
+    let items: Vec<&str> = if html.contains("<li>") {
+        html.split("<li>")
+            .skip(1)
+            .map(|i| i.split("</li>").next().unwrap_or(i))
+            .collect()
+    } else {
+        html.split("<br>").collect()
+    };
     let mut out = Vec::new();
-    for item in html.split("<li>").skip(1) {
-        let item = item.split("</li>").next().unwrap_or(item);
-        let (label, value) = match (item.find("<strong>"), item.find("</strong>")) {
+    for item in items {
+        let (mut label, mut value) = match (item.find("<strong>"), item.find("</strong>")) {
             (Some(a), Some(b)) if a < b => (plain(&item[a + 8..b]), plain(&item[b + 9..])),
             _ => (String::new(), plain(item)),
         };
-        let label = label.trim_end_matches(':').trim().to_string();
-        if !value.is_empty() && value.len() < 400 {
-            out.push((label.chars().take(60).collect(), value));
+        // "OS: Windows 10" steht ganz in der Bezeichnung oder ganz im Wert
+        let whole = if value.is_empty() {
+            Some(std::mem::take(&mut label))
+        } else if label.is_empty() {
+            Some(std::mem::take(&mut value))
+        } else {
+            None
+        };
+        if let Some(w) = whole {
+            match w.split_once(':') {
+                Some((l, v)) if !v.trim().is_empty() && l.chars().count() <= 40 => {
+                    label = l.trim().to_string();
+                    value = v.trim().to_string();
+                }
+                _ => value = w,
+            }
         }
+        let label = label.trim_end_matches(':').trim().to_string();
+        // Überschriften wie "Minimum:" / "Empfohlen:" überspringen
+        if value.is_empty() || is_heading(&label, &value) || value.len() >= 400 {
+            continue;
+        }
+        out.push((label.chars().take(60).collect(), value));
         if out.len() >= 15 {
             break;
         }
     }
     out
+}
+
+fn is_heading(label: &str, value: &str) -> bool {
+    let v = value.trim_end_matches(':').trim().to_lowercase();
+    label.is_empty()
+        && matches!(
+            v.as_str(),
+            "minimum"
+                | "recommended"
+                | "required"
+                | "mindestanforderungen"
+                | "empfohlen"
+                | "minimale systemanforderungen"
+                | "empfohlene systemanforderungen"
+        )
 }
 
 fn os_req_key() -> &'static str {
@@ -250,7 +299,15 @@ pub fn fetch(appid: u32, lang: &str) -> Option<Info> {
         &format!("https://store.steampowered.com/api/appdetails?appids={appid}&l={l}"),
         4 * 1024 * 1024,
     )?;
-    let mut info = parse_appdetails(appid, &body).unwrap_or(Info {
+    // Manche Spiele blendet Steam je nach Land aus (success: false) → noch einmal mit US-Store
+    let parsed = parse_appdetails(appid, &body).or_else(|| {
+        let us = get_text(
+            &format!("https://store.steampowered.com/api/appdetails?appids={appid}&l={l}&cc=us"),
+            4 * 1024 * 1024,
+        )?;
+        parse_appdetails(appid, &us)
+    });
+    let mut info = parsed.unwrap_or(Info {
         version: VERSION,
         ..Default::default()
     });
@@ -260,6 +317,175 @@ pub fn fetch(appid: u32, lang: &str) -> Option<Info> {
         }
     }
     Some(info)
+}
+
+// ----------------------------------------------------------------------
+// Epic Games Store: Systemanforderungen für Spiele, die es nicht auf Steam gibt
+// ----------------------------------------------------------------------
+
+const EPIC_CONTENT: &str = "https://store-content-ipv4.ak.epicgames.com/api";
+
+/// Store-Slug aus dem Titel raten ("Control: Ultimate Edition" → "control-ultimate-edition")
+pub fn epic_slug_guess(title: &str) -> String {
+    let mut out = String::new();
+    for c in title.to_lowercase().chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c);
+        } else if !out.ends_with('-') && !out.is_empty() && !matches!(c, '\'' | '’' | '®' | '™')
+        {
+            out.push('-');
+        }
+    }
+    out.trim_end_matches('-').to_string()
+}
+
+/// Mögliche Slugs aus dem Titel: voller Titel, ohne Klammern ("(Beta)"), ohne Untertitel
+/// ("Disco Elysium - The Final Cut" → "disco-elysium") und ohne "… Edition"
+pub fn epic_slug_candidates(title: &str) -> Vec<String> {
+    let mut base = String::new();
+    let mut depth = 0;
+    for c in title.chars() {
+        match c {
+            '(' | '[' => depth += 1,
+            ')' | ']' => depth = (depth - 1).max(0),
+            _ if depth == 0 => base.push(c),
+            _ => {}
+        }
+    }
+    let base = base.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut forms = vec![title.to_string(), base.clone()];
+    for sep in [" - ", " – ", ": "] {
+        if let Some((head, _)) = base.split_once(sep) {
+            forms.push(head.to_string());
+        }
+    }
+    let lower = base.to_lowercase();
+    if let Some(pos) = lower.rfind(" edition") {
+        let words: Vec<&str> = base[..pos].split_whitespace().collect();
+        // "… Standard/Definitive/Deluxe Edition" → Wort davor auch weglassen
+        let keep = match words.last().map(|w| w.to_lowercase()) {
+            Some(w)
+                if matches!(
+                    w.as_str(),
+                    "standard" | "definitive" | "deluxe" | "complete" | "gold"
+                ) =>
+            {
+                words.len() - 1
+            }
+            _ => words.len(),
+        };
+        forms.push(words[..keep].join(" "));
+    }
+    let mut out: Vec<String> = Vec::new();
+    for f in forms {
+        let s = epic_slug_guess(&f);
+        if !s.is_empty() && !out.contains(&s) {
+            out.push(s);
+        }
+    }
+    out
+}
+
+/// Nur harmlose Slugs (Teil einer URL); "spiel/home" → "spiel"
+fn clean_slug(s: &str) -> Option<String> {
+    let s = s.trim().trim_end_matches("/home").to_lowercase();
+    let ok =
+        !s.is_empty() && s.len() <= 120 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+    ok.then_some(s)
+}
+
+fn epic_locale(lang: &str) -> &'static str {
+    match lang.split(['-', '_']).next().unwrap_or("") {
+        "de" => "de",
+        "fr" => "fr",
+        "es" => "es-ES",
+        "it" => "it",
+        "pl" => "pl",
+        "pt" => "pt-BR",
+        "ru" => "ru",
+        "tr" => "tr",
+        "ja" => "ja",
+        "ko" => "ko",
+        "zh" => "zh-CN",
+        _ => "en-US",
+    }
+}
+
+type Reqs = (Vec<(String, String)>, Vec<(String, String)>);
+
+/// Antwort der Epic-Content-API → (Minimum, Empfohlen) für dieses Betriebssystem
+pub fn parse_epic_requirements(json: &str, os: &str) -> Reqs {
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
+        return Default::default();
+    };
+    let systems: Vec<&serde_json::Value> = v["pages"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|p| p["data"]["requirements"]["systems"].as_array())
+        .flatten()
+        .collect();
+    let kind = |s: &&serde_json::Value| s["systemType"].as_str().unwrap_or("").to_lowercase();
+    let sys = systems
+        .iter()
+        .find(|s| kind(s).starts_with(os))
+        .or_else(|| systems.iter().find(|s| kind(s).starts_with("windows")))
+        .or(systems.first());
+    let mut min = Vec::new();
+    let mut rec = Vec::new();
+    for d in sys
+        .and_then(|s| s["details"].as_array())
+        .into_iter()
+        .flatten()
+    {
+        let title: String = plain(d["title"].as_str().unwrap_or(""))
+            .chars()
+            .take(60)
+            .collect();
+        for (key, list) in [("minimum", &mut min), ("recommended", &mut rec)] {
+            let val = plain(d[key].as_str().unwrap_or(""));
+            if !val.is_empty() && val.len() < 400 && list.len() < 15 {
+                list.push((title.clone(), val));
+            }
+        }
+    }
+    (min, rec)
+}
+
+/// Systemanforderungen eines Epic-Spiels: erst über den Slug aus der Bibliothek,
+/// sonst über einen aus dem Titel geratenen Slug
+pub fn fetch_epic_requirements(app_name: &str, title: &str, lang: &str) -> Option<Reqs> {
+    let known = crate::epicacct::load_cache()
+        .into_iter()
+        .find(|o| o.app_name == app_name)
+        .map(|o| o.slug);
+    let os = if cfg!(target_os = "macos") {
+        "mac"
+    } else {
+        "windows"
+    };
+    let locale = epic_locale(lang);
+    let mut tried: Vec<String> = Vec::new();
+    for slug in known.into_iter().chain(epic_slug_candidates(title)) {
+        let Some(slug) = clean_slug(&slug) else {
+            continue;
+        };
+        if tried.contains(&slug) {
+            continue;
+        }
+        tried.push(slug.clone());
+        let Some(body) = get_text(
+            &format!("{EPIC_CONTENT}/{locale}/content/products/{slug}"),
+            4 * 1024 * 1024,
+        ) else {
+            continue;
+        };
+        let reqs = parse_epic_requirements(&body, os);
+        if !reqs.0.is_empty() || !reqs.1.is_empty() {
+            return Some(reqs);
+        }
+    }
+    None
 }
 
 // ----------------------------------------------------------------------
@@ -571,6 +797,107 @@ pub fn fetch_wiki(name: &str, lang: &str) -> Option<Info> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn requirements_all_forms() {
+        // Terraria: Bezeichnung und Wert zusammen fett
+        let terraria = r#"<ul class="bb_ul"><li><strong>Betriebssystem: Windows Xp, Vista, 7</strong> <br></li><li><strong>Speicher: 512 MB</strong><br></li></ul>"#;
+        assert_eq!(
+            parse_requirements(terraria),
+            vec![
+                ("Betriebssystem".into(), "Windows Xp, Vista, 7".into()),
+                ("Speicher".into(), "512 MB".into())
+            ]
+        );
+        // Überschrift im <h2>, dann Liste
+        let rec = r#"<h2 class="bb_tag" ><strong>RECOMMENDED</strong></h2><ul class="bb_ul"><li><strong>OS: Windows 10</strong> <br>		</li><li><strong>Memory: 4GB</strong></li></ul>"#;
+        assert_eq!(parse_requirements(rec)[1], ("Memory".into(), "4GB".into()));
+        // Ohne Liste, nur Zeilenumbrüche
+        let br = "<strong>Minimum:</strong><br>OS: Windows 7<br>Memory: 2 GB RAM<br>Requires a 64-bit processor";
+        assert_eq!(
+            parse_requirements(br),
+            vec![
+                ("OS".into(), "Windows 7".into()),
+                ("Memory".into(), "2 GB RAM".into()),
+                ("".into(), "Requires a 64-bit processor".into())
+            ]
+        );
+        // Bisheriges Format bleibt gleich
+        let normal = "<ul><li><strong>OS:</strong> Windows 10</li></ul>";
+        assert_eq!(
+            parse_requirements(normal),
+            vec![("OS".into(), "Windows 10".into())]
+        );
+    }
+
+    #[test]
+    fn epic_requirements() {
+        let j = r#"{"pages":[{"data":{"requirements":{"systems":[
+            {"systemType":"Mac","details":[{"title":"OS","minimum":"macOS 12","recommended":""}]},
+            {"systemType":"Windows","details":[
+                {"title":"Betriebssystem","minimum":"Windows 7 (64&nbsp;Bit)","recommended":"Windows 10"},
+                {"title":"Prozessor","minimum":"i5-4690","recommended":""}]}]}}}]}"#;
+        let (min, rec) = parse_epic_requirements(j, "windows");
+        assert_eq!(
+            min,
+            vec![
+                ("Betriebssystem".into(), "Windows 7 (64 Bit)".into()),
+                ("Prozessor".into(), "i5-4690".into())
+            ]
+        );
+        assert_eq!(rec, vec![("Betriebssystem".into(), "Windows 10".into())]);
+        assert_eq!(parse_epic_requirements(j, "mac").0[0].1, "macOS 12");
+        assert_eq!(
+            parse_epic_requirements("kaputt", "windows"),
+            Reqs::default()
+        );
+        assert_eq!(
+            epic_slug_guess("Control: Ultimate Edition"),
+            "control-ultimate-edition"
+        );
+        assert_eq!(
+            epic_slug_guess("Assassin's Creed® Unity"),
+            "assassins-creed-unity"
+        );
+        assert_eq!(clean_slug("control/home").as_deref(), Some("control"));
+        assert_eq!(
+            epic_slug_candidates("Disco Elysium - The Final Cut"),
+            vec!["disco-elysium-the-final-cut", "disco-elysium"]
+        );
+        assert_eq!(
+            epic_slug_candidates("Barony (Beta)"),
+            vec!["barony-beta", "barony"]
+        );
+        assert_eq!(
+            epic_slug_candidates("art of rally Standard Edition"),
+            vec!["art-of-rally-standard-edition", "art-of-rally"]
+        );
+        assert_eq!(clean_slug("../x"), None);
+    }
+
+    #[test]
+    fn refetch_only_steam_without_requirements() {
+        let old = |source: &str, req: bool| Info {
+            source: source.into(),
+            version: 2,
+            fetched: 1,
+            req_min: if req {
+                vec![("OS".into(), "10".into())]
+            } else {
+                vec![]
+            },
+            ..Default::default()
+        };
+        assert!(!old("steam", false).is_current());
+        assert!(old("steam", true).is_current());
+        assert!(!old("wikipedia", false).is_current());
+        // Früher nichts gefunden → neu versuchen
+        let none = Info {
+            version: 2,
+            ..Default::default()
+        };
+        assert!(!none.is_current());
+    }
 
     #[test]
     fn appdetails() {

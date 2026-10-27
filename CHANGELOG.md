@@ -7,6 +7,15 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [1.9.3] – 2026-10-27
+
+### Behoben
+- **Systemanforderungen fehlten bei vielen Spielen** (z. B. Terraria, Portal, Half-Life 2): Steam liefert sie in mehreren Formen – Bezeichnung und Wert zusammen fett, oder als Text ohne Liste. OG liest jetzt alle diese Formen. Spiele, die Steam im deutschen Store ausblendet, werden über den US-Store abgefragt.
+- Bereits gespeicherte Spiel-Infos ohne Anforderungen werden einmal neu geladen (alle anderen bleiben im Cache).
+
+### Neu
+- **Systemanforderungen für Epic-Spiele**, die es nicht auf Steam gibt – direkt aus dem Epic Games Store (Minimum und Empfohlen). Der Store-Slug kommt aus der Epic-Bibliothek, sonst wird er aus dem Titel abgeleitet.
+
 ## [1.9.2] – 2026-10-27
 
 ### Geändert
