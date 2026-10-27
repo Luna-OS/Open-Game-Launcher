@@ -14,18 +14,17 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-const API: &str = "https://api.github.com/repos/MikeAdamRGB/Open-Game-Launcher/releases/latest";
+// Updates kommen aus dem Fork Luna-OS/Open-Game-Launcher – nicht aus dem Original
+// (MikeAdamRGB), sonst würde eine höhere Original-Version den Fork ersetzen.
+const API: &str = "https://api.github.com/repos/Luna-OS/Open-Game-Launcher/releases/latest";
 /// Liste der letzten Releases (inkl. Test-Versionen)
 const API_ALL: &str =
-    "https://api.github.com/repos/MikeAdamRGB/Open-Game-Launcher/releases?per_page=15";
-const DOWNLOAD_PREFIX: &str =
-    "https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/";
-/// Früherer Name des Repositorys (bis 1.8) – GitHub leitet weiter
-const OLD_DOWNLOAD_PREFIX: &str = "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/";
+    "https://api.github.com/repos/Luna-OS/Open-Game-Launcher/releases?per_page=15";
+const DOWNLOAD_PREFIX: &str = "https://github.com/Luna-OS/Open-Game-Launcher/releases/download/";
 
 /// SICHERHEIT: nur Dateien aus genau diesem Repository
 fn allowed_url(url: &str) -> bool {
-    url.starts_with(DOWNLOAD_PREFIX) || url.starts_with(OLD_DOWNLOAD_PREFIX)
+    url.starts_with(DOWNLOAD_PREFIX)
 }
 const MAX_SIZE: u64 = 400 * 1024 * 1024;
 
@@ -626,9 +625,13 @@ mod tests {
         );
         assert!(pick_asset(&InstallKind::Manual, &list).is_none());
         assert!(allowed_url(
+            "https://github.com/Luna-OS/Open-Game-Launcher/releases/download/v1/x.exe"
+        ));
+        // Das Original darf den Fork nicht mehr ersetzen
+        assert!(!allowed_url(
             "https://github.com/MikeAdamRGB/Open-Game-Launcher/releases/download/v1/x.exe"
         ));
-        assert!(allowed_url(
+        assert!(!allowed_url(
             "https://github.com/MikeAdamRGB/MAZ-Lauchner/releases/download/v1/x.exe"
         ));
         assert!(!allowed_url(

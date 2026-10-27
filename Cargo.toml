@@ -1,11 +1,11 @@
 [package]
 name = "maz-launcher"
-version = "1.9.1"
+version = "1.9.2"
 edition = "2021"
 rust-version = "1.85"
 description = "Open Game Launcher (OG) – alle deine Steam-, Epic-, Roblox- und eigenen Spiele in einem schönen Launcher (Windows, macOS, Linux)"
 license = "MIT"
-repository = "https://github.com/MikeAdamRGB/Open-Game-Launcher"
+repository = "https://github.com/Luna-OS/Open-Game-Launcher"
 readme = "README.md"
 keywords = ["launcher", "games", "steam", "epic", "dioxus"]
 categories = ["games", "gui"]

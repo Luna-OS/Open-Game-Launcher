@@ -7,6 +7,11 @@ Alle wichtigen Änderungen am MAZ Launcher. Jede Version hat bis zu vier Abschni
 Der Abschnitt der aktuellen Version wird automatisch als Text für das GitHub-Release
 und für das Update-Fenster in der App verwendet.
 
+## [1.9.2] – 2026-10-27
+
+### Geändert
+- **Updates kommen jetzt aus diesem Fork** (`Luna-OS/Open-Game-Launcher`): Der Updater prüft und lädt nur noch Releases aus diesem Repository. Vorher suchte er im Original-Repository – eine höhere Original-Version hätte den Fork (NoRisk-Hub, Fixes) ersetzt, und Fork-Releases wurden nie angeboten. Projekt-Links zeigen ebenfalls auf den Fork.
+
 ## [1.9.1] – 2026-10-27
 
 ### Behoben
