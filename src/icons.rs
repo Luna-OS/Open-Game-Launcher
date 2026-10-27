@@ -14,7 +14,11 @@ pub fn cached_icon(exe: &Path) -> Option<PathBuf> {
         .map(|d| d.as_secs())
         .unwrap_or(0);
     let dir = sys::icon_cache_dir();
-    let key = sys::fnv1a(&format!("{}|{}", exe.to_string_lossy().to_lowercase(), mtime));
+    let key = sys::fnv1a(&format!(
+        "{}|{}",
+        exe.to_string_lossy().to_lowercase(),
+        mtime
+    ));
     let out = dir.join(format!("{key:016x}.png"));
     if out.exists() {
         return Some(out);
@@ -49,22 +53,66 @@ fn extract_png(_exe: &Path, _out: &Path) -> Option<()> {
 /// Rät die Haupt-EXE eines Spielordners (für Icons von Steam-Spielen ohne Cache).
 pub fn guess_main_exe(dir: &Path, game_name: &str) -> Option<PathBuf> {
     const SKIP: &[&str] = &[
-        "unins", "uninst", "setup", "install", "crash", "report", "redist", "vcredist", "vc_redist", "dxsetup",
-        "dotnet", "prereq", "helper", "update", "launcherhelper", "easyanticheat", "battleye", "be_service",
-        "unitycrashhandler", "cefprocess", "webhelper", "touchup", "cleanup", "dxwebsetup", "physx", "oalinst",
+        "unins",
+        "uninst",
+        "setup",
+        "install",
+        "crash",
+        "report",
+        "redist",
+        "vcredist",
+        "vc_redist",
+        "dxsetup",
+        "dotnet",
+        "prereq",
+        "helper",
+        "update",
+        "launcherhelper",
+        "easyanticheat",
+        "battleye",
+        "be_service",
+        "unitycrashhandler",
+        "cefprocess",
+        "webhelper",
+        "touchup",
+        "cleanup",
+        "dxwebsetup",
+        "physx",
+        "oalinst",
     ];
     let wanted = crate::model::normalize_name(game_name);
     let mut best: Option<(u64, PathBuf)> = None;
-    let subdirs = ["", "bin", "Bin", "bin\\win64", "Binaries\\Win64", "x64", "Game", "Win64"];
+    let subdirs = [
+        "",
+        "bin",
+        "Bin",
+        "bin\\win64",
+        "Binaries\\Win64",
+        "x64",
+        "Game",
+        "Win64",
+    ];
     for sub in subdirs {
-        let d = if sub.is_empty() { dir.to_path_buf() } else { dir.join(sub) };
+        let d = if sub.is_empty() {
+            dir.to_path_buf()
+        } else {
+            dir.join(sub)
+        };
         let Ok(rd) = fs::read_dir(&d) else { continue };
         for e in rd.flatten() {
             let p = e.path();
-            if p.extension().and_then(|x| x.to_str()).map(|x| x.eq_ignore_ascii_case("exe")) != Some(true) {
+            if p.extension()
+                .and_then(|x| x.to_str())
+                .map(|x| x.eq_ignore_ascii_case("exe"))
+                != Some(true)
+            {
                 continue;
             }
-            let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+            let stem = p
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_lowercase();
             if SKIP.iter().any(|s| stem.contains(s)) {
                 continue;
             }

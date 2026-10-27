@@ -38,7 +38,9 @@ impl FreeGame {
     pub fn launcher_url(&self) -> String {
         match (self.store, &self.epic_slug, self.steam_appid) {
             (FreeStore::Epic, Some(slug), _) => format!("com.epicgames.launcher://store/p/{slug}"),
-            (FreeStore::Steam, _, Some(id)) => format!("steam://openurl/https://store.steampowered.com/app/{id}/"),
+            (FreeStore::Steam, _, Some(id)) => {
+                format!("steam://openurl/https://store.steampowered.com/app/{id}/")
+            }
             _ => self.url.clone(),
         }
     }
@@ -137,8 +139,14 @@ pub fn parse_epic(v: &serde_json::Value, lang: &str) -> Vec<FreeGame> {
             continue;
         }
         let price = el.pointer("/price/totalPrice");
-        let discount_price = price.and_then(|p| p.get("discountPrice")).and_then(|x| x.as_i64()).unwrap_or(-1);
-        let original = price.and_then(|p| p.get("originalPrice")).and_then(|x| x.as_i64()).unwrap_or(0);
+        let discount_price = price
+            .and_then(|p| p.get("discountPrice"))
+            .and_then(|x| x.as_i64())
+            .unwrap_or(-1);
+        let original = price
+            .and_then(|p| p.get("originalPrice"))
+            .and_then(|x| x.as_i64())
+            .unwrap_or(0);
         let fmt_original = price
             .and_then(|p| p.pointer("/fmtPrice/originalPrice"))
             .and_then(|x| x.as_str())
@@ -147,7 +155,10 @@ pub fn parse_epic(v: &serde_json::Value, lang: &str) -> Vec<FreeGame> {
         let worth = if !fmt_original.is_empty() && fmt_original != "0" {
             fmt_original
         } else if original > 0 {
-            let cur = price.and_then(|p| p.get("currencyCode")).and_then(|x| x.as_str()).unwrap_or("");
+            let cur = price
+                .and_then(|p| p.get("currencyCode"))
+                .and_then(|x| x.as_str())
+                .unwrap_or("");
             let dec = crate::i18n::t("fmt.decimal");
             format!("{}{dec}{:02} {cur}", original / 100, original % 100)
         } else {
@@ -160,8 +171,15 @@ pub fn parse_epic(v: &serde_json::Value, lang: &str) -> Vec<FreeGame> {
                 for g in groups {
                     if let Some(offers) = g.get("promotionalOffers").and_then(|o| o.as_array()) {
                         for o in offers {
-                            let pct = o.pointer("/discountSetting/discountPercentage").and_then(|x| x.as_i64()).unwrap_or(-1);
-                            v.push((parse_datetime(s(o, "startDate")), parse_datetime(s(o, "endDate")), pct));
+                            let pct = o
+                                .pointer("/discountSetting/discountPercentage")
+                                .and_then(|x| x.as_i64())
+                                .unwrap_or(-1);
+                            v.push((
+                                parse_datetime(s(o, "startDate")),
+                                parse_datetime(s(o, "endDate")),
+                                pct,
+                            ));
                         }
                     }
                 }
@@ -170,13 +188,14 @@ pub fn parse_epic(v: &serde_json::Value, lang: &str) -> Vec<FreeGame> {
         };
         let current = windows("promotionalOffers");
         let upcoming = windows("upcomingPromotionalOffers");
-        let (is_free_now, is_upcoming, starts, ends) = if discount_price == 0 && original > 0 && !current.is_empty() {
-            (true, false, current[0].0, current[0].1)
-        } else if let Some(u) = upcoming.iter().find(|u| u.2 == 0) {
-            (false, true, u.0, u.1)
-        } else {
-            (false, false, None, None)
-        };
+        let (is_free_now, is_upcoming, starts, ends) =
+            if discount_price == 0 && original > 0 && !current.is_empty() {
+                (true, false, current[0].0, current[0].1)
+            } else if let Some(u) = upcoming.iter().find(|u| u.2 == 0) {
+                (false, true, u.0, u.1)
+            } else {
+                (false, false, None, None)
+            };
         if !is_free_now && !is_upcoming {
             continue;
         }
@@ -189,8 +208,19 @@ pub fn parse_epic(v: &serde_json::Value, lang: &str) -> Vec<FreeGame> {
             id: format!("epic:{}", s(el, "id")),
             title,
             store: FreeStore::Epic,
-            images: epic_images(el, &["OfferImageTall", "DieselGameBoxTall", "Thumbnail", "DieselStoreFrontTall"]),
-            wide: epic_images(el, &["OfferImageWide", "DieselStoreFrontWide", "DieselGameBox"]),
+            images: epic_images(
+                el,
+                &[
+                    "OfferImageTall",
+                    "DieselGameBoxTall",
+                    "Thumbnail",
+                    "DieselStoreFrontTall",
+                ],
+            ),
+            wide: epic_images(
+                el,
+                &["OfferImageWide", "DieselStoreFrontWide", "DieselGameBox"],
+            ),
             starts,
             ends,
             upcoming: is_upcoming,
@@ -223,22 +253,37 @@ fn between<'a>(hay: &'a str, start: &str, end: &str) -> Option<&'a str> {
 pub fn parse_steam_search(html: &str) -> Vec<FreeGame> {
     let mut out = Vec::new();
     for row in html.split("<a ").skip(1) {
-        let Some(id) = between(row, "data-ds-appid=\"", "\"").and_then(|x| x.split(',').next()).and_then(|x| x.parse::<u32>().ok()) else {
+        let Some(id) = between(row, "data-ds-appid=\"", "\"")
+            .and_then(|x| x.split(',').next())
+            .and_then(|x| x.parse::<u32>().ok())
+        else {
             continue;
         };
-        let Some(title) = between(row, "<span class=\"title\">", "</span>") else { continue };
+        let Some(title) = between(row, "<span class=\"title\">", "</span>") else {
+            continue;
+        };
         if !row.contains("-100%") {
             continue;
         }
-        let worth = between(row, "discount_original_price\">", "</div>").map(html_unescape).unwrap_or_default();
-        let url = between(row, "href=\"", "\"").map(|u| u.split('?').next().unwrap_or(u).to_string()).unwrap_or_else(|| format!("https://store.steampowered.com/app/{id}/"));
+        let worth = between(row, "discount_original_price\">", "</div>")
+            .map(html_unescape)
+            .unwrap_or_default();
+        let url = between(row, "href=\"", "\"")
+            .map(|u| u.split('?').next().unwrap_or(u).to_string())
+            .unwrap_or_else(|| format!("https://store.steampowered.com/app/{id}/"));
         let cdn = "https://cdn.cloudflare.steamstatic.com/steam/apps";
         out.push(FreeGame {
             id: format!("steam:{id}"),
             title: html_unescape(title.trim()),
             store: FreeStore::Steam,
-            images: vec![format!("{cdn}/{id}/library_600x900_2x.jpg"), format!("{cdn}/{id}/library_600x900.jpg")],
-            wide: vec![format!("{cdn}/{id}/header.jpg"), format!("{cdn}/{id}/capsule_616x353.jpg")],
+            images: vec![
+                format!("{cdn}/{id}/library_600x900_2x.jpg"),
+                format!("{cdn}/{id}/library_600x900.jpg"),
+            ],
+            wide: vec![
+                format!("{cdn}/{id}/header.jpg"),
+                format!("{cdn}/{id}/capsule_616x353.jpg"),
+            ],
             starts: None,
             ends: None,
             upcoming: false,
@@ -303,13 +348,20 @@ pub fn fetch(lang: &str) -> (Vec<FreeGame>, Vec<String>) {
     );
     match get_json(&agent, &steam_url) {
         Ok(v) => {
-            let mut steam = parse_steam_search(v.get("results_html").and_then(|h| h.as_str()).unwrap_or(""));
+            let mut steam =
+                parse_steam_search(v.get("results_html").and_then(|h| h.as_str()).unwrap_or(""));
             if !steam.is_empty() {
-                if let Ok(gp) = get_json(&agent, "https://www.gamerpower.com/api/giveaways?platform=steam&type=game") {
+                if let Ok(gp) = get_json(
+                    &agent,
+                    "https://www.gamerpower.com/api/giveaways?platform=steam&type=game",
+                ) {
                     let ends = parse_gamerpower_end_dates(&gp);
                     for g in steam.iter_mut() {
                         let n = normalize_name(&g.title);
-                        if let Some((_, end)) = ends.iter().find(|(t, _)| *t == n || (!t.is_empty() && n.starts_with(t.as_str()))) {
+                        if let Some((_, end)) = ends
+                            .iter()
+                            .find(|(t, _)| *t == n || (!t.is_empty() && n.starts_with(t.as_str())))
+                        {
                             g.ends = Some(*end);
                         }
                     }
@@ -351,7 +403,10 @@ mod tests {
         assert_eq!(g[0].ends, parse_datetime("2026-10-29T15:00:00.000Z"));
         assert!(!g[0].upcoming);
         assert!(g[1].upcoming);
-        assert_eq!(g[0].launcher_url(), "com.epicgames.launcher://store/p/home-19212a");
+        assert_eq!(
+            g[0].launcher_url(),
+            "com.epicgames.launcher://store/p/home-19212a"
+        );
     }
 
     #[test]

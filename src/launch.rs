@@ -19,13 +19,19 @@ pub fn launch_store(game: &Game) -> Result<(), Problem> {
             } else {
                 format!("steam://install/{id}")
             };
-            sys::open_url(&uri).map_err(|code| Problem::launcher_uri_failed(&game.name, "Steam", code, &uri))
+            sys::open_url(&uri)
+                .map_err(|code| Problem::launcher_uri_failed(&game.name, "Steam", code, &uri))
         }
         LaunchTarget::Epic(uri) | LaunchTarget::EpicInstall(uri) => {
             if !epic::launcher_installed() {
-                return Err(if uri.starts_with("heroic://") { Problem::heroic_missing() } else { Problem::epic_missing() });
+                return Err(if uri.starts_with("heroic://") {
+                    Problem::heroic_missing()
+                } else {
+                    Problem::epic_missing()
+                });
             }
-            sys::open_url(uri).map_err(|code| Problem::launcher_uri_failed(&game.name, "Epic Games", code, uri))
+            sys::open_url(uri)
+                .map_err(|code| Problem::launcher_uri_failed(&game.name, "Epic Games", code, uri))
         }
         LaunchTarget::Roblox(place) => crate::roblox::launch(*place),
         LaunchTarget::Uri(uri) => {
@@ -33,28 +39,50 @@ pub fn launch_store(game: &Game) -> Result<(), Problem> {
             if !scheme.starts_with("http") && !sys::protocol_registered(scheme) {
                 return Err(client_missing(game));
             }
-            sys::open_url(uri).map_err(|code| Problem::launcher_uri_failed(&game.name, &game.source.label(), code, uri))
+            sys::open_url(uri).map_err(|code| {
+                Problem::launcher_uri_failed(&game.name, &game.source.label(), code, uri)
+            })
         }
         LaunchTarget::Exe { path, args, dir } => {
             if path.is_empty() || !Path::new(path).exists() {
-                return Err(Problem::exe_missing(&game.name, path, sys::drive_exists(path)));
+                return Err(Problem::exe_missing(
+                    &game.name,
+                    path,
+                    sys::drive_exists(path),
+                ));
             }
             let mut cmd = sys::host_command(path);
             cmd.args(args);
-            let wd = if dir.is_empty() { Path::new(path).parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default() } else { dir.clone() };
+            let wd = if dir.is_empty() {
+                Path::new(path)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_default()
+            } else {
+                dir.clone()
+            };
             if !wd.is_empty() && Path::new(&wd).is_dir() {
                 cmd.current_dir(&wd);
             }
-            cmd.spawn().map(|_| ()).map_err(|e| Problem::from_os_error(&game.name, path, e.raw_os_error(), &e.to_string()))
+            cmd.spawn().map(|_| ()).map_err(|e| {
+                Problem::from_os_error(&game.name, path, e.raw_os_error(), &e.to_string())
+            })
         }
-        LaunchTarget::Appx { family, app } => crate::appx::launch(family, app).map_err(|e| Problem::unknown(&game.name, &e)),
-        LaunchTarget::Custom => Err(Problem::unknown(&game.name, "Internal error: custom game without data")),
+        LaunchTarget::Appx { family, app } => {
+            crate::appx::launch(family, app).map_err(|e| Problem::unknown(&game.name, &e))
+        }
+        LaunchTarget::Custom => Err(Problem::unknown(
+            &game.name,
+            "Internal error: custom game without data",
+        )),
     }
 }
 
 /// Store-Programm fehlt → freundlich erklären, wo es das gibt
 fn client_missing(game: &Game) -> Problem {
-    let url = crate::stores::library(game.source).map(|s| s.download_url()).unwrap_or(sys::GITHUB_URL);
+    let url = crate::stores::library(game.source)
+        .map(|s| s.download_url())
+        .unwrap_or(sys::GITHUB_URL);
     Problem::client_missing(&game.source.label(), url)
 }
 
@@ -82,7 +110,9 @@ pub fn launch_custom(c: &CustomGame, force_admin: bool) -> Result<Option<Child>,
     let path = Path::new(&exe);
     let wd = c.workdir.trim().trim_matches('"');
     let workdir = if wd.is_empty() {
-        path.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default()
+        path.parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default()
     } else {
         wd.to_string()
     };
@@ -117,7 +147,12 @@ pub fn launch_custom(c: &CustomGame, force_admin: bool) -> Result<Option<Child>,
     }
     match cmd.spawn() {
         Ok(child) => Ok(Some(child)),
-        Err(e) => Err(Problem::from_os_error(&c.name, &exe, e.raw_os_error(), &e.to_string())),
+        Err(e) => Err(Problem::from_os_error(
+            &c.name,
+            &exe,
+            e.raw_os_error(),
+            &e.to_string(),
+        )),
     }
 }
 
@@ -133,18 +168,33 @@ fn shell_start(c: &CustomGame, exe: &str, workdir: &str, as_admin: bool) -> Resu
         use std::os::unix::fs::PermissionsExt;
         let _ = as_admin;
         let p = Path::new(exe);
-        let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
-        let executable = p.is_file() && p.metadata().map(|m| m.permissions().mode() & 0o111 != 0).unwrap_or(false);
-        let mut cmd = if matches!(ext.as_str(), "exe" | "msi" | "bat") && !cfg!(target_os = "macos") {
+        let ext = p
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let executable = p.is_file()
+            && p.metadata()
+                .map(|m| m.permissions().mode() & 0o111 != 0)
+                .unwrap_or(false);
+        let mut cmd = if matches!(ext.as_str(), "exe" | "msi" | "bat") && !cfg!(target_os = "macos")
+        {
             // Windows-Programm unter Linux: gewählte Wine-/Proton-Version (sonst System-Wine)
-            let wd = (!workdir.is_empty() && Path::new(workdir).is_dir()).then(|| Path::new(workdir));
+            let wd =
+                (!workdir.is_empty() && Path::new(workdir).is_dir()).then(|| Path::new(workdir));
             let mut cmd = match crate::runners::find(c.runner.trim()) {
                 Some(r) if r.kind == crate::runners::Kind::Proton => {
                     let prefix = crate::runners::prefix_for(&c.id);
                     let _ = std::fs::create_dir_all(&prefix);
-                    let mut env = vec![("STEAM_COMPAT_DATA_PATH".to_string(), prefix.to_string_lossy().to_string())];
+                    let mut env = vec![(
+                        "STEAM_COMPAT_DATA_PATH".to_string(),
+                        prefix.to_string_lossy().to_string(),
+                    )];
                     if let Some(root) = crate::runners::steam_root() {
-                        env.push(("STEAM_COMPAT_CLIENT_INSTALL_PATH".into(), root.to_string_lossy().to_string()));
+                        env.push((
+                            "STEAM_COMPAT_CLIENT_INSTALL_PATH".into(),
+                            root.to_string_lossy().to_string(),
+                        ));
                     }
                     let mut cmd = sys::host_command_env(&r.path, &env, wd);
                     cmd.arg("run");
@@ -161,10 +211,9 @@ fn shell_start(c: &CustomGame, exe: &str, workdir: &str, as_admin: bool) -> Resu
             if !c.args.trim().is_empty() {
                 cmd.args(c.args.split_whitespace());
             }
-            return cmd
-                .spawn()
-                .map(|_| ())
-                .map_err(|e| Problem::from_os_error(&c.name, exe, e.raw_os_error(), &e.to_string()));
+            return cmd.spawn().map(|_| ()).map_err(|e| {
+                Problem::from_os_error(&c.name, exe, e.raw_os_error(), &e.to_string())
+            });
         } else if executable && ext != "desktop" {
             let mut cmd = sys::host_command(p);
             let args = c.args.trim();
@@ -228,10 +277,12 @@ pub fn verify_fix(game: &Game) -> Option<crate::problem::Fix> {
             label: crate::i18n::t("fix.verify"),
             url: format!("steam://validate/{id}"),
         }),
-        LaunchTarget::Epic(uri) if uri.starts_with("com.epicgames.launcher://") => Some(Fix::OpenUrl {
-            label: crate::i18n::t("fix.verify"),
-            url: uri.replace("action=launch", "action=verify"),
-        }),
+        LaunchTarget::Epic(uri) if uri.starts_with("com.epicgames.launcher://") => {
+            Some(Fix::OpenUrl {
+                label: crate::i18n::t("fix.verify"),
+                url: uri.replace("action=launch", "action=verify"),
+            })
+        }
         _ => None,
     }
 }
@@ -239,10 +290,26 @@ pub fn verify_fix(game: &Game) -> Option<crate::problem::Fix> {
 /// Programme im Spielordner, die nicht das Spiel selbst sind
 fn is_helper(path: &str) -> bool {
     const HELPERS: [&str; 14] = [
-        "crashreport", "crashhandler", "crashpad", "unitycrashhandler", "easyanticheat", "battleye", "redist",
-        "vc_redist", "vcredist", "dxsetup", "dotnet", "uninst", "setup", "launcherpatcher",
+        "crashreport",
+        "crashhandler",
+        "crashpad",
+        "unitycrashhandler",
+        "easyanticheat",
+        "battleye",
+        "redist",
+        "vc_redist",
+        "vcredist",
+        "dxsetup",
+        "dotnet",
+        "uninst",
+        "setup",
+        "launcherpatcher",
     ];
-    let file = path.rsplit(['\\', '/']).next().unwrap_or(path).to_lowercase();
+    let file = path
+        .rsplit(['\\', '/'])
+        .next()
+        .unwrap_or(path)
+        .to_lowercase();
     HELPERS.iter().any(|h| file.contains(h))
 }
 
@@ -254,7 +321,12 @@ pub fn watch_store(game: &Game) -> Option<Problem> {
     use crate::winffi::{process_ids, Proc};
     use std::collections::HashSet;
 
-    let dir = game.install_dir.as_ref()?.trim_end_matches(['\\', '/']).to_lowercase().replace('/', "\\");
+    let dir = game
+        .install_dir
+        .as_ref()?
+        .trim_end_matches(['\\', '/'])
+        .to_lowercase()
+        .replace('/', "\\");
     if dir.len() < 4 {
         return None;
     }
@@ -314,7 +386,8 @@ pub fn watch_store(game: &Game) -> Option<Problem> {
             }
         } else if tracked.is_empty() && last_activity.elapsed() > Duration::from_secs(6) {
             // Alles beendet und nichts Neues gestartet
-            return crash.map(|(path, code)| Problem::store_crash(&game.name, &store, &path, code, verify));
+            return crash
+                .map(|(path, code)| Problem::store_crash(&game.name, &store, &path, code, verify));
         }
         if started.elapsed() > Duration::from_secs(300) {
             return None;
@@ -342,8 +415,18 @@ pub fn specific_dir(loc: &str) -> bool {
     }
     let last = parts[parts.len() - 1].to_lowercase();
     const ROOTS: [&str; 12] = [
-        "program files", "program files (x86)", "programdata", "windows", "users", "games", "spiele",
-        "steamapps", "common", "appdata", "local", "programs",
+        "program files",
+        "program files (x86)",
+        "programdata",
+        "windows",
+        "users",
+        "games",
+        "spiele",
+        "steamapps",
+        "common",
+        "appdata",
+        "local",
+        "programs",
     ];
     !ROOTS.contains(&last.as_str())
 }
@@ -354,39 +437,79 @@ pub fn find_uninstaller(c: &CustomGame) -> Option<Uninstaller> {
     {
         use winreg::enums::*;
         use winreg::RegKey;
-        let exe = c.exe.trim().trim_matches('"').to_lowercase().replace('/', "\\");
-        let exe_dir = Path::new(&exe).parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+        let exe = c
+            .exe
+            .trim()
+            .trim_matches('"')
+            .to_lowercase()
+            .replace('/', "\\");
+        let exe_dir = Path::new(&exe)
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
         let name = crate::model::normalize_name(&c.name);
         let roots = [
-            (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
-            (HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
-            (HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
+            (
+                HKEY_LOCAL_MACHINE,
+                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            ),
+            (
+                HKEY_LOCAL_MACHINE,
+                "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            ),
+            (
+                HKEY_CURRENT_USER,
+                "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            ),
         ];
         let mut by_name: Option<Uninstaller> = None;
         for (hive, path) in roots {
-            let Ok(root) = RegKey::predef(hive).open_subkey(path) else { continue };
+            let Ok(root) = RegKey::predef(hive).open_subkey(path) else {
+                continue;
+            };
             for sub in root.enum_keys().flatten() {
-                let Ok(k) = root.open_subkey(&sub) else { continue };
+                let Ok(k) = root.open_subkey(&sub) else {
+                    continue;
+                };
                 let get = |n: &str| k.get_value::<String, _>(n).unwrap_or_default();
                 let uninstall = get("UninstallString");
                 if uninstall.trim().is_empty() {
                     continue;
                 }
-                let loc = get("InstallLocation").trim().trim_matches('"').trim_end_matches('\\').to_lowercase();
+                let loc = get("InstallLocation")
+                    .trim()
+                    .trim_matches('"')
+                    .trim_end_matches('\\')
+                    .to_lowercase();
                 let icon = get("DisplayIcon").to_lowercase();
                 let display_name = get("DisplayName");
                 // Nur eindeutige Treffer: genau diese EXE als Icon, oder ein Ordner, der wirklich
                 // nur zu diesem Programm gehört (nicht "C:\\Program Files" o. Ä.).
-                let matches_dir = specific_dir(&loc) && (exe.starts_with(&format!("{loc}\\")) || exe_dir == loc);
-                let matches_icon = !icon.is_empty() && icon.trim_matches('"').split(',').next().map(|i| i.trim_matches('"') == exe).unwrap_or(false);
+                let matches_dir =
+                    specific_dir(&loc) && (exe.starts_with(&format!("{loc}\\")) || exe_dir == loc);
+                let matches_icon = !icon.is_empty()
+                    && icon
+                        .trim_matches('"')
+                        .split(',')
+                        .next()
+                        .map(|i| i.trim_matches('"') == exe)
+                        .unwrap_or(false);
                 if matches_dir || matches_icon {
                     let (program, args) = split_command(&uninstall);
-                    return Some(Uninstaller { display_name, program, args });
+                    return Some(Uninstaller {
+                        display_name,
+                        program,
+                        args,
+                    });
                 }
                 let dn = crate::model::normalize_name(&display_name);
                 if name.len() >= 4 && dn == name && by_name.is_none() {
                     let (program, args) = split_command(&uninstall);
-                    by_name = Some(Uninstaller { display_name, program, args });
+                    by_name = Some(Uninstaller {
+                        display_name,
+                        program,
+                        args,
+                    });
                 }
             }
         }
@@ -407,7 +530,8 @@ pub fn split_command(cmd: &str) -> (String, String) {
             return (rest[..end].to_string(), rest[end + 1..].trim().to_string());
         }
     }
-    let lower = cmd.to_lowercase();
+    // to_ascii_lowercase: gleiche Byte-Positionen wie `cmd` (to_lowercase kann Längen ändern → Absturz beim Schneiden)
+    let lower = cmd.to_ascii_lowercase();
     if let Some(i) = lower.find(".exe") {
         let end = i + 4;
         return (cmd[..end].to_string(), cmd[end..].trim().to_string());
@@ -424,13 +548,27 @@ mod tests {
 
     #[test]
     fn uninstall_command_split() {
-        assert_eq!(split_command("\"C:\\G\\unins000.exe\" /x"), ("C:\\G\\unins000.exe".into(), "/x".into()));
-        assert_eq!(split_command("MsiExec.exe /X{ABC}"), ("MsiExec.exe".into(), "/X{ABC}".into()));
-        assert_eq!(split_command("C:\\Program Files\\G\\uninstall.exe"), ("C:\\Program Files\\G\\uninstall.exe".into(), "".into()));
+        assert_eq!(
+            split_command("\"C:\\G\\unins000.exe\" /x"),
+            ("C:\\G\\unins000.exe".into(), "/x".into())
+        );
+        assert_eq!(
+            split_command("MsiExec.exe /X{ABC}"),
+            ("MsiExec.exe".into(), "/X{ABC}".into())
+        );
+        assert_eq!(
+            split_command("C:\\Program Files\\G\\uninstall.exe"),
+            ("C:\\Program Files\\G\\uninstall.exe".into(), "".into())
+        );
         assert!(is_helper("C:\\G\\UnityCrashHandler64.exe"));
         assert!(!is_helper("C:\\G\\Game.exe"));
         assert!(!specific_dir("c:\\program files"));
         assert!(!specific_dir("c:\\"));
         assert!(specific_dir("c:\\program files\\cool game"));
+        // Nicht-ASCII vor ".exe" ("İ" wird mit to_lowercase länger) darf nicht abstürzen
+        assert_eq!(
+            split_command("C:\\İİİ\\un.EXE /S"),
+            ("C:\\İİİ\\un.EXE".into(), "/S".into())
+        );
     }
 }

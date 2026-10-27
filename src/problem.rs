@@ -74,15 +74,27 @@ pub fn drive_of(path: &str) -> Option<String> {
 }
 
 fn url(label_key: &str, url: &str) -> Fix {
-    Fix::OpenUrl { label: t(label_key), url: url.to_string() }
+    Fix::OpenUrl {
+        label: t(label_key),
+        url: url.to_string(),
+    }
 }
 
 fn folder(label_key: &str, path: String) -> Fix {
-    Fix::OpenFolder { label: t(label_key), path }
+    Fix::OpenFolder {
+        label: t(label_key),
+        path,
+    }
 }
 
 /// Baut ein Problem aus den Texten `p.<id>.title/what/why/steps`.
-fn build(id: &str, severity: Severity, args: &[(&str, &str)], fixes: Vec<Fix>, technical: String) -> Problem {
+fn build(
+    id: &str,
+    severity: Severity,
+    args: &[(&str, &str)],
+    fixes: Vec<Fix>,
+    technical: String,
+) -> Problem {
     Problem {
         severity,
         title: tf(&format!("p.{id}.title"), args),
@@ -120,7 +132,13 @@ impl Problem {
     }
 
     pub fn workdir_missing(game: &str, dir: &str) -> Problem {
-        build("workdir_missing", Severity::Error, &[("game", game)], vec![Fix::EditGame], format!("Working directory does not exist: {dir}"))
+        build(
+            "workdir_missing",
+            Severity::Error,
+            &[("game", game)],
+            vec![Fix::EditGame],
+            format!("Working directory does not exist: {dir}"),
+        )
     }
 
     // ------------------------------------------------------------------
@@ -131,7 +149,8 @@ impl Problem {
     pub fn from_os_error(game: &str, path: &str, code: Option<i32>, message: &str) -> Problem {
         let tech = format!(
             "Path: {path}\nWindows error code: {}\nMessage: {message}",
-            code.map(|c| c.to_string()).unwrap_or_else(|| "unknown".into())
+            code.map(|c| c.to_string())
+                .unwrap_or_else(|| "unknown".into())
         );
         let g = [("game", game)];
         let gf = || folder("fix.folder_game", parent_of(path));
@@ -141,13 +160,41 @@ impl Problem {
                 p.technical = tech;
                 p
             }
-            Some(740) => build("admin_required", Severity::Warning, &g, vec![Fix::RunAsAdmin, Fix::EditGame], tech),
-            Some(5) => build("access_denied", Severity::Error, &g, vec![Fix::RunAsAdmin, gf()], tech),
-            Some(193) | Some(216) | Some(129) => build("not_an_app", Severity::Error, &g, vec![Fix::EditGame, gf()], tech),
-            Some(225) => build("virus", Severity::Error, &g, vec![url("fix.defender", "windowsdefender://threat")], tech),
-            Some(1260) | Some(4551) | Some(4556) => {
-                build("blocked", Severity::Error, &g, vec![url("fix.defender", "windowsdefender://appbrowser")], tech)
-            }
+            Some(740) => build(
+                "admin_required",
+                Severity::Warning,
+                &g,
+                vec![Fix::RunAsAdmin, Fix::EditGame],
+                tech,
+            ),
+            Some(5) => build(
+                "access_denied",
+                Severity::Error,
+                &g,
+                vec![Fix::RunAsAdmin, gf()],
+                tech,
+            ),
+            Some(193) | Some(216) | Some(129) => build(
+                "not_an_app",
+                Severity::Error,
+                &g,
+                vec![Fix::EditGame, gf()],
+                tech,
+            ),
+            Some(225) => build(
+                "virus",
+                Severity::Error,
+                &g,
+                vec![url("fix.defender", "windowsdefender://threat")],
+                tech,
+            ),
+            Some(1260) | Some(4551) | Some(4556) => build(
+                "blocked",
+                Severity::Error,
+                &g,
+                vec![url("fix.defender", "windowsdefender://appbrowser")],
+                tech,
+            ),
             Some(32) | Some(33) => build("in_use", Severity::Warning, &g, vec![], tech),
             Some(1155) => build("no_assoc", Severity::Error, &g, vec![Fix::EditGame], tech),
             _ => Problem::unknown(game, &tech),
@@ -176,24 +223,48 @@ impl Problem {
                 "bad_image",
                 Severity::Error,
                 &g,
-                vec![url("fix.vc64", VCREDIST_X64), url("fix.vc86", VCREDIST_X86), url("fix.directx", DIRECTX)],
+                vec![
+                    url("fix.vc64", VCREDIST_X64),
+                    url("fix.vc86", VCREDIST_X86),
+                    url("fix.directx", DIRECTX),
+                ],
                 tech,
             ),
             0xC000_0142 => build(
                 "dll_init",
                 Severity::Error,
                 &g,
-                vec![url("fix.nvidia", NVIDIA), url("fix.amd", AMD), url("fix.intel", INTEL), url("fix.vc64", VCREDIST_X64)],
+                vec![
+                    url("fix.nvidia", NVIDIA),
+                    url("fix.amd", AMD),
+                    url("fix.intel", INTEL),
+                    url("fix.vc64", VCREDIST_X64),
+                ],
                 tech,
             ),
             0xC000_0005 | 0xC000_0409 | 0xC000_001D | 0xC000_0374 | 0xC000_00FD => build(
                 "crash",
                 Severity::Error,
                 &g,
-                vec![Fix::RunAsAdmin, url("fix.nvidia", NVIDIA), url("fix.amd", AMD), url("fix.intel", INTEL)],
+                vec![
+                    Fix::RunAsAdmin,
+                    url("fix.nvidia", NVIDIA),
+                    url("fix.amd", AMD),
+                    url("fix.intel", INTEL),
+                ],
                 tech,
             ),
-            _ => build("quit_early", Severity::Warning, &g, vec![Fix::RunAsAdmin, Fix::EditGame, url("fix.vc64", VCREDIST_X64)], tech),
+            _ => build(
+                "quit_early",
+                Severity::Warning,
+                &g,
+                vec![
+                    Fix::RunAsAdmin,
+                    Fix::EditGame,
+                    url("fix.vc64", VCREDIST_X64),
+                ],
+                tech,
+            ),
         };
         Some(p)
     }
@@ -208,8 +279,10 @@ impl Problem {
         let tech = format!("Store: {store}\nPath: {path}\nExit code: {code} (0x{code:08X})");
         match code {
             0xC000_0135 | 0xC06D_007E | 0xC000_007B | 0xC000_0142 => {
-                let mut p = Problem::from_exit_code(game, path, code).unwrap_or_else(|| Problem::unknown(game, &tech));
-                p.fixes.retain(|f| matches!(f, Fix::OpenUrl { .. } | Fix::OpenFolder { .. }));
+                let mut p = Problem::from_exit_code(game, path, code)
+                    .unwrap_or_else(|| Problem::unknown(game, &tech));
+                p.fixes
+                    .retain(|f| matches!(f, Fix::OpenUrl { .. } | Fix::OpenFolder { .. }));
                 p.fixes.insert(0, verify);
                 p.technical = tech;
                 p
@@ -234,7 +307,13 @@ impl Problem {
     }
 
     /// "Spiel startet nicht?" – alle typischen Lösungen auf einen Blick.
-    pub fn start_help(game: &str, store: &str, verify: Option<Fix>, dir: Option<String>, custom: bool) -> Problem {
+    pub fn start_help(
+        game: &str,
+        store: &str,
+        verify: Option<Fix>,
+        dir: Option<String>,
+        custom: bool,
+    ) -> Problem {
         let mut fixes = Vec::new();
         if custom {
             fixes.push(Fix::RunAsAdmin);
@@ -255,7 +334,11 @@ impl Problem {
             fixes.push(folder("fix.folder_game", d));
         }
         build(
-            if custom { "start_help_custom" } else { "start_help" },
+            if custom {
+                "start_help_custom"
+            } else {
+                "start_help"
+            },
             Severity::Info,
             &[("game", game), ("store", store)],
             fixes,
@@ -266,12 +349,19 @@ impl Problem {
     /// Roblox ist nicht installiert (Linux: Sober fehlt)
     pub fn roblox_missing() -> Problem {
         let (url_, label) = if cfg!(target_os = "linux") {
-            ("https://flathub.org/apps/org.vinegarhq.Sober", "fix.sober_dl")
+            (
+                "https://flathub.org/apps/org.vinegarhq.Sober",
+                "fix.sober_dl",
+            )
         } else {
             ("https://www.roblox.com/download", "fix.roblox_dl")
         };
         build(
-            if cfg!(target_os = "linux") { "roblox_missing_linux" } else { "roblox_missing" },
+            if cfg!(target_os = "linux") {
+                "roblox_missing_linux"
+            } else {
+                "roblox_missing"
+            },
             Severity::Error,
             &[],
             vec![url(label, url_), Fix::Rescan],
@@ -297,7 +387,13 @@ impl Problem {
             fixes.push(folder("fix.folder_game", d));
         }
         fixes.push(Fix::RemoveGame);
-        build("no_uninstaller", Severity::Info, &[("game", game)], fixes, "No matching entry in ...\\CurrentVersion\\Uninstall".into())
+        build(
+            "no_uninstaller",
+            Severity::Info,
+            &[("game", game)],
+            fixes,
+            "No matching entry in ...\\CurrentVersion\\Uninstall".into(),
+        )
     }
 
     pub fn uac_cancelled(game: &str) -> Problem {
@@ -361,19 +457,38 @@ impl Problem {
             "client_missing",
             Severity::Error,
             &[("store", store)],
-            vec![Fix::OpenUrl { label: tf("fix.client_dl", &[("store", store)]), url: download.to_string() }, Fix::Rescan],
+            vec![
+                Fix::OpenUrl {
+                    label: tf("fix.client_dl", &[("store", store)]),
+                    url: download.to_string(),
+                },
+                Fix::Rescan,
+            ],
             format!("Protocol handler for {store} not registered."),
         )
     }
 
     /// Erweiterung konnte nicht installiert/geprüft werden
     pub fn extension_failed(error: &str) -> Problem {
-        build("extension_failed", Severity::Error, &[("error", error)], vec![Fix::OpenSettings], error.to_string())
+        build(
+            "extension_failed",
+            Severity::Error,
+            &[("error", error)],
+            vec![Fix::OpenSettings],
+            error.to_string(),
+        )
     }
 
     /// Linux: Die gewählte Wine-/Proton-Version gibt es nicht mehr
+    #[cfg_attr(windows, allow(dead_code))]
     pub fn runner_missing(game: &str, runner: &str) -> Problem {
-        build("runner_missing", Severity::Error, &[("game", game), ("runner", runner)], vec![Fix::EditGame], format!("Runner not found: {runner}"))
+        build(
+            "runner_missing",
+            Severity::Error,
+            &[("game", game), ("runner", runner)],
+            vec![Fix::EditGame],
+            format!("Runner not found: {runner}"),
+        )
     }
 
     /// Spiel aus einem anderen Store deinstallieren: Das macht der Store selbst
@@ -383,7 +498,13 @@ impl Problem {
             fixes.push(url("fix.apps", "ms-settings:appsfeatures"));
         }
         fixes.push(Fix::Rescan);
-        build("store_uninstall", Severity::Info, &[("game", game), ("store", store)], fixes, String::new())
+        build(
+            "store_uninstall",
+            Severity::Info,
+            &[("game", game), ("store", store)],
+            fixes,
+            String::new(),
+        )
     }
 
     /// Linux: Epic-Spiele laufen über den Heroic Games Launcher
@@ -392,7 +513,13 @@ impl Problem {
             "heroic_missing",
             Severity::Error,
             &[],
-            vec![url("fix.heroic_dl", "https://flathub.org/apps/com.heroicgameslauncher.hgl"), Fix::Rescan],
+            vec![
+                url(
+                    "fix.heroic_dl",
+                    "https://flathub.org/apps/com.heroicgameslauncher.hgl",
+                ),
+                Fix::Rescan,
+            ],
             "Heroic Games Launcher config not found (~/.config/heroic).".into(),
         )
     }
@@ -418,7 +545,13 @@ impl Problem {
     }
 
     pub fn install_failed(dir: &str, message: &str) -> Problem {
-        build("install_failed", Severity::Error, &[], vec![], format!("Target folder: {dir}\nError: {message}"))
+        build(
+            "install_failed",
+            Severity::Error,
+            &[],
+            vec![],
+            format!("Target folder: {dir}\nError: {message}"),
+        )
     }
 
     pub fn steam_api(status: Option<u16>, message: &str) -> Problem {
@@ -430,7 +563,13 @@ impl Problem {
                 vec![url("fix.api_key", STEAM_API_KEY_URL), Fix::OpenSettings],
                 format!("HTTP {}: {message}", status.unwrap_or(0)),
             ),
-            _ => build("steam_api", Severity::Info, &[], vec![Fix::OpenSettings, Fix::Rescan], format!("HTTP {status:?}: {message}")),
+            _ => build(
+                "steam_api",
+                Severity::Info,
+                &[],
+                vec![Fix::OpenSettings, Fix::Rescan],
+                format!("HTTP {status:?}: {message}"),
+            ),
         }
     }
 
@@ -449,13 +588,22 @@ impl Problem {
             "app_crashed",
             Severity::Error,
             &[("log", log)],
-            vec![Fix::OpenUrl { label: t("fix.report"), url: issues_url.to_string() }],
+            vec![Fix::OpenUrl {
+                label: t("fix.report"),
+                url: issues_url.to_string(),
+            }],
             message.to_string(),
         )
     }
 
     pub fn unknown(game: &str, technical: &str) -> Problem {
-        build("unknown", Severity::Error, &[("game", game)], vec![Fix::RunAsAdmin, Fix::EditGame], technical.to_string())
+        build(
+            "unknown",
+            Severity::Error,
+            &[("game", game)],
+            vec![Fix::RunAsAdmin, Fix::EditGame],
+            technical.to_string(),
+        )
     }
 
     /// Kurzer Text für die Zwischenablage / GitHub-Issues.
@@ -473,7 +621,11 @@ impl Problem {
         for (i, st) in self.steps.iter().enumerate() {
             out.push_str(&format!("{}. {}\n", i + 1, st));
         }
-        out.push_str(&format!("\n{}\n{}\n", t("problem.tech_short"), self.technical));
+        out.push_str(&format!(
+            "\n{}\n{}\n",
+            t("problem.tech_short"),
+            self.technical
+        ));
         out
     }
 }
@@ -494,7 +646,10 @@ mod tests {
         let p = Problem::exe_missing("Test", "E:\\Spiele\\test.exe", false);
         assert!(p.title.contains("E:"), "{}", p.title);
         assert!(!p.steps.is_empty());
-        assert_eq!(Problem::from_os_error("x", "C:\\a.exe", Some(740), "").fixes[0], Fix::RunAsAdmin);
+        assert_eq!(
+            Problem::from_os_error("x", "C:\\a.exe", Some(740), "").fixes[0],
+            Fix::RunAsAdmin
+        );
         assert!(Problem::from_exit_code("x", "C:\\a.exe", 0).is_none());
         for code in [0xC000_0135u32, 0xC000_007B, 0xC000_0142, 0xC000_0005, 1] {
             let p = Problem::from_exit_code("x", "C:\\a.exe", code).unwrap();

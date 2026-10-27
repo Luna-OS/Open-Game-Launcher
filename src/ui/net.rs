@@ -15,14 +15,21 @@ use dioxus::prelude::*;
 /// Bibliothek mit dem gespeicherten Epic-Konto neu laden.
 /// `force` = false → höchstens alle 6 Stunden.
 pub fn sync_epic(app: App, force: bool) {
-    let Some(auth) = app.settings.peek().epic_auth.clone() else { return };
+    let Some(auth) = app.settings.peek().epic_auth.clone() else {
+        return;
+    };
     let last = app.settings.peek().epic_synced;
     if *app.epic_busy.peek() || (!force && sys::now_secs().saturating_sub(last) < 6 * 3600) {
         return;
     }
     run_epic(app, move |p| {
         let fresh = crate::epicacct::ensure_fresh(&auth)?;
-        let list = crate::epicacct::fetch_library(&fresh, &crate::epicacct::load_cache(), &crate::i18n::current_code(), p)?;
+        let list = crate::epicacct::fetch_library(
+            &fresh,
+            &crate::epicacct::load_cache(),
+            &crate::i18n::current_code(),
+            p,
+        )?;
         Ok((fresh, list))
     });
 }
@@ -41,14 +48,24 @@ pub fn epic_connect(app: App, pasted: String) {
         let auth = crate::epicacct::exchange(&code)?;
         // Anmeldung hat geklappt → ab jetzt zählt der Fortschritt
         p.total.store(1, std::sync::atomic::Ordering::Relaxed);
-        let list = crate::epicacct::fetch_library(&auth, &crate::epicacct::load_cache(), &crate::i18n::current_code(), p)?;
+        let list = crate::epicacct::fetch_library(
+            &auth,
+            &crate::epicacct::load_cache(),
+            &crate::i18n::current_code(),
+            p,
+        )?;
         Ok((auth, list))
     });
 }
 
 fn run_epic<F>(app: App, job: F)
 where
-    F: FnOnce(&crate::epicacct::Progress) -> Result<(crate::epicacct::EpicAuth, Vec<crate::epicacct::OwnedEpic>), String> + Send + 'static,
+    F: FnOnce(
+            &crate::epicacct::Progress,
+        )
+            -> Result<(crate::epicacct::EpicAuth, Vec<crate::epicacct::OwnedEpic>), String>
+        + Send
+        + 'static,
 {
     let (mut busy, mut err, mut prog) = (app.epic_busy, app.epic_error, app.epic_progress);
     busy.set(true);
@@ -61,7 +78,10 @@ where
         use std::sync::atomic::Ordering;
         while *app.epic_busy.peek() {
             let mut prog = app.epic_progress;
-            prog.set((watch.done.load(Ordering::Relaxed), watch.total.load(Ordering::Relaxed)));
+            prog.set((
+                watch.done.load(Ordering::Relaxed),
+                watch.total.load(Ordering::Relaxed),
+            ));
             tokio::time::sleep(std::time::Duration::from_millis(250)).await;
         }
     });
@@ -125,7 +145,11 @@ pub fn load_free(app: App, force: bool) {
             Ok((games, errors)) => {
                 let failed = games.is_empty() && !errors.is_empty();
                 free.set(games);
-                st.set(if failed { LoadState::Failed } else { LoadState::Done });
+                st.set(if failed {
+                    LoadState::Failed
+                } else {
+                    LoadState::Done
+                });
             }
             Err(_) => st.set(LoadState::Failed),
         }
@@ -149,8 +173,12 @@ pub fn owned_game(app: App, fg: &FreeGame) -> Option<crate::model::Game> {
 pub fn claim_free(app: App, fg: &FreeGame) {
     let launcher = fg.launcher_url();
     let opened = match fg.store {
-        crate::freegames::FreeStore::Epic if crate::epic::launcher_installed() => sys::open_url(&launcher).is_ok(),
-        crate::freegames::FreeStore::Steam if sys::protocol_registered("steam") => sys::open_url(&launcher).is_ok(),
+        crate::freegames::FreeStore::Epic if crate::epic::launcher_installed() => {
+            sys::open_url(&launcher).is_ok()
+        }
+        crate::freegames::FreeStore::Steam if sys::protocol_registered("steam") => {
+            sys::open_url(&launcher).is_ok()
+        }
         _ => false,
     };
     if !opened {
@@ -171,10 +199,19 @@ pub fn remaining(fg: &FreeGame) -> String {
     let (key_d, key_h, key_m, target) = if fg.upcoming {
         ("free.in_days", "free.in_hours", "free.in_min", fg.starts)
     } else {
-        ("free.left_days", "free.left_hours", "free.left_min", fg.ends)
+        (
+            "free.left_days",
+            "free.left_hours",
+            "free.left_min",
+            fg.ends,
+        )
     };
     let Some(target) = target else {
-        return if fg.upcoming { t("free.soon") } else { t("free.now") };
+        return if fg.upcoming {
+            t("free.soon")
+        } else {
+            t("free.now")
+        };
     };
     let secs = target.saturating_sub(now);
     let n;
@@ -215,7 +252,10 @@ pub fn update_loop(app: App) {
 
 /// Nach Updates suchen. `manual` = vom Nutzer angestoßen (dann auch "kein Update" melden).
 pub fn check_update(app: App, manual: bool) {
-    if matches!(*app.update_state.peek(), UpdateState::Checking | UpdateState::Downloading(..) | UpdateState::Installing) {
+    if matches!(
+        *app.update_state.peek(),
+        UpdateState::Checking | UpdateState::Downloading(..) | UpdateState::Installing
+    ) {
         return;
     }
     let mut st = app.update_state;
@@ -230,7 +270,10 @@ pub fn check_update(app: App, manual: bool) {
                 let skipped = app.settings.peek().update_skip == r.version;
                 st.set(UpdateState::Idle);
                 if manual || !skipped {
-                    app.toast(&tf("update.available", &[("version", &r.version)]), "download");
+                    app.toast(
+                        &tf("update.available", &[("version", &r.version)]),
+                        "download",
+                    );
                     upd.set(Some(r));
                     if manual {
                         app.open(Modal::Update);
@@ -241,10 +284,17 @@ pub fn check_update(app: App, manual: bool) {
                 st.set(UpdateState::Idle);
                 upd.set(None);
                 if manual {
-                    app.toast(&tf("update.latest", &[("version", crate::sys::VERSION)]), "check-circle");
+                    app.toast(
+                        &tf("update.latest", &[("version", crate::sys::VERSION)]),
+                        "check-circle",
+                    );
                 }
             }
-            Ok(Err(e)) => st.set(if manual { UpdateState::Failed(e) } else { UpdateState::Idle }),
+            Ok(Err(e)) => st.set(if manual {
+                UpdateState::Failed(e)
+            } else {
+                UpdateState::Idle
+            }),
             Err(_) => st.set(UpdateState::Idle),
         }
     });
@@ -252,9 +302,13 @@ pub fn check_update(app: App, manual: bool) {
 
 /// Update herunterladen und installieren
 pub fn start_update(app: App) {
-    let Some(release) = app.update_avail.peek().clone() else { return };
+    let Some(release) = app.update_avail.peek().clone() else {
+        return;
+    };
     let kind = crate::updater::InstallKind::detect();
-    let total = crate::updater::pick_asset(&kind, &release.assets).map(|a| a.size).unwrap_or(0);
+    let total = crate::updater::pick_asset(&kind, &release.assets)
+        .map(|a| a.size)
+        .unwrap_or(0);
     let progress = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
     let mut st = app.update_state;
     st.set(UpdateState::Downloading(0, total));
@@ -268,20 +322,26 @@ pub fn start_update(app: App) {
             let got = p2.load(std::sync::atomic::Ordering::Relaxed);
             let mut st = app.update_state;
             if matches!(*st.peek(), UpdateState::Downloading(..)) {
-                st.set(if total > 0 && got >= total { UpdateState::Installing } else { UpdateState::Downloading(got, total) });
+                st.set(if total > 0 && got >= total {
+                    UpdateState::Installing
+                } else {
+                    UpdateState::Downloading(got, total)
+                });
             }
         }
     });
     spawn_forever(async move {
-        let res = tokio::task::spawn_blocking(move || crate::updater::install(&release, &kind, progress)).await;
+        let res =
+            tokio::task::spawn_blocking(move || crate::updater::install(&release, &kind, progress))
+                .await;
         done.store(true, std::sync::atomic::Ordering::Relaxed);
         let mut st = app.update_state;
         match res {
             Ok(Ok(crate::updater::Outcome::Restart(p))) => st.set(UpdateState::Ready(p)),
             Ok(Ok(crate::updater::Outcome::Installed)) => st.set(UpdateState::Done),
-            Ok(Ok(crate::updater::Outcome::Manual { file, command })) => {
-                st.set(UpdateState::Manual(file.to_string_lossy().to_string(), command))
-            }
+            Ok(Ok(crate::updater::Outcome::Manual { file, command })) => st.set(
+                UpdateState::Manual(file.to_string_lossy().to_string(), command),
+            ),
             Ok(Err(e)) => st.set(UpdateState::Failed(e)),
             Err(_) => st.set(UpdateState::Failed(t("common.err_unknown"))),
         }

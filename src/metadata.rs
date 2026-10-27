@@ -48,7 +48,10 @@ fn path() -> std::path::PathBuf {
 }
 
 pub fn load_cache() -> BTreeMap<String, Info> {
-    std::fs::read_to_string(path()).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+    std::fs::read_to_string(path())
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or_default()
 }
 
 pub fn save_cache(cache: &BTreeMap<String, Info>) {
@@ -57,10 +60,7 @@ pub fn save_cache(cache: &BTreeMap<String, Info>) {
         let _ = std::fs::create_dir_all(d);
     }
     if let Ok(t) = serde_json::to_string(cache) {
-        let tmp = p.with_extension("json.tmp");
-        if std::fs::write(&tmp, t).is_ok() {
-            let _ = std::fs::rename(tmp, p);
-        }
+        let _ = crate::sys::write_atomic(&p, t.as_bytes());
     }
 }
 
@@ -129,19 +129,38 @@ pub fn parse_appdetails_for(appid: u32, json: &str, req_key: &str) -> Option<Inf
         return None;
     }
     let data = d.get("data")?;
-    let s = |k: &str| data.get(k).and_then(|x| x.as_str()).map(plain).unwrap_or_default();
+    let s = |k: &str| {
+        data.get(k)
+            .and_then(|x| x.as_str())
+            .map(plain)
+            .unwrap_or_default()
+    };
     // Linux/Mac ohne eigene Angaben (oft leer) → Windows-Angaben nehmen (Proton/Wine)
     let reqs = data
         .get(req_key)
         .filter(|r| r.get("minimum").is_some())
         .or_else(|| data.get("pc_requirements"));
-    let req = |k: &str| reqs.and_then(|r| r.get(k)).and_then(|x| x.as_str()).map(parse_requirements).unwrap_or_default();
+    let req = |k: &str| {
+        reqs.and_then(|r| r.get(k))
+            .and_then(|x| x.as_str())
+            .map(parse_requirements)
+            .unwrap_or_default()
+    };
     Some(Info {
         description: s("short_description"),
         genres: data
             .get("genres")
             .and_then(|g| g.as_array())
-            .map(|a| a.iter().filter_map(|g| g.get("description").and_then(|x| x.as_str()).map(|x| x.to_string())).take(8).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|g| {
+                        g.get("description")
+                            .and_then(|x| x.as_str())
+                            .map(|x| x.to_string())
+                    })
+                    .take(8)
+                    .collect()
+            })
             .unwrap_or_default(),
         developer: data
             .get("developers")
@@ -150,7 +169,12 @@ pub fn parse_appdetails_for(appid: u32, json: &str, req_key: &str) -> Option<Inf
             .and_then(|x| x.as_str())
             .unwrap_or("")
             .to_string(),
-        release: data.get("release_date").and_then(|r| r.get("date")).and_then(|x| x.as_str()).unwrap_or("").to_string(),
+        release: data
+            .get("release_date")
+            .and_then(|r| r.get("date"))
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string(),
         req_min: req("minimum"),
         req_rec: req("recommended"),
         source: "steam".into(),
@@ -189,12 +213,19 @@ fn agent() -> ureq::Agent {
     AGENT
         .get_or_init(|| {
             use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
-            let tls = TlsConfig::builder().provider(TlsProvider::NativeTls).root_certs(RootCerts::PlatformVerifier).build();
+            let tls = TlsConfig::builder()
+                .provider(TlsProvider::NativeTls)
+                .root_certs(RootCerts::PlatformVerifier)
+                .build();
             ureq::Agent::config_builder()
                 .tls_config(tls)
                 .timeout_global(Some(std::time::Duration::from_secs(12)))
                 // Wikipedia verlangt einen aussagekräftigen User-Agent mit Kontakt
-                .user_agent(concat!("Open-Game-Launcher/", env!("CARGO_PKG_VERSION"), " (https://github.com/MikeAdamRGB/Open-Game-Launcher)"))
+                .user_agent(concat!(
+                    "Open-Game-Launcher/",
+                    env!("CARGO_PKG_VERSION"),
+                    " (https://github.com/MikeAdamRGB/Open-Game-Launcher)"
+                ))
                 .build()
                 .into()
         })
@@ -204,15 +235,25 @@ fn agent() -> ureq::Agent {
 /// GET mit Größenlimit. `None` = keine Verbindung / Fehler
 fn get_text(url: &str, limit: u64) -> Option<String> {
     let mut resp = agent().get(url).call().ok()?;
-    resp.body_mut().with_config().limit(limit).read_to_string().ok()
+    resp.body_mut()
+        .with_config()
+        .limit(limit)
+        .read_to_string()
+        .ok()
 }
 
 /// Infos zu einer Steam-AppID laden (in der Sprache des Launchers).
 /// `None` = keine Verbindung (später erneut versuchen), `fetched == 0` = nichts gefunden.
 pub fn fetch(appid: u32, lang: &str) -> Option<Info> {
     let l = steam_lang(lang);
-    let body = get_text(&format!("https://store.steampowered.com/api/appdetails?appids={appid}&l={l}"), 4 * 1024 * 1024)?;
-    let mut info = parse_appdetails(appid, &body).unwrap_or(Info { version: VERSION, ..Default::default() });
+    let body = get_text(
+        &format!("https://store.steampowered.com/api/appdetails?appids={appid}&l={l}"),
+        4 * 1024 * 1024,
+    )?;
+    let mut info = parse_appdetails(appid, &body).unwrap_or(Info {
+        version: VERSION,
+        ..Default::default()
+    });
     if info.fetched > 0 {
         if let Some(d) = get_text(&format!("https://store.steampowered.com/saleaction/ajaxgetdeckappcompatibilityreport?nAppID={appid}&l={l}"), 256 * 1024) {
             info.deck = parse_deck(&d);
@@ -227,15 +268,39 @@ pub fn fetch(appid: u32, lang: &str) -> Option<Info> {
 
 /// Wörter, an denen man in der Kurzbeschreibung erkennt, dass es um ein Spiel geht
 const GAME_WORDS: &[&str] = &[
-    "video game", "videogame", "computer game", "videospiel", "computerspiel", "jeu vidéo", "videojuego", "videogioco",
-    "jogo eletrônico", "jogo de vídeo", "gra komputerowa", "gra wideo", "video oyunu", "bilgisayar oyunu", "компьютерная игра",
+    "video game",
+    "videogame",
+    "computer game",
+    "videospiel",
+    "computerspiel",
+    "jeu vidéo",
+    "videojuego",
+    "videogioco",
+    "jogo eletrônico",
+    "jogo de vídeo",
+    "gra komputerowa",
+    "gra wideo",
+    "video oyunu",
+    "bilgisayar oyunu",
+    "компьютерная игра",
     "видеоигра",
 ];
 
 /// Name für die Suche säubern ("Spiel™ – Deluxe Edition" → "Spiel")
 pub fn search_name(name: &str) -> String {
-    let mut n: String = name.chars().filter(|c| !matches!(c, '™' | '®' | '©')).collect();
-    for cut in [" - ", " – ", ": Game of the Year", " Deluxe Edition", " Definitive Edition", " GOTY", " Remastered"] {
+    let mut n: String = name
+        .chars()
+        .filter(|c| !matches!(c, '™' | '®' | '©'))
+        .collect();
+    for cut in [
+        " - ",
+        " – ",
+        ": Game of the Year",
+        " Deluxe Edition",
+        " Definitive Edition",
+        " GOTY",
+        " Remastered",
+    ] {
         if let Some(i) = n.find(cut) {
             if i > 2 {
                 n.truncate(i);
@@ -255,7 +320,8 @@ pub fn pick_search_result(json: &str, name: &str) -> Option<String> {
         .filter_map(|r| r.get("title")?.as_str())
         .find(|t| {
             let n = crate::model::normalize_name(t.split(" (").next().unwrap_or(t));
-            !want.is_empty() && (n == want || n.starts_with(&want) || want.starts_with(&n) && n.len() > 3)
+            !want.is_empty()
+                && (n == want || n.starts_with(&want) || want.starts_with(&n) && n.len() > 3)
         })
         .map(|t| t.to_string())
 }
@@ -266,10 +332,22 @@ pub fn parse_summary(json: &str) -> Option<(String, String, String, String)> {
     if v.get("type").and_then(|t| t.as_str()) == Some("disambiguation") {
         return None;
     }
-    let desc = v.get("description").and_then(|d| d.as_str()).unwrap_or("").to_lowercase();
-    let extract = v.get("extract").and_then(|d| d.as_str()).unwrap_or("").trim().to_string();
+    let desc = v
+        .get("description")
+        .and_then(|d| d.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let extract = v
+        .get("extract")
+        .and_then(|d| d.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
     let head: String = extract.chars().take(300).collect::<String>().to_lowercase();
-    if !GAME_WORDS.iter().any(|w| desc.contains(w) || head.contains(w)) {
+    if !GAME_WORDS
+        .iter()
+        .any(|w| desc.contains(w) || head.contains(w))
+    {
         return None;
     }
     let thumb = v
@@ -279,7 +357,11 @@ pub fn parse_summary(json: &str) -> Option<(String, String, String, String)> {
         .filter(|u| u.starts_with("https://upload.wikimedia.org/"))
         .unwrap_or("")
         .to_string();
-    let qid = v.get("wikibase_item").and_then(|q| q.as_str()).unwrap_or("").to_string();
+    let qid = v
+        .get("wikibase_item")
+        .and_then(|q| q.as_str())
+        .unwrap_or("")
+        .to_string();
     let page = v
         .get("content_urls")
         .and_then(|c| c.get("desktop"))
@@ -304,15 +386,29 @@ fn valid_qid(q: &str) -> bool {
 
 /// Aus den Wikidata-Aussagen: Genre-IDs (P136), Entwickler-IDs (P178), Erscheinungsjahr (P577)
 pub fn parse_wikidata_claims(json: &str, qid: &str) -> (Vec<String>, Vec<String>, String) {
-    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else { return Default::default() };
-    let Some(claims) = v.get("entities").and_then(|e| e.get(qid)).and_then(|e| e.get("claims")) else { return Default::default() };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
+        return Default::default();
+    };
+    let Some(claims) = v
+        .get("entities")
+        .and_then(|e| e.get(qid))
+        .and_then(|e| e.get("claims"))
+    else {
+        return Default::default();
+    };
     let ids = |p: &str| -> Vec<String> {
         claims
             .get(p)
             .and_then(|a| a.as_array())
             .map(|a| {
                 a.iter()
-                    .filter_map(|c| c.get("mainsnak")?.get("datavalue")?.get("value")?.get("id")?.as_str())
+                    .filter_map(|c| {
+                        c.get("mainsnak")?
+                            .get("datavalue")?
+                            .get("value")?
+                            .get("id")?
+                            .as_str()
+                    })
                     .filter(|q| valid_qid(q))
                     .map(|q| q.to_string())
                     .take(6)
@@ -325,8 +421,19 @@ pub fn parse_wikidata_claims(json: &str, qid: &str) -> (Vec<String>, Vec<String>
         .and_then(|a| a.as_array())
         .and_then(|a| {
             a.iter()
-                .filter_map(|c| c.get("mainsnak")?.get("datavalue")?.get("value")?.get("time")?.as_str())
-                .map(|t| t.trim_start_matches('+').chars().take(4).collect::<String>())
+                .filter_map(|c| {
+                    c.get("mainsnak")?
+                        .get("datavalue")?
+                        .get("value")?
+                        .get("time")?
+                        .as_str()
+                })
+                .map(|t| {
+                    t.trim_start_matches('+')
+                        .chars()
+                        .take(4)
+                        .collect::<String>()
+                })
                 .filter(|y| y.len() == 4 && y.chars().all(|c| c.is_ascii_digit()))
                 .min()
         })
@@ -337,8 +444,15 @@ pub fn parse_wikidata_claims(json: &str, qid: &str) -> (Vec<String>, Vec<String>
 /// Beschriftungen zu Wikidata-IDs (in der Sprache, sonst Englisch)
 pub fn parse_labels(json: &str, lang: &str) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
-    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else { return out };
-    for (id, e) in v.get("entities").and_then(|e| e.as_object()).into_iter().flatten() {
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
+        return out;
+    };
+    for (id, e) in v
+        .get("entities")
+        .and_then(|e| e.as_object())
+        .into_iter()
+        .flatten()
+    {
         let labels = e.get("labels");
         let l = labels
             .and_then(|l| l.get(lang))
@@ -364,21 +478,40 @@ fn first_upper(s: &str) -> String {
 pub fn fetch_wiki(name: &str, lang: &str) -> Option<Info> {
     let name = search_name(name);
     if name.chars().count() < 2 {
-        return Some(Info { version: VERSION, ..Default::default() });
+        return Some(Info {
+            version: VERSION,
+            ..Default::default()
+        });
     }
-    let langs: Vec<&str> = if lang == "en" { vec!["en"] } else { vec![lang, "en"] };
+    let langs: Vec<&str> = if lang == "en" {
+        vec!["en"]
+    } else {
+        vec![lang, "en"]
+    };
     let mut summary = None;
     let mut reached = false;
     for l in &langs {
-        let l = if l.chars().all(|c| c.is_ascii_lowercase()) && l.len() == 2 { *l } else { "en" };
+        let l = if l.chars().all(|c| c.is_ascii_lowercase()) && l.len() == 2 {
+            *l
+        } else {
+            "en"
+        };
         let q = crate::sys::url_encode(&format!("{name} video game"));
         let Some(search) = get_text(&format!("https://{l}.wikipedia.org/w/api.php?action=query&list=search&srsearch={q}&srlimit=5&format=json&utf8=1"), 512 * 1024) else {
             continue;
         };
         reached = true;
-        let Some(title) = pick_search_result(&search, &name) else { continue };
+        let Some(title) = pick_search_result(&search, &name) else {
+            continue;
+        };
         let t = crate::sys::url_encode(&title.replace(' ', "_"));
-        if let Some(s) = get_text(&format!("https://{l}.wikipedia.org/api/rest_v1/page/summary/{t}"), 512 * 1024).as_deref().and_then(parse_summary) {
+        if let Some(s) = get_text(
+            &format!("https://{l}.wikipedia.org/api/rest_v1/page/summary/{t}"),
+            512 * 1024,
+        )
+        .as_deref()
+        .and_then(parse_summary)
+        {
             summary = Some((l.to_string(), s));
             break;
         }
@@ -387,7 +520,10 @@ pub fn fetch_wiki(name: &str, lang: &str) -> Option<Info> {
         return None;
     }
     let Some((wl, (text, thumb, qid, page))) = summary else {
-        return Some(Info { version: VERSION, ..Default::default() });
+        return Some(Info {
+            version: VERSION,
+            ..Default::default()
+        });
     };
     let mut info = Info {
         description: text,
@@ -399,7 +535,10 @@ pub fn fetch_wiki(name: &str, lang: &str) -> Option<Info> {
         ..Default::default()
     };
     if valid_qid(&qid) {
-        if let Some(j) = get_text(&format!("https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"), 8 * 1024 * 1024) {
+        if let Some(j) = get_text(
+            &format!("https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"),
+            8 * 1024 * 1024,
+        ) {
             let (genres, devs, year) = parse_wikidata_claims(&j, &qid);
             info.release = year;
             let ids: Vec<String> = genres.iter().chain(devs.iter()).cloned().collect();
@@ -411,8 +550,17 @@ pub fn fetch_wiki(name: &str, lang: &str) -> Option<Info> {
                 );
                 if let Some(lj) = get_text(&url, 1024 * 1024) {
                     let labels = parse_labels(&lj, &wl);
-                    info.genres = genres.iter().filter_map(|g| labels.get(g)).map(|g| first_upper(g)).collect();
-                    info.developer = devs.iter().filter_map(|d| labels.get(d)).cloned().collect::<Vec<_>>().join(", ");
+                    info.genres = genres
+                        .iter()
+                        .filter_map(|g| labels.get(g))
+                        .map(|g| first_upper(g))
+                        .collect();
+                    info.developer = devs
+                        .iter()
+                        .filter_map(|d| labels.get(d))
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join(", ");
                 }
             }
         }
@@ -433,19 +581,35 @@ mod tests {
         assert_eq!(i.description, "Every day, millions & more play.");
         assert_eq!(i.genres, vec!["Action", "Strategy"]);
         assert_eq!(i.developer, "Valve");
-        assert_eq!(i.req_min, vec![("OS".into(), "Windows 10".into()), ("Memory".into(), "4 GB RAM".into()), ("".into(), "Broadband".into())]);
+        assert_eq!(
+            i.req_min,
+            vec![
+                ("OS".into(), "Windows 10".into()),
+                ("Memory".into(), "4 GB RAM".into()),
+                ("".into(), "Broadband".into())
+            ]
+        );
         assert_eq!(i.req_rec, vec![("Graphics".into(), "GTX 1060".into())]);
         assert!(i.is_current());
         assert!(parse_appdetails(570, r#"{"570":{"success":false}}"#).is_none());
-        assert_eq!(parse_deck(r#"{"success":1,"results":{"appid":570,"resolved_category":3}}"#), 3);
+        assert_eq!(
+            parse_deck(r#"{"success":1,"results":{"appid":570,"resolved_category":3}}"#),
+            3
+        );
         assert_eq!(parse_deck("kaputt"), 0);
     }
 
     #[test]
     fn wikipedia() {
-        assert_eq!(search_name("The Witcher® 3: Wild Hunt – Game of the Year Edition"), "The Witcher 3: Wild Hunt");
+        assert_eq!(
+            search_name("The Witcher® 3: Wild Hunt – Game of the Year Edition"),
+            "The Witcher 3: Wild Hunt"
+        );
         let s = r#"{"query":{"search":[{"title":"Mario (Figur)"},{"title":"Super Mario World"},{"title":"Super Mario World 2"}]}}"#;
-        assert_eq!(pick_search_result(s, "Super Mario World").as_deref(), Some("Super Mario World"));
+        assert_eq!(
+            pick_search_result(s, "Super Mario World").as_deref(),
+            Some("Super Mario World")
+        );
         assert_eq!(pick_search_result(s, "Zelda"), None);
         let sum = r#"{"type":"standard","description":"1990 video game","extract":"Super Mario World is a platform game.","thumbnail":{"source":"https://upload.wikimedia.org/x.png"},"wikibase_item":"Q1137577","content_urls":{"desktop":{"page":"https://en.wikipedia.org/wiki/Super_Mario_World"}}}"#;
         let (t, img, q, page) = parse_summary(sum).unwrap();
@@ -453,13 +617,26 @@ mod tests {
         assert_eq!(img, "https://upload.wikimedia.org/x.png");
         assert_eq!(q, "Q1137577");
         assert!(page.ends_with("Super_Mario_World"));
-        assert!(parse_summary(r#"{"type":"standard","description":"Stadt in Bayern","extract":"Eine Stadt."}"#).is_none());
+        assert!(parse_summary(
+            r#"{"type":"standard","description":"Stadt in Bayern","extract":"Eine Stadt."}"#
+        )
+        .is_none());
         // Bild von fremder Seite wird ignoriert
         let evil = r#"{"description":"video game","extract":"x","thumbnail":{"source":"https://evil.example/a.png"}}"#;
         assert_eq!(parse_summary(evil).unwrap().1, "");
         let wd = r#"{"entities":{"Q1":{"claims":{"P136":[{"mainsnak":{"datavalue":{"value":{"id":"Q2"}}}}],"P178":[{"mainsnak":{"datavalue":{"value":{"id":"Q3"}}}}],"P577":[{"mainsnak":{"datavalue":{"value":{"time":"+1991-11-21T00:00:00Z"}}}},{"mainsnak":{"datavalue":{"value":{"time":"+1990-11-21T00:00:00Z"}}}}]}}}}"#;
-        assert_eq!(parse_wikidata_claims(wd, "Q1"), (vec!["Q2".to_string()], vec!["Q3".to_string()], "1990".to_string()));
-        let labels = parse_labels(r#"{"entities":{"Q2":{"labels":{"en":{"value":"platform game"},"de":{"value":"Jump ’n’ Run"}}}}}"#, "de");
+        assert_eq!(
+            parse_wikidata_claims(wd, "Q1"),
+            (
+                vec!["Q2".to_string()],
+                vec!["Q3".to_string()],
+                "1990".to_string()
+            )
+        );
+        let labels = parse_labels(
+            r#"{"entities":{"Q2":{"labels":{"en":{"value":"platform game"},"de":{"value":"Jump ’n’ Run"}}}}}"#,
+            "de",
+        );
         assert_eq!(labels.get("Q2").map(|s| s.as_str()), Some("Jump ’n’ Run"));
     }
 }

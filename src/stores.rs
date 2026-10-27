@@ -28,6 +28,7 @@ pub trait StoreLibrary {
         Vec::new()
     }
     /// Kann dieser Store auch nicht installierte Spiele zeigen?
+    #[allow(dead_code)] // derzeit ungenutzt
     fn has_library(&self) -> bool {
         false
     }
@@ -46,7 +47,10 @@ pub trait StoreLibrary {
         if with_owned {
             for g in self.owned() {
                 let key = crate::model::normalize_name(&g.name);
-                if !games.iter().any(|o| o.id == g.id || crate::model::normalize_name(&o.name) == key) {
+                if !games
+                    .iter()
+                    .any(|o| o.id == g.id || crate::model::normalize_name(&o.name) == key)
+                {
                     games.push(g);
                 }
             }
@@ -56,7 +60,9 @@ pub trait StoreLibrary {
             found: client || !games.is_empty(),
             installed,
             owned: games.len(),
-            note: (!client && games.is_empty()).then(|| crate::i18n::tf("store.client_missing", &[("store", &self.source().label())])),
+            note: (!client && games.is_empty()).then(|| {
+                crate::i18n::tf("store.client_missing", &[("store", &self.source().label())])
+            }),
             ..Default::default()
         };
         StoreScan { games, status }
@@ -89,7 +95,13 @@ pub fn scan_all(settings: &Settings) -> Vec<(Source, StoreScan)> {
         .collect()
 }
 
-fn game(id: String, name: String, source: Source, dir: Option<String>, launch: LaunchTarget) -> Game {
+fn game(
+    id: String,
+    name: String,
+    source: Source,
+    dir: Option<String>,
+    launch: LaunchTarget,
+) -> Game {
     Game {
         id,
         name,
@@ -135,7 +147,9 @@ pub fn open_db(path: &Path) -> Option<rusqlite::Connection> {
         })
         .collect();
     let uri = format!("file://{enc}?immutable=1&mode=ro");
-    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
+        | OpenFlags::SQLITE_OPEN_URI
+        | OpenFlags::SQLITE_OPEN_NO_MUTEX;
     let conn = rusqlite::Connection::open_with_flags(uri, flags).ok()?;
     // Schutz gegen riesige oder kaputte Dateien
     let _ = conn.busy_timeout(std::time::Duration::from_millis(500));
@@ -158,7 +172,10 @@ pub fn open_db_wal(copy: &Path) -> Option<rusqlite::Connection> {
 fn has_column(conn: &rusqlite::Connection, table: &str, col: &str) -> bool {
     conn.prepare(&format!("PRAGMA table_info({table})"))
         .and_then(|mut st| {
-            let names: Vec<String> = st.query_map([], |r| r.get::<_, String>(1))?.flatten().collect();
+            let names: Vec<String> = st
+                .query_map([], |r| r.get::<_, String>(1))?
+                .flatten()
+                .collect();
             Ok(names.iter().any(|n| n.eq_ignore_ascii_case(col)))
         })
         .unwrap_or(false)
@@ -171,31 +188,38 @@ pub fn galaxy_owned(conn: &rusqlite::Connection) -> Vec<(String, String, Option<
                JOIN GamePieceTypes t ON t.id = gp.gamePieceTypeId \
                WHERE lr.releaseKey LIKE 'gog\\_%' ESCAPE '\\' AND t.type IN ('originalTitle', 'title', 'originalImages') \
                LIMIT 20000";
-    let Ok(mut st) = conn.prepare(sql) else { return Vec::new() };
+    let Ok(mut st) = conn.prepare(sql) else {
+        return Vec::new();
+    };
     let rows: Vec<(String, String)> = st
         .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
         .map(|it| it.flatten().collect())
         .unwrap_or_default();
     let mut out: Vec<(String, String, Option<String>)> = Vec::new();
+    // Index statt linearer Suche (bis zu 20 000 Zeilen → sonst quadratische Laufzeit)
+    let mut index: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
     for (key, value) in rows {
-        let Some(id) = key.strip_prefix("gog_") else { continue };
+        let Some(id) = key.strip_prefix("gog_") else {
+            continue;
+        };
         if !id.chars().all(|c| c.is_ascii_digit()) {
             continue;
         }
         let v: serde_json::Value = serde_json::from_str(&value).unwrap_or(serde_json::Value::Null);
-        let entry = match out.iter_mut().position(|e| e.0 == id) {
-            Some(i) => i,
-            None => {
-                out.push((id.to_string(), String::new(), None));
-                out.len() - 1
-            }
-        };
+        let entry = *index.entry(id.to_string()).or_insert_with(|| {
+            out.push((id.to_string(), String::new(), None));
+            out.len() - 1
+        });
         if let Some(t) = v.get("title").and_then(|t| t.as_str()) {
             if out[entry].1.is_empty() {
                 out[entry].1 = t.trim().to_string();
             }
         }
-        if let Some(c) = v.get("verticalCover").and_then(|c| c.as_str()).filter(|u| u.starts_with("https://")) {
+        if let Some(c) = v
+            .get("verticalCover")
+            .and_then(|c| c.as_str())
+            .filter(|u| u.starts_with("https://"))
+        {
             out[entry].2 = Some(c.to_string());
         }
     }
@@ -208,34 +232,53 @@ pub fn amazon_owned(conn: &rusqlite::Connection) -> Vec<(String, String, Option<
     if !has_column(conn, "DbSet", "ProductIdStr") || !has_column(conn, "DbSet", "ProductTitle") {
         return Vec::new();
     }
-    let icon = if has_column(conn, "DbSet", "ProductIconUrl") { "ProductIconUrl" } else { "''" };
+    let icon = if has_column(conn, "DbSet", "ProductIconUrl") {
+        "ProductIconUrl"
+    } else {
+        "''"
+    };
     let sql = format!("SELECT ProductIdStr, ProductTitle, {icon} FROM DbSet LIMIT 20000");
-    let Ok(mut st) = conn.prepare(&sql) else { return Vec::new() };
+    let Ok(mut st) = conn.prepare(&sql) else {
+        return Vec::new();
+    };
     st.query_map([], |r| {
         Ok((
             r.get::<_, Option<String>>(0)?.unwrap_or_default(),
             r.get::<_, Option<String>>(1)?.unwrap_or_default(),
-            r.get::<_, Option<String>>(2)?.filter(|u| u.starts_with("https://")),
+            r.get::<_, Option<String>>(2)?
+                .filter(|u| u.starts_with("https://")),
         ))
     })
-    .map(|it| it.flatten().filter(|(id, t, _)| !id.is_empty() && !t.trim().is_empty()).collect())
+    .map(|it| {
+        it.flatten()
+            .filter(|(id, t, _)| !id.is_empty() && !t.trim().is_empty())
+            .collect()
+    })
     .unwrap_or_default()
 }
 
 /// itch.io: butler.db – Spiele, für die es einen Kauf-/Download-Schlüssel gibt
 pub fn itch_owned(conn: &rusqlite::Connection) -> Vec<(String, String, Option<String>, String)> {
-    let sql = "SELECT g.id, g.title, COALESCE(g.still_cover_url, g.cover_url, ''), COALESCE(g.url, '') \
+    let sql =
+        "SELECT g.id, g.title, COALESCE(g.still_cover_url, g.cover_url, ''), COALESCE(g.url, '') \
                FROM games g WHERE g.id IN (SELECT game_id FROM download_keys) LIMIT 20000";
-    let Ok(mut st) = conn.prepare(sql) else { return Vec::new() };
+    let Ok(mut st) = conn.prepare(sql) else {
+        return Vec::new();
+    };
     st.query_map([], |r| {
         Ok((
             r.get::<_, i64>(0)?.to_string(),
             r.get::<_, Option<String>>(1)?.unwrap_or_default(),
-            r.get::<_, Option<String>>(2)?.filter(|u| u.starts_with("https://")),
+            r.get::<_, Option<String>>(2)?
+                .filter(|u| u.starts_with("https://")),
             r.get::<_, Option<String>>(3)?.unwrap_or_default(),
         ))
     })
-    .map(|it| it.flatten().filter(|(_, t, _, _)| !t.trim().is_empty()).collect())
+    .map(|it| {
+        it.flatten()
+            .filter(|(_, t, _, _)| !t.trim().is_empty())
+            .collect()
+    })
     .unwrap_or_default()
 }
 
@@ -260,17 +303,38 @@ pub fn uninstall_entries() -> Vec<UninstallEntry> {
         use winreg::RegKey;
         let mut out = Vec::new();
         for (hive, path) in [
-            (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
-            (HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
-            (HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall"),
+            (
+                HKEY_LOCAL_MACHINE,
+                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            ),
+            (
+                HKEY_LOCAL_MACHINE,
+                "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            ),
+            (
+                HKEY_CURRENT_USER,
+                "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            ),
         ] {
-            let Ok(root) = RegKey::predef(hive).open_subkey(path) else { continue };
+            let Ok(root) = RegKey::predef(hive).open_subkey(path) else {
+                continue;
+            };
             for key in root.enum_keys().flatten() {
-                let Ok(k) = root.open_subkey(&key) else { continue };
-                let get = |n: &str| k.get_value::<String, _>(n).unwrap_or_default().trim().to_string();
+                let Ok(k) = root.open_subkey(&key) else {
+                    continue;
+                };
+                let get = |n: &str| {
+                    k.get_value::<String, _>(n)
+                        .unwrap_or_default()
+                        .trim()
+                        .to_string()
+                };
                 let e = UninstallEntry {
                     display_name: get("DisplayName"),
-                    install_location: get("InstallLocation").trim_matches('"').trim_end_matches('\\').to_string(),
+                    install_location: get("InstallLocation")
+                        .trim_matches('"')
+                        .trim_end_matches('\\')
+                        .to_string(),
                     uninstall_string: get("UninstallString"),
                     display_icon: get("DisplayIcon"),
                     publisher: get("Publisher"),
@@ -292,7 +356,10 @@ pub fn uninstall_entries() -> Vec<UninstallEntry> {
 /// Pfad aus "DisplayIcon" ("C:\x\game.exe",0 → C:\x\game.exe)
 pub fn icon_path(display_icon: &str) -> String {
     let s = display_icon.trim();
-    let s = s.strip_prefix('"').map(|r| r.split('"').next().unwrap_or(r)).unwrap_or(s);
+    let s = s
+        .strip_prefix('"')
+        .map(|r| r.split('"').next().unwrap_or(r))
+        .unwrap_or(s);
     s.split(',').next().unwrap_or(s).trim().to_string()
 }
 
@@ -318,16 +385,27 @@ pub struct Gog;
 
 #[cfg(windows)]
 fn galaxy_exe() -> Option<PathBuf> {
-    let dir = reg(sys::Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\GOG.com\\GalaxyClient\\paths", "client")?;
+    let dir = reg(
+        sys::Hive::LocalMachine,
+        "SOFTWARE\\WOW6432Node\\GOG.com\\GalaxyClient\\paths",
+        "client",
+    )?;
     let p = Path::new(&dir).join("GalaxyClient.exe");
     p.exists().then_some(p)
 }
 
 /// Heroic: alle gekauften GOG-Spiele aus der Bibliothek (nicht installiert)
+#[cfg_attr(windows, allow(dead_code))]
 pub fn parse_heroic_gog_library(library_json: &str) -> Vec<Game> {
-    let library: serde_json::Value = serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
+    let library: serde_json::Value =
+        serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
     let mut out = Vec::new();
-    for g in library.get("games").and_then(|g| g.as_array()).into_iter().flatten() {
+    for g in library
+        .get("games")
+        .and_then(|g| g.as_array())
+        .into_iter()
+        .flatten()
+    {
         let s = |k: &str| g.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
         let (app, title) = (s("app_name"), s("title"));
         if app.is_empty() || title.is_empty() || !app.chars().all(|c| c.is_ascii_alphanumeric()) {
@@ -337,7 +415,10 @@ pub fn parse_heroic_gog_library(library_json: &str) -> Vec<Game> {
             format!("gog:{app}"),
             title,
             Source::Gog,
-            LaunchTarget::Uri(format!("heroic://launch?appName={}&runner=gog", sys::url_encode(&app))),
+            LaunchTarget::Uri(format!(
+                "heroic://launch?appName={}&runner=gog",
+                sys::url_encode(&app)
+            )),
         );
         let cover = s("art_square");
         if cover.starts_with("https://") {
@@ -349,26 +430,54 @@ pub fn parse_heroic_gog_library(library_json: &str) -> Vec<Game> {
 }
 
 /// Heroic (Linux): gog_store/installed.json + gog_store/library.json
+#[cfg_attr(windows, allow(dead_code))]
 pub fn parse_heroic_gog(installed_json: &str, library_json: &str) -> Vec<Game> {
-    let installed: serde_json::Value = serde_json::from_str(installed_json).unwrap_or(serde_json::Value::Null);
-    let library: serde_json::Value = serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
-    let lib: Vec<serde_json::Value> = library.get("games").and_then(|g| g.as_array()).cloned().unwrap_or_default();
+    let installed: serde_json::Value =
+        serde_json::from_str(installed_json).unwrap_or(serde_json::Value::Null);
+    let library: serde_json::Value =
+        serde_json::from_str(library_json).unwrap_or(serde_json::Value::Null);
+    let lib: Vec<serde_json::Value> = library
+        .get("games")
+        .and_then(|g| g.as_array())
+        .cloned()
+        .unwrap_or_default();
     let mut out = Vec::new();
-    for e in installed.get("installed").and_then(|i| i.as_array()).into_iter().flatten() {
+    for e in installed
+        .get("installed")
+        .and_then(|i| i.as_array())
+        .into_iter()
+        .flatten()
+    {
         let app = e.get("appName").and_then(|a| a.as_str()).unwrap_or("");
         if app.is_empty() {
             continue;
         }
-        let info = lib.iter().find(|g| g.get("app_name").and_then(|a| a.as_str()) == Some(app));
-        let get = |k: &str| info.and_then(|i| i.get(k)).and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let info = lib
+            .iter()
+            .find(|g| g.get("app_name").and_then(|a| a.as_str()) == Some(app));
+        let get = |k: &str| {
+            info.and_then(|i| i.get(k))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        };
         let title = get("title");
-        let name = if title.is_empty() { app.to_string() } else { title };
+        let name = if title.is_empty() {
+            app.to_string()
+        } else {
+            title
+        };
         let mut g = game(
             format!("gog:{app}"),
             name,
             Source::Gog,
-            e.get("install_path").and_then(|p| p.as_str()).map(|s| s.to_string()),
-            LaunchTarget::Uri(format!("heroic://launch?appName={}&runner=gog", sys::url_encode(app))),
+            e.get("install_path")
+                .and_then(|p| p.as_str())
+                .map(|s| s.to_string()),
+            LaunchTarget::Uri(format!(
+                "heroic://launch?appName={}&runner=gog",
+                sys::url_encode(app)
+            )),
         );
         for (k, slot) in [("art_square", 0), ("art_cover", 1)] {
             let u = get(k);
@@ -389,7 +498,12 @@ pub fn parse_heroic_gog(installed_json: &str, library_json: &str) -> Vec<Game> {
 
 #[cfg(windows)]
 fn galaxy_db() -> Option<PathBuf> {
-    sys::env_path("ProgramData").map(|p| p.join("GOG.com").join("Galaxy").join("storage").join("galaxy-2.0.db"))
+    sys::env_path("ProgramData").map(|p| {
+        p.join("GOG.com")
+            .join("Galaxy")
+            .join("storage")
+            .join("galaxy-2.0.db")
+    })
 }
 
 impl StoreLibrary for Gog {
@@ -402,11 +516,18 @@ impl StoreLibrary for Gog {
     fn owned(&self) -> Vec<Game> {
         #[cfg(windows)]
         {
-            let Some(conn) = galaxy_db().and_then(|p| open_db(&p)) else { return Vec::new() };
+            let Some(conn) = galaxy_db().and_then(|p| open_db(&p)) else {
+                return Vec::new();
+            };
             galaxy_owned(&conn)
                 .into_iter()
                 .map(|(id, title, cover)| {
-                    let mut g = owned_game(format!("gog:{id}"), title, Source::Gog, LaunchTarget::Uri(format!("goggalaxy://openGameView/{id}")));
+                    let mut g = owned_game(
+                        format!("gog:{id}"),
+                        title,
+                        Source::Gog,
+                        LaunchTarget::Uri(format!("goggalaxy://openGameView/{id}")),
+                    );
                     g.art.cover.extend(cover);
                     g
                 })
@@ -470,12 +591,19 @@ impl StoreLibrary for Gog {
                 let launch = match &galaxy {
                     Some(g) => LaunchTarget::Exe {
                         path: g.to_string_lossy().to_string(),
-                        args: vec!["/command=runGame".into(), format!("/gameId={id}"), format!("/path={dir}")],
+                        args: vec![
+                            "/command=runGame".into(),
+                            format!("/gameId={id}"),
+                            format!("/path={dir}"),
+                        ],
                         dir: String::new(),
                     },
                     None => LaunchTarget::Exe {
                         path: exe.clone(),
-                        args: r("launchParam").split_whitespace().map(|s| s.to_string()).collect(),
+                        args: r("launchParam")
+                            .split_whitespace()
+                            .map(|s| s.to_string())
+                            .collect(),
                         dir: r("workingDir"),
                     },
                 };
@@ -489,7 +617,8 @@ impl StoreLibrary for Gog {
         {
             let mut out = Vec::new();
             for d in crate::epic::heroic_dirs() {
-                let installed = std::fs::read_to_string(d.join("gog_store/installed.json")).unwrap_or_default();
+                let installed =
+                    std::fs::read_to_string(d.join("gog_store/installed.json")).unwrap_or_default();
                 let library = std::fs::read_to_string(d.join("store_cache/gog_library.json"))
                     .or_else(|_| std::fs::read_to_string(d.join("gog_store/library.json")))
                     .unwrap_or_default();
@@ -515,7 +644,11 @@ pub fn ea_content_id(xml: &str) -> Option<String> {
     let start = xml.find("<contentID>")? + "<contentID>".len();
     let end = xml[start..].find("</contentID>")? + start;
     let id = xml[start..end].trim();
-    (!id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | ':'))).then(|| id.to_string())
+    (!id.is_empty()
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | ':')))
+    .then(|| id.to_string())
 }
 
 impl StoreLibrary for Ea {
@@ -540,9 +673,15 @@ impl StoreLibrary for Ea {
             if e.install_location.is_empty() {
                 continue;
             }
-            let xml_path = Path::new(&e.install_location).join("__Installer").join("installerdata.xml");
-            let Ok(xml) = std::fs::read_to_string(&xml_path) else { continue };
-            let Some(cid) = ea_content_id(&xml) else { continue };
+            let xml_path = Path::new(&e.install_location)
+                .join("__Installer")
+                .join("installerdata.xml");
+            let Ok(xml) = std::fs::read_to_string(&xml_path) else {
+                continue;
+            };
+            let Some(cid) = ea_content_id(&xml) else {
+                continue;
+            };
             let id = format!("ea:{cid}");
             if out.iter().any(|g: &Game| g.id == id) {
                 continue;
@@ -552,7 +691,10 @@ impl StoreLibrary for Ea {
                 e.display_name.clone(),
                 Source::Ea,
                 Some(e.install_location.clone()),
-                LaunchTarget::Uri(format!("origin2://game/launch?offerIds={}&autoDownload=1", sys::url_encode(&cid))),
+                LaunchTarget::Uri(format!(
+                    "origin2://game/launch?offerIds={}&autoDownload=1",
+                    sys::url_encode(&cid)
+                )),
             );
             let icon = icon_path(&e.display_icon);
             g.exe = icon.to_lowercase().ends_with(".exe").then_some(icon);
@@ -588,7 +730,12 @@ impl StoreLibrary for Ubisoft {
             let base = "SOFTWARE\\WOW6432Node\\Ubisoft\\Launcher\\Installs";
             let mut out = Vec::new();
             for id in subkeys(base) {
-                let dir = reg(sys::Hive::LocalMachine, &format!("{base}\\{id}"), "InstallDir").unwrap_or_default();
+                let dir = reg(
+                    sys::Hive::LocalMachine,
+                    &format!("{base}\\{id}"),
+                    "InstallDir",
+                )
+                .unwrap_or_default();
                 let dir = sys::native_path(dir.trim_end_matches(['/', '\\']));
                 if dir.is_empty() || !Path::new(&dir).exists() {
                     continue;
@@ -597,11 +744,22 @@ impl StoreLibrary for Ubisoft {
                     .iter()
                     .find(|e| e.key.eq_ignore_ascii_case(&format!("Uplay Install {id}")))
                     .map(|e| e.display_name.clone())
-                    .unwrap_or_else(|| Path::new(&dir).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default());
+                    .unwrap_or_else(|| {
+                        Path::new(&dir)
+                            .file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_default()
+                    });
                 if name.is_empty() {
                     continue;
                 }
-                out.push(game(format!("ubisoft:{id}"), name, Source::Ubisoft, Some(dir), LaunchTarget::Uri(format!("uplay://launch/{id}/0"))));
+                out.push(game(
+                    format!("ubisoft:{id}"),
+                    name,
+                    Source::Ubisoft,
+                    Some(dir),
+                    LaunchTarget::Uri(format!("uplay://launch/{id}/0")),
+                ));
             }
             out
         }
@@ -652,16 +810,27 @@ pub fn battlenet_code(uid: &str) -> Option<&'static str> {
 pub fn battlenet_uid(uninstall: &str) -> Option<String> {
     let i = uninstall.find("--uid=")? + 6;
     let rest = &uninstall[i..];
-    let uid: String = rest.chars().take_while(|c| !c.is_whitespace() && *c != '"').collect();
+    let uid: String = rest
+        .chars()
+        .take_while(|c| !c.is_whitespace() && *c != '"')
+        .collect();
     (!uid.is_empty()).then_some(uid)
 }
 
 #[cfg(windows)]
 fn battlenet_exe() -> Option<PathBuf> {
-    let from_reg = reg(sys::Hive::LocalMachine, "SOFTWARE\\WOW6432Node\\Blizzard Entertainment\\Battle.net\\Capabilities", "ApplicationIcon")
-        .map(|i| PathBuf::from(icon_path(&i)));
-    let fallback = sys::env_path("ProgramFiles(x86)").map(|p| p.join("Battle.net").join("Battle.net.exe"));
-    [from_reg, fallback].into_iter().flatten().find(|p| p.exists())
+    let from_reg = reg(
+        sys::Hive::LocalMachine,
+        "SOFTWARE\\WOW6432Node\\Blizzard Entertainment\\Battle.net\\Capabilities",
+        "ApplicationIcon",
+    )
+    .map(|i| PathBuf::from(icon_path(&i)));
+    let fallback =
+        sys::env_path("ProgramFiles(x86)").map(|p| p.join("Battle.net").join("Battle.net.exe"));
+    [from_reg, fallback]
+        .into_iter()
+        .flatten()
+        .find(|p| p.exists())
 }
 
 impl StoreLibrary for BattleNet {
@@ -690,10 +859,14 @@ impl StoreLibrary for BattleNet {
             let client = battlenet_exe();
             let mut out = Vec::new();
             for e in uninstall_entries() {
-                if !e.uninstall_string.contains("Battle.net") || !e.uninstall_string.contains("--uid=") {
+                if !e.uninstall_string.contains("Battle.net")
+                    || !e.uninstall_string.contains("--uid=")
+                {
                     continue;
                 }
-                let Some(uid) = battlenet_uid(&e.uninstall_string) else { continue };
+                let Some(uid) = battlenet_uid(&e.uninstall_string) else {
+                    continue;
+                };
                 if uid.starts_with("battle.net") || uid.contains("agent") {
                     continue;
                 }
@@ -704,9 +877,19 @@ impl StoreLibrary for BattleNet {
                         args: vec![format!("--exec=launch {code}")],
                         dir: String::new(),
                     },
-                    _ => LaunchTarget::Exe { path: icon.clone(), args: Vec::new(), dir: String::new() },
+                    _ => LaunchTarget::Exe {
+                        path: icon.clone(),
+                        args: Vec::new(),
+                        dir: String::new(),
+                    },
                 };
-                let mut g = game(format!("battlenet:{uid}"), e.display_name.clone(), Source::BattleNet, Some(e.install_location.clone()), launch);
+                let mut g = game(
+                    format!("battlenet:{uid}"),
+                    e.display_name.clone(),
+                    Source::BattleNet,
+                    Some(e.install_location.clone()),
+                    launch,
+                );
                 g.exe = icon.to_lowercase().ends_with(".exe").then_some(icon);
                 if !out.iter().any(|o: &Game| o.id == g.id) {
                     out.push(g);
@@ -733,13 +916,23 @@ pub fn amazon_game_id(uninstall: &str) -> Option<String> {
         return None;
     }
     let i = uninstall.find(" -p ")? + 4;
-    let id: String = uninstall[i..].trim_start().chars().take_while(|c| !c.is_whitespace() && *c != '"').collect();
+    let id: String = uninstall[i..]
+        .trim_start()
+        .chars()
+        .take_while(|c| !c.is_whitespace() && *c != '"')
+        .collect();
     (!id.is_empty()).then_some(id)
 }
 
 #[cfg(windows)]
 fn amazon_db() -> Option<PathBuf> {
-    sys::env_path("LOCALAPPDATA").map(|p| p.join("Amazon Games").join("Data").join("Games").join("Sql").join("GameProductInfo.sqlite"))
+    sys::env_path("LOCALAPPDATA").map(|p| {
+        p.join("Amazon Games")
+            .join("Data")
+            .join("Games")
+            .join("Sql")
+            .join("GameProductInfo.sqlite")
+    })
 }
 
 impl StoreLibrary for Amazon {
@@ -749,12 +942,22 @@ impl StoreLibrary for Amazon {
     fn owned(&self) -> Vec<Game> {
         #[cfg(windows)]
         {
-            let Some(conn) = amazon_db().and_then(|p| open_db(&p)) else { return Vec::new() };
+            let Some(conn) = amazon_db().and_then(|p| open_db(&p)) else {
+                return Vec::new();
+            };
             amazon_owned(&conn)
                 .into_iter()
-                .filter(|(id, _, _)| id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')))
+                .filter(|(id, _, _)| {
+                    id.chars()
+                        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+                })
                 .map(|(id, title, icon)| {
-                    let mut g = owned_game(format!("amazon:{id}"), title, Source::Amazon, LaunchTarget::Uri(format!("amazon-games://play/{}", sys::url_encode(&id))));
+                    let mut g = owned_game(
+                        format!("amazon:{id}"),
+                        title,
+                        Source::Amazon,
+                        LaunchTarget::Uri(format!("amazon-games://play/{}", sys::url_encode(&id))),
+                    );
                     g.art.icon.extend(icon);
                     g
                 })
@@ -780,7 +983,9 @@ impl StoreLibrary for Amazon {
     fn games(&self) -> Vec<Game> {
         let mut out = Vec::new();
         for e in uninstall_entries() {
-            let Some(id) = amazon_game_id(&e.uninstall_string) else { continue };
+            let Some(id) = amazon_game_id(&e.uninstall_string) else {
+                continue;
+            };
             out.push(game(
                 format!("amazon:{id}"),
                 e.display_name.clone(),
@@ -801,7 +1006,10 @@ pub struct Itch;
 
 fn itch_apps_dir() -> PathBuf {
     if cfg!(windows) {
-        sys::env_path("APPDATA").unwrap_or_else(sys::home_dir).join("itch").join("apps")
+        sys::env_path("APPDATA")
+            .unwrap_or_else(sys::home_dir)
+            .join("itch")
+            .join("apps")
     } else if cfg!(target_os = "macos") {
         sys::home_dir().join("Library/Application Support/itch/apps")
     } else {
@@ -814,9 +1022,12 @@ pub fn parse_itch_receipt(json: &str) -> Option<(String, Option<String>)> {
     let v: serde_json::Value = serde_json::from_str(json).ok()?;
     let g = v.get("game")?;
     let title = g.get("title")?.as_str()?.trim().to_string();
-    let cover = ["stillCoverUrl", "coverUrl"]
-        .iter()
-        .find_map(|k| g.get(*k).and_then(|c| c.as_str()).filter(|u| u.starts_with("https://")).map(|u| u.to_string()));
+    let cover = ["stillCoverUrl", "coverUrl"].iter().find_map(|k| {
+        g.get(*k)
+            .and_then(|c| c.as_str())
+            .filter(|u| u.starts_with("https://"))
+            .map(|u| u.to_string())
+    });
     (!title.is_empty()).then_some((title, cover))
 }
 
@@ -865,13 +1076,21 @@ fn guess_exe(dir: &Path, name: &str) -> Option<PathBuf> {
 
 /// Nur echte itch.io-Seiten (https://<name>.itch.io/…) öffnen
 pub fn is_itch_url(url: &str) -> bool {
-    let Some(rest) = url.strip_prefix("https://") else { return false };
+    let Some(rest) = url.strip_prefix("https://") else {
+        return false;
+    };
     let host = rest.split(['/', '?', '#']).next().unwrap_or("");
-    !host.contains('@') && !host.contains(':') && (host == "itch.io" || host.ends_with(".itch.io")) && host.len() < 80
+    !host.contains('@')
+        && !host.contains(':')
+        && (host == "itch.io" || host.ends_with(".itch.io"))
+        && host.len() < 80
 }
 
 fn itch_db() -> PathBuf {
-    itch_apps_dir().parent().map(|p| p.join("db").join("butler.db")).unwrap_or_default()
+    itch_apps_dir()
+        .parent()
+        .map(|p| p.join("db").join("butler.db"))
+        .unwrap_or_default()
 }
 
 impl StoreLibrary for Itch {
@@ -882,13 +1101,24 @@ impl StoreLibrary for Itch {
         true
     }
     fn owned(&self) -> Vec<Game> {
-        let Some(conn) = open_db(&itch_db()) else { return Vec::new() };
+        let Some(conn) = open_db(&itch_db()) else {
+            return Vec::new();
+        };
         itch_owned(&conn)
             .into_iter()
             .map(|(id, title, cover, url)| {
                 // Installieren geht über die itch-App; der Link öffnet die offizielle Spielseite
-                let page = if is_itch_url(&url) { url } else { "https://itch.io/my-purchases".to_string() };
-                let mut g = owned_game(format!("itch-owned:{id}"), title, Source::Itch, LaunchTarget::Uri(page));
+                let page = if is_itch_url(&url) {
+                    url
+                } else {
+                    "https://itch.io/my-purchases".to_string()
+                };
+                let mut g = owned_game(
+                    format!("itch-owned:{id}"),
+                    title,
+                    Source::Itch,
+                    LaunchTarget::Uri(page),
+                );
                 if let Some(c) = cover {
                     g.art.cover.push(c.clone());
                     g.art.header.push(c);
@@ -909,15 +1139,29 @@ impl StoreLibrary for Itch {
     fn games(&self) -> Vec<Game> {
         use std::io::Read;
         let mut out = Vec::new();
-        for e in std::fs::read_dir(itch_apps_dir()).into_iter().flatten().flatten() {
+        for e in std::fs::read_dir(itch_apps_dir())
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
             let dir = e.path();
-            let Ok(bytes) = std::fs::read(dir.join(".itch").join("receipt.json.gz")) else { continue };
+            let Ok(bytes) = std::fs::read(dir.join(".itch").join("receipt.json.gz")) else {
+                continue;
+            };
             let mut json = String::new();
-            if flate2::read::GzDecoder::new(&bytes[..]).take(4 * 1024 * 1024).read_to_string(&mut json).is_err() {
+            if flate2::read::GzDecoder::new(&bytes[..])
+                .take(4 * 1024 * 1024)
+                .read_to_string(&mut json)
+                .is_err()
+            {
                 continue;
             }
-            let Some((title, cover)) = parse_itch_receipt(&json) else { continue };
-            let Some(exe) = guess_exe(&dir, &title) else { continue };
+            let Some((title, cover)) = parse_itch_receipt(&json) else {
+                continue;
+            };
+            let Some(exe) = guess_exe(&dir, &title) else {
+                continue;
+            };
             let folder = e.file_name().to_string_lossy().to_string();
             let mut g = game(
                 format!("itch:{folder}"),
@@ -927,7 +1171,10 @@ impl StoreLibrary for Itch {
                 LaunchTarget::Exe {
                     path: exe.to_string_lossy().to_string(),
                     args: Vec::new(),
-                    dir: exe.parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default(),
+                    dir: exe
+                        .parent()
+                        .map(|p| p.to_string_lossy().to_string())
+                        .unwrap_or_default(),
                 },
             );
             g.exe = Some(exe.to_string_lossy().to_string());
@@ -976,7 +1223,9 @@ pub fn parse_xbox_config(xml: &str) -> Option<XboxConfig> {
         identity,
         display_name: xml_attr(visuals, "DefaultDisplayName").unwrap_or_default(),
         exe_id: xml_attr(exe_tag, "Id").unwrap_or_else(|| "Game".into()),
-        logo: xml_attr(visuals, "Square150x150Logo").or_else(|| xml_attr(visuals, "Square480x480Logo")).unwrap_or_default(),
+        logo: xml_attr(visuals, "Square150x150Logo")
+            .or_else(|| xml_attr(visuals, "Square480x480Logo"))
+            .unwrap_or_default(),
     })
 }
 
@@ -1010,19 +1259,38 @@ impl StoreLibrary for Xbox {
         for root in roots {
             for e in std::fs::read_dir(&root).into_iter().flatten().flatten() {
                 let content = e.path().join("Content");
-                let Ok(xml) = std::fs::read_to_string(content.join("MicrosoftGame.config")) else { continue };
-                let Some(cfg) = parse_xbox_config(&xml) else { continue };
+                let Ok(xml) = std::fs::read_to_string(content.join("MicrosoftGame.config")) else {
+                    continue;
+                };
+                let Some(cfg) = parse_xbox_config(&xml) else {
+                    continue;
+                };
                 // SICHERHEIT: nur einfache Kennungen an explorer.exe weitergeben
-                let simple = |v: &str| !v.is_empty() && v.len() < 130 && v.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'));
+                let simple = |v: &str| {
+                    !v.is_empty()
+                        && v.len() < 130
+                        && v.chars()
+                            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+                };
                 if !simple(&cfg.exe_id) || !simple(&cfg.identity) {
                     continue;
                 }
                 // Minecraft Launcher hat eine eigene Kachel (Quelle "Minecraft")
-                if cfg.identity.eq_ignore_ascii_case(crate::minecraft::STORE_PACKAGE) {
+                if cfg
+                    .identity
+                    .eq_ignore_ascii_case(crate::minecraft::STORE_PACKAGE)
+                {
                     continue;
                 }
-                let Some(pkg) = packages.iter().find(|p| p.name.eq_ignore_ascii_case(&cfg.identity)) else { continue };
-                let name = if !cfg.display_name.is_empty() && !cfg.display_name.starts_with("ms-resource") {
+                let Some(pkg) = packages
+                    .iter()
+                    .find(|p| p.name.eq_ignore_ascii_case(&cfg.identity))
+                else {
+                    continue;
+                };
+                let name = if !cfg.display_name.is_empty()
+                    && !cfg.display_name.starts_with("ms-resource")
+                {
                     cfg.display_name.clone()
                 } else {
                     e.file_name().to_string_lossy().to_string()
@@ -1032,7 +1300,12 @@ impl StoreLibrary for Xbox {
                     name,
                     Source::Xbox,
                     Some(content.to_string_lossy().to_string()),
-                    LaunchTarget::Appx { family: pkg.family.clone(), app: pkg.app_id(&cfg.exe_id).unwrap_or_else(|| cfg.exe_id.clone()) },
+                    LaunchTarget::Appx {
+                        family: pkg.family.clone(),
+                        app: pkg
+                            .app_id(&cfg.exe_id)
+                            .unwrap_or_else(|| cfg.exe_id.clone()),
+                    },
                 );
                 if !cfg.logo.is_empty() {
                     let logo = content.join(sys::native_path(&cfg.logo));
@@ -1071,14 +1344,23 @@ mod tests {
     #[test]
     fn amazon_ids() {
         let u = r#""C:\Users\x\AppData\Local\Amazon Games\App\Amazon Game Remover.exe" -m Game -p amzn1.adg.product.1234-abcd"#;
-        assert_eq!(amazon_game_id(u).as_deref(), Some("amzn1.adg.product.1234-abcd"));
+        assert_eq!(
+            amazon_game_id(u).as_deref(),
+            Some("amzn1.adg.product.1234-abcd")
+        );
         assert_eq!(amazon_game_id("C:\\uninstall.exe"), None);
     }
 
     #[test]
     fn itch_receipt() {
         let j = r#"{"game":{"id":1,"title":"Celeste Classic","coverUrl":"https://img.itch.zone/a.png"},"files":[]}"#;
-        assert_eq!(parse_itch_receipt(j), Some(("Celeste Classic".into(), Some("https://img.itch.zone/a.png".into()))));
+        assert_eq!(
+            parse_itch_receipt(j),
+            Some((
+                "Celeste Classic".into(),
+                Some("https://img.itch.zone/a.png".into())
+            ))
+        );
         assert_eq!(parse_itch_receipt("{}"), None);
     }
 
@@ -1129,14 +1411,23 @@ mod tests {
         )
         .unwrap();
         let gog = galaxy_owned(&c);
-        assert_eq!(gog, vec![("1207658930".into(), "The Witcher".into(), Some("https://images.gog.com/c.jpg".into()))]);
+        assert_eq!(
+            gog,
+            vec![(
+                "1207658930".into(),
+                "The Witcher".into(),
+                Some("https://images.gog.com/c.jpg".into())
+            )]
+        );
         let amz = amazon_owned(&c);
         assert_eq!(amz.len(), 1);
         assert_eq!(amz[0].1, "Spiel A");
         let itch = itch_owned(&c);
         assert_eq!(itch.len(), 1);
         assert_eq!(itch[0].1, "Celeste");
-        let lib = parse_heroic_gog_library(r#"{"games":[{"app_name":"123","title":"Spiel"},{"app_name":"x;rm","title":"Böse"}]}"#);
+        let lib = parse_heroic_gog_library(
+            r#"{"games":[{"app_name":"123","title":"Spiel"},{"app_name":"x;rm","title":"Böse"}]}"#,
+        );
         assert_eq!(lib.len(), 1);
         assert!(!lib[0].installed);
     }

@@ -92,14 +92,22 @@ impl ManifestError {
             ManifestError::BadRun(p) => tf("ext.err.run", &[("path", p)]),
             ManifestError::BadScheme(s) => tf("ext.err.scheme", &[("scheme", s)]),
             ManifestError::BadPath(p) => tf("ext.err.read_path", &[("path", p)]),
-            ManifestError::Api(v) => tf("ext.err.api", &[("version", &v.to_string()), ("supported", &API_VERSION.to_string())]),
+            ManifestError::Api(v) => tf(
+                "ext.err.api",
+                &[
+                    ("version", &v.to_string()),
+                    ("supported", &API_VERSION.to_string()),
+                ],
+            ),
         }
     }
 }
 
 pub fn valid_id(id: &str) -> bool {
     (2..=40).contains(&id.len())
-        && id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && id
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
         && !id.starts_with('-')
         && !id.ends_with('-')
 }
@@ -109,7 +117,9 @@ pub fn valid_semver(v: &str) -> bool {
     let (core, pre) = v.split_once('-').unwrap_or((v, ""));
     let parts: Vec<&str> = core.split('.').collect();
     parts.len() == 3
-        && parts.iter().all(|p| !p.is_empty() && p.len() <= 6 && p.chars().all(|c| c.is_ascii_digit()))
+        && parts
+            .iter()
+            .all(|p| !p.is_empty() && p.len() <= 6 && p.chars().all(|c| c.is_ascii_digit()))
         && pre.len() <= 20
         && pre.chars().all(|c| c.is_ascii_alphanumeric() || c == '.')
         && v.len() <= 32
@@ -127,7 +137,13 @@ pub fn os_key() -> &'static str {
 
 /// Relativer Pfad ohne "..", ohne Laufwerk, ohne absolute Teile
 pub fn safe_relative(p: &str) -> Option<PathBuf> {
-    if p.is_empty() || p.len() > 200 || p.contains('\0') || p.contains(':') || p.starts_with('/') || p.starts_with('\\') {
+    if p.is_empty()
+        || p.len() > 200
+        || p.contains('\0')
+        || p.contains(':')
+        || p.starts_with('/')
+        || p.starts_with('\\')
+    {
         return None;
     }
     let path = PathBuf::from(p.replace('\\', "/"));
@@ -144,7 +160,13 @@ fn expand_placeholder(p: &str) -> Option<PathBuf> {
     if let Some(rest) = p.strip_prefix("~/") {
         return safe_relative(rest).map(|r| home.join(r));
     }
-    for var in ["APPDATA", "LOCALAPPDATA", "PROGRAMDATA", "XDG_DATA_HOME", "XDG_CONFIG_HOME"] {
+    for var in [
+        "APPDATA",
+        "LOCALAPPDATA",
+        "PROGRAMDATA",
+        "XDG_DATA_HOME",
+        "XDG_CONFIG_HOME",
+    ] {
         let token = format!("%{var}%");
         if let Some(rest) = p.strip_prefix(&token) {
             let base = crate::sys::env_path(var).or_else(|| match var {
@@ -153,7 +175,11 @@ fn expand_placeholder(p: &str) -> Option<PathBuf> {
                 _ => None,
             })?;
             let rest = rest.trim_start_matches(['/', '\\']);
-            return if rest.is_empty() { Some(base) } else { safe_relative(rest).map(|r| base.join(r)) };
+            return if rest.is_empty() {
+                Some(base)
+            } else {
+                safe_relative(rest).map(|r| base.join(r))
+            };
         }
     }
     None
@@ -170,7 +196,11 @@ impl Manifest {
 
     /// Gelesene Ordner mit eingesetzten Platzhaltern
     pub fn read_paths(&self) -> Vec<PathBuf> {
-        self.permissions.read_paths.iter().filter_map(|p| expand_placeholder(p)).collect()
+        self.permissions
+            .read_paths
+            .iter()
+            .filter_map(|p| expand_placeholder(p))
+            .collect()
     }
 
     pub fn has(&self, k: ExtKind) -> bool {
@@ -183,16 +213,25 @@ pub fn parse(text: &str) -> Result<Manifest, ManifestError> {
     if text.len() > 64 * 1024 {
         return Err(ManifestError::TooBig);
     }
-    let m: Manifest = serde_json::from_str(text).map_err(|e| ManifestError::Json(e.to_string().chars().take(200).collect()))?;
+    let m: Manifest = serde_json::from_str(text)
+        .map_err(|e| ManifestError::Json(e.to_string().chars().take(200).collect()))?;
     if !valid_id(&m.id) {
         return Err(ManifestError::BadId);
     }
     if !valid_semver(&m.version) {
         return Err(ManifestError::BadVersion);
     }
-    for (field, value, max) in [("name", &m.name, 60), ("author", &m.author, 60), ("description", &m.description, 500), ("homepage", &m.homepage, 200)] {
+    for (field, value, max) in [
+        ("name", &m.name, 60),
+        ("author", &m.author, 60),
+        ("description", &m.description, 500),
+        ("homepage", &m.homepage, 200),
+    ] {
         let required = field == "name" || field == "author";
-        if (required && value.trim().is_empty()) || value.chars().count() > max || value.chars().any(|c| c.is_control()) {
+        if (required && value.trim().is_empty())
+            || value.chars().count() > max
+            || value.chars().any(|c| c.is_control())
+        {
             return Err(ManifestError::BadText(field));
         }
     }
@@ -236,7 +275,11 @@ pub fn parse(text: &str) -> Result<Manifest, ManifestError> {
             return Err(ManifestError::BadPath(p.clone()));
         }
     }
-    if m.languages.len() > 20 || m.languages.iter().any(|l| l.len() != 2 || !l.chars().all(|c| c.is_ascii_lowercase())) {
+    if m.languages.len() > 20
+        || m.languages
+            .iter()
+            .any(|l| l.len() != 2 || !l.chars().all(|c| c.is_ascii_lowercase()))
+    {
         return Err(ManifestError::BadText("languages"));
     }
     Ok(m)
@@ -256,7 +299,8 @@ pub fn load_dir(dir: &Path) -> Result<(Manifest, PathBuf), ManifestError> {
     let text = std::fs::read_to_string(&mpath).map_err(|_| ManifestError::Missing)?;
     let m = parse(&text)?;
     let run_rel = m.run_for_os().ok_or(ManifestError::NoRun)?;
-    let run = resolve_inside(dir, &run_rel).ok_or_else(|| ManifestError::BadRun(run_rel.clone()))?;
+    let run =
+        resolve_inside(dir, &run_rel).ok_or_else(|| ManifestError::BadRun(run_rel.clone()))?;
     Ok((m, run))
 }
 
@@ -290,17 +334,50 @@ mod tests {
     #[test]
     fn invalid_manifests() {
         let with = |from: &str, to: &str| parse(&good().replace(from, to));
-        assert_eq!(with("hello-world", "Hello World").unwrap_err(), ManifestError::BadId);
-        assert_eq!(with("\"1.0.0\"", "\"1.0\"").unwrap_err(), ManifestError::BadVersion);
-        assert_eq!(with("\"api_version\":1", "\"api_version\":2").unwrap_err(), ManifestError::Api(2));
-        assert!(matches!(with("\"author\":\"MAZ\"", "\"author\":\"MAZ\",\"evil\":1").unwrap_err(), ManifestError::Json(_)));
-        assert!(matches!(with("\"hello.exe\"", "\"../hello.exe\"").unwrap_err(), ManifestError::BadRun(_)));
-        assert!(matches!(with("\"hello.exe\"", "\"C:\\\\x.exe\"").unwrap_err(), ManifestError::BadRun(_)));
-        assert!(matches!(with("\"linux\":\"hello\"", "\"linux\":\"/bin/sh\"").unwrap_err(), ManifestError::BadRun(_)));
-        assert!(matches!(with("[\"hello\"]", "[\"javascript\"]").unwrap_err(), ManifestError::BadScheme(_)));
-        assert!(matches!(with("~/Games", "/etc").unwrap_err(), ManifestError::BadPath(_)));
-        assert!(matches!(with("~/Games", "~/../../etc").unwrap_err(), ManifestError::BadPath(_)));
-        assert_eq!(with("[\"library\",\"action\"]", "[]").unwrap_err(), ManifestError::NoKinds);
+        assert_eq!(
+            with("hello-world", "Hello World").unwrap_err(),
+            ManifestError::BadId
+        );
+        assert_eq!(
+            with("\"1.0.0\"", "\"1.0\"").unwrap_err(),
+            ManifestError::BadVersion
+        );
+        assert_eq!(
+            with("\"api_version\":1", "\"api_version\":2").unwrap_err(),
+            ManifestError::Api(2)
+        );
+        assert!(matches!(
+            with("\"author\":\"MAZ\"", "\"author\":\"MAZ\",\"evil\":1").unwrap_err(),
+            ManifestError::Json(_)
+        ));
+        assert!(matches!(
+            with("\"hello.exe\"", "\"../hello.exe\"").unwrap_err(),
+            ManifestError::BadRun(_)
+        ));
+        assert!(matches!(
+            with("\"hello.exe\"", "\"C:\\\\x.exe\"").unwrap_err(),
+            ManifestError::BadRun(_)
+        ));
+        assert!(matches!(
+            with("\"linux\":\"hello\"", "\"linux\":\"/bin/sh\"").unwrap_err(),
+            ManifestError::BadRun(_)
+        ));
+        assert!(matches!(
+            with("[\"hello\"]", "[\"javascript\"]").unwrap_err(),
+            ManifestError::BadScheme(_)
+        ));
+        assert!(matches!(
+            with("~/Games", "/etc").unwrap_err(),
+            ManifestError::BadPath(_)
+        ));
+        assert!(matches!(
+            with("~/Games", "~/../../etc").unwrap_err(),
+            ManifestError::BadPath(_)
+        ));
+        assert_eq!(
+            with("[\"library\",\"action\"]", "[]").unwrap_err(),
+            ManifestError::NoKinds
+        );
         assert!(parse("kein json").is_err());
     }
 

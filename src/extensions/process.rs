@@ -54,7 +54,11 @@ fn read_line_limited<R: BufRead>(r: &mut R, max: usize) -> Result<Option<Vec<u8>
             Err(_) => return Err(CallError::Crashed),
         };
         if buf.is_empty() {
-            return if out.is_empty() { Ok(None) } else { Ok(Some(out)) };
+            return if out.is_empty() {
+                Ok(None)
+            } else {
+                Ok(Some(out))
+            };
         }
         if let Some(i) = buf.iter().position(|&b| b == b'\n') {
             out.extend_from_slice(&buf[..i]);
@@ -92,9 +96,27 @@ pub struct ExtProcess {
 fn minimal_env(cmd: &mut Command, ext_dir: &Path, network: bool) {
     cmd.env_clear();
     let keep: &[&str] = if cfg!(windows) {
-        &["SystemRoot", "windir", "SystemDrive", "PATH", "PATHEXT", "ComSpec", "TEMP", "TMP", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE"]
+        &[
+            "SystemRoot",
+            "windir",
+            "SystemDrive",
+            "PATH",
+            "PATHEXT",
+            "ComSpec",
+            "TEMP",
+            "TMP",
+            "NUMBER_OF_PROCESSORS",
+            "PROCESSOR_ARCHITECTURE",
+        ]
     } else {
-        &["PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "XDG_RUNTIME_DIR"]
+        &[
+            "PATH",
+            "HOME",
+            "LANG",
+            "LC_ALL",
+            "TMPDIR",
+            "XDG_RUNTIME_DIR",
+        ]
     };
     for k in keep {
         if let Some(v) = std::env::var_os(k) {
@@ -109,7 +131,10 @@ fn minimal_env(cmd: &mut Command, ext_dir: &Path, network: bool) {
 impl ExtProcess {
     pub fn spawn(program: &Path, ext_dir: &Path, network: bool) -> Result<ExtProcess, CallError> {
         let mut cmd = Command::new(program);
-        cmd.current_dir(ext_dir).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
+        cmd.current_dir(ext_dir)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
         minimal_env(&mut cmd, ext_dir, network);
         #[cfg(windows)]
         {
@@ -179,7 +204,12 @@ impl ExtProcess {
     }
 
     /// Eine Anfrage senden und auf die passende Antwort warten
-    pub fn call(&mut self, call: &str, params: Value, timeout: Duration) -> Result<Value, CallError> {
+    pub fn call(
+        &mut self,
+        call: &str,
+        params: Value,
+        timeout: Duration,
+    ) -> Result<Value, CallError> {
         let id = self.next_id;
         self.next_id += 1;
         let mut req = serde_json::json!({ "id": id, "call": call });
@@ -192,26 +222,38 @@ impl ExtProcess {
         }
         let line = format!("{req}\n");
         let stdin = self.stdin.as_mut().ok_or(CallError::Crashed)?;
-        stdin.write_all(line.as_bytes()).map_err(|_| CallError::Crashed)?;
+        stdin
+            .write_all(line.as_bytes())
+            .map_err(|_| CallError::Crashed)?;
         stdin.flush().map_err(|_| CallError::Crashed)?;
         let deadline = std::time::Instant::now() + timeout;
         loop {
             let left = deadline.saturating_duration_since(std::time::Instant::now());
             match self.lines.recv_timeout(left) {
                 Ok(Line::Data(bytes)) => {
-                    let v: Value = serde_json::from_slice(&bytes).map_err(|_| CallError::BadJson)?;
+                    let v: Value =
+                        serde_json::from_slice(&bytes).map_err(|_| CallError::BadJson)?;
                     // Antworten auf ältere (abgelaufene) Anfragen überspringen
                     if v.get("id").and_then(|x| x.as_u64()) != Some(id) {
                         continue;
                     }
                     if let Some(e) = v.get("error") {
-                        let s = |k: &str| e.get(k).and_then(|x| x.as_str()).unwrap_or("").chars().take(200).collect::<String>();
+                        let s = |k: &str| {
+                            e.get(k)
+                                .and_then(|x| x.as_str())
+                                .unwrap_or("")
+                                .chars()
+                                .take(200)
+                                .collect::<String>()
+                        };
                         return Err(CallError::Remote(s("code"), s("message")));
                     }
                     return Ok(v.get("result").cloned().unwrap_or(Value::Null));
                 }
                 Ok(Line::TooBig) => return Err(CallError::TooBig),
-                Ok(Line::Eof) | Err(RecvTimeoutError::Disconnected) => return Err(CallError::Crashed),
+                Ok(Line::Eof) | Err(RecvTimeoutError::Disconnected) => {
+                    return Err(CallError::Crashed)
+                }
                 Err(RecvTimeoutError::Timeout) => return Err(CallError::Timeout),
             }
         }
@@ -248,8 +290,14 @@ mod tests {
     #[test]
     fn limited_lines() {
         let mut r = std::io::Cursor::new(b"abc\ndef".to_vec());
-        assert_eq!(read_line_limited(&mut r, 10).unwrap(), Some(b"abc".to_vec()));
-        assert_eq!(read_line_limited(&mut r, 10).unwrap(), Some(b"def".to_vec()));
+        assert_eq!(
+            read_line_limited(&mut r, 10).unwrap(),
+            Some(b"abc".to_vec())
+        );
+        assert_eq!(
+            read_line_limited(&mut r, 10).unwrap(),
+            Some(b"def".to_vec())
+        );
         assert_eq!(read_line_limited(&mut r, 10).unwrap(), None);
         let mut big = std::io::Cursor::new(vec![b'x'; 100]);
         assert_eq!(read_line_limited(&mut big, 10), Err(CallError::TooBig));
@@ -269,29 +317,56 @@ mod tests {
             std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o755)).unwrap();
             p
         };
-        let ok = script("ok", r#"while read l; do echo '{"id":1,"result":{"name":"x"}}'; done"#);
+        let ok = script(
+            "ok",
+            r#"while read l; do echo '{"id":1,"result":{"name":"x"}}'; done"#,
+        );
         let mut p = ExtProcess::spawn(&ok, &dir, false).unwrap();
-        assert_eq!(p.call("hello", serde_json::json!({}), TIMEOUT).unwrap()["name"], "x");
+        assert_eq!(
+            p.call("hello", serde_json::json!({}), TIMEOUT).unwrap()["name"],
+            "x"
+        );
 
         let slow = script("slow", "read l; sleep 5");
         let mut p = ExtProcess::spawn(&slow, &dir, false).unwrap();
-        assert_eq!(p.call("hello", serde_json::json!({}), Duration::from_millis(300)), Err(CallError::Timeout));
+        assert_eq!(
+            p.call("hello", serde_json::json!({}), Duration::from_millis(300)),
+            Err(CallError::Timeout)
+        );
 
         let bad = script("bad", "read l; echo 'kein json'; sleep 1");
         let mut p = ExtProcess::spawn(&bad, &dir, false).unwrap();
-        assert_eq!(p.call("hello", serde_json::json!({}), TIMEOUT), Err(CallError::BadJson));
+        assert_eq!(
+            p.call("hello", serde_json::json!({}), TIMEOUT),
+            Err(CallError::BadJson)
+        );
 
         let crash = script("crash", "exit 3");
         let mut p = ExtProcess::spawn(&crash, &dir, false).unwrap();
-        assert_eq!(p.call("hello", serde_json::json!({}), TIMEOUT), Err(CallError::Crashed));
+        assert_eq!(
+            p.call("hello", serde_json::json!({}), TIMEOUT),
+            Err(CallError::Crashed)
+        );
 
-        let err = script("err", r#"read l; echo '{"id":1,"error":{"code":"nope","message":"geht nicht"}}'; sleep 1"#);
+        let err = script(
+            "err",
+            r#"read l; echo '{"id":1,"error":{"code":"nope","message":"geht nicht"}}'; sleep 1"#,
+        );
         let mut p = ExtProcess::spawn(&err, &dir, false).unwrap();
-        assert_eq!(p.call("hello", serde_json::json!({}), TIMEOUT), Err(CallError::Remote("nope".into(), "geht nicht".into())));
+        assert_eq!(
+            p.call("hello", serde_json::json!({}), TIMEOUT),
+            Err(CallError::Remote("nope".into(), "geht nicht".into()))
+        );
 
-        let huge = script("huge", "read l; head -c 2000000 /dev/zero | tr '\\0' 'a'; echo");
+        let huge = script(
+            "huge",
+            "read l; head -c 2000000 /dev/zero | tr '\\0' 'a'; echo",
+        );
         let mut p = ExtProcess::spawn(&huge, &dir, false).unwrap();
-        assert_eq!(p.call("hello", serde_json::json!({}), TIMEOUT), Err(CallError::TooBig));
+        assert_eq!(
+            p.call("hello", serde_json::json!({}), TIMEOUT),
+            Err(CallError::TooBig)
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

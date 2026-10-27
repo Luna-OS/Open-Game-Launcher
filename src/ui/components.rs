@@ -9,6 +9,7 @@ use dioxus::prelude::*;
 // Button
 // ----------------------------------------------------------------------
 
+#[allow(dead_code)]
 #[derive(Default, Clone, PartialEq, Eq)]
 pub enum ButtonVariant {
     #[default]
@@ -109,19 +110,31 @@ pub fn Card(#[props(into, optional)] class: Option<String>, children: Element) -
 
 #[component]
 pub fn CardHeader(#[props(into, optional)] class: Option<String>, children: Element) -> Element {
-    let cls = format!("flex flex-col gap-1.5 px-6 pt-6 {}", class.as_deref().unwrap_or(""));
+    let cls = format!(
+        "flex flex-col gap-1.5 px-6 pt-6 {}",
+        class.as_deref().unwrap_or("")
+    );
     rsx! { div { class: "{cls}", {children} } }
 }
 
 #[component]
 pub fn CardTitle(#[props(into, optional)] class: Option<String>, children: Element) -> Element {
-    let cls = format!("leading-none font-semibold text-[15px] {}", class.as_deref().unwrap_or(""));
+    let cls = format!(
+        "leading-none font-semibold text-[15px] {}",
+        class.as_deref().unwrap_or("")
+    );
     rsx! { h2 { class: "{cls}", {children} } }
 }
 
 #[component]
-pub fn CardDescription(#[props(into, optional)] class: Option<String>, children: Element) -> Element {
-    let cls = format!("text-muted-foreground text-sm {}", class.as_deref().unwrap_or(""));
+pub fn CardDescription(
+    #[props(into, optional)] class: Option<String>,
+    children: Element,
+) -> Element {
+    let cls = format!(
+        "text-muted-foreground text-sm {}",
+        class.as_deref().unwrap_or("")
+    );
     rsx! { p { class: "{cls}", {children} } }
 }
 
@@ -227,7 +240,10 @@ pub fn Input(
 
 #[component]
 pub fn Label(#[props(into, optional)] class: Option<String>, children: Element) -> Element {
-    let cls = format!("flex items-center gap-2 text-sm leading-none font-medium select-none {}", class.as_deref().unwrap_or(""));
+    let cls = format!(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none {}",
+        class.as_deref().unwrap_or("")
+    );
     rsx! { label { class: "{cls}", {children} } }
 }
 
@@ -236,7 +252,11 @@ pub fn Label(#[props(into, optional)] class: Option<String>, children: Element) 
 // ----------------------------------------------------------------------
 
 #[component]
-pub fn Switch(checked: bool, onchange: EventHandler<bool>, #[props(into, optional)] label: Option<String>) -> Element {
+pub fn Switch(
+    checked: bool,
+    onchange: EventHandler<bool>,
+    #[props(into, optional)] label: Option<String>,
+) -> Element {
     let state = if checked { "checked" } else { "unchecked" };
     rsx! {
         button {
@@ -278,7 +298,10 @@ pub fn SwitchRow(
 
 #[component]
 pub fn Separator(#[props(into, optional)] class: Option<String>) -> Element {
-    let cls = format!("shrink-0 bg-border h-px w-full {}", class.as_deref().unwrap_or(""));
+    let cls = format!(
+        "shrink-0 bg-border h-px w-full {}",
+        class.as_deref().unwrap_or("")
+    );
     rsx! { div { role: "separator", class: "{cls}" } }
 }
 
@@ -308,15 +331,23 @@ pub fn Dialog(
                 },
             }
             div { class: "{cls}", "data-dialog": "1",
+                role: "dialog",
+                "aria-modal": "true",
+                tabindex: "-1",
+                // Fokus ins Fenster holen, damit Escape sofort schließt und Tab im Fenster beginnt
+                onmounted: move |e| async move {
+                    let _ = e.set_focus(true).await;
+                },
                 onkeydown: move |e| {
                     if e.key() == Key::Escape {
+                        e.stop_propagation();
                         on_close.call(());
                     }
                 },
                 button {
                     r#type: "button",
                     "data-dialog-close": "1",
-                    class: "absolute top-4 right-4 z-10 p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer",
+                    class: "absolute top-4 right-4 z-10 p-1.5 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer",
                     title: crate::i18n::t("common.close"),
                     onclick: move |_| on_close.call(()),
                     Icon { name: "x", class: "size-4" }
@@ -333,21 +364,29 @@ pub fn Dialog(
 
 #[component]
 pub fn Spinner(#[props(into, default)] class: String) -> Element {
-    let cls = if class.is_empty() { "size-4".to_string() } else { class };
+    let cls = if class.is_empty() {
+        "size-4".to_string()
+    } else {
+        class
+    };
     rsx! { Icon { name: "loader", class: "animate-spin {cls}" } }
 }
 
 /// Segmentierte Auswahl (z. B. Kartengröße)
 #[component]
-pub fn Segmented(options: Vec<(String, String)>, value: String, onchange: EventHandler<String>) -> Element {
+pub fn Segmented(
+    options: Vec<(String, String)>,
+    value: String,
+    onchange: EventHandler<String>,
+) -> Element {
     rsx! {
         div { class: "inline-flex rounded-lg bg-muted p-1 gap-1",
             {options.into_iter().map(|(val, label)| {
                 let active = val == value;
                 let cls = if active {
-                    "px-3 h-8 rounded-md text-sm font-medium bg-background text-foreground shadow cursor-pointer"
+                    "px-3 h-7 rounded-md text-sm font-medium bg-background text-foreground shadow transition-colors cursor-pointer"
                 } else {
-                    "px-3 h-8 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+                    "px-3 h-7 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 };
                 let v = val.clone();
                 rsx! {

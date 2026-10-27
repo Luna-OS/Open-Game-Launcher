@@ -5,8 +5,8 @@ use super::components::*;
 use super::icons::Icon;
 use super::library::SourceBadge;
 use super::state::*;
-use crate::model::{Game, LaunchTarget, Source};
 use crate::i18n::{t, tf};
+use crate::model::{Game, LaunchTarget, Source};
 use crate::sys;
 use dioxus::prelude::*;
 
@@ -17,42 +17,76 @@ struct InfoRow {
 
 fn info_rows(app: App, g: &Game) -> Vec<InfoRow> {
     let s = app.settings.read();
-    let mut rows = vec![InfoRow { label: t("info.platform"), value: g.source.label() }];
+    let mut rows = vec![InfoRow {
+        label: t("info.platform"),
+        value: g.source.label(),
+    }];
     rows.push(InfoRow {
         label: t("info.status"),
-        value: t(if g.installed { "filter.installed" } else { "game.not_installed" }),
+        value: t(if g.installed {
+            "filter.installed"
+        } else {
+            "game.not_installed"
+        }),
     });
     let pt = s.playtime(g);
     if pt > 0 {
-        rows.push(InfoRow { label: t("info.playtime"), value: sys::format_playtime(pt) });
+        rows.push(InfoRow {
+            label: t("info.playtime"),
+            value: sys::format_playtime(pt),
+        });
     }
-    rows.push(InfoRow { label: t("filter.recent"), value: sys::format_ago(s.last_played(&g.id)) });
+    rows.push(InfoRow {
+        label: t("filter.recent"),
+        value: sys::format_ago(s.last_played(&g.id)),
+    });
     if let Some(n) = s.launch_count.get(&g.id) {
-        rows.push(InfoRow { label: t("info.launches"), value: format!("{n}×") });
+        rows.push(InfoRow {
+            label: t("info.launches"),
+            value: format!("{n}×"),
+        });
     }
     if let Some(b) = g.size_bytes {
-        rows.push(InfoRow { label: t("info.size"), value: sys::format_bytes(b) });
+        rows.push(InfoRow {
+            label: t("info.size"),
+            value: sys::format_bytes(b),
+        });
     }
     if let Some(d) = &g.install_dir {
-        rows.push(InfoRow { label: t("info.folder"), value: d.clone() });
+        rows.push(InfoRow {
+            label: t("info.folder"),
+            value: d.clone(),
+        });
     }
     let fs = s.first_seen(&g.id);
     drop(s);
     if let Some(i) = app.meta_cache.read().get(&g.id) {
         if !i.developer.is_empty() {
-            rows.push(InfoRow { label: t("info.developer"), value: i.developer.clone() });
+            rows.push(InfoRow {
+                label: t("info.developer"),
+                value: i.developer.clone(),
+            });
         }
         if !i.release.is_empty() {
-            rows.push(InfoRow { label: t("info.release"), value: i.release.clone() });
+            rows.push(InfoRow {
+                label: t("info.release"),
+                value: i.release.clone(),
+            });
         }
     }
     if fs > 0 {
-        rows.push(InfoRow { label: t("info.added"), value: sys::format_ago(fs) });
+        rows.push(InfoRow {
+            label: t("info.added"),
+            value: sys::format_ago(fs),
+        });
     }
     let s = app.settings.read();
     if let Some(c) = s.custom(&g.id) {
         if !c.args.trim().is_empty() {
-            rows.push(InfoRow { label: t("info.args"), value: c.args.clone() });
+            rows.push(InfoRow {
+                label: t("info.args"),
+                value: c.args.clone(),
+            });
         }
         rows.push(InfoRow {
             label: t("info.admin"),
@@ -71,7 +105,11 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
     let has_override = s.cover_overrides.contains_key(&game.id);
     let is_custom = s.custom(&game.id).is_some();
     drop(s);
-    let btn = if steam_style { "w-full justify-start rounded-sm" } else { "w-full justify-start" };
+    let btn = if steam_style {
+        "w-full justify-start rounded-sm"
+    } else {
+        "w-full justify-start"
+    };
     let (id1, id2, id3, id4, id5, id6) = (
         game.id.clone(),
         game.id.clone(),
@@ -80,19 +118,34 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
         game.id.clone(),
         game.id.clone(),
     );
-    let (id7, id8, id9, id10) = (game.id.clone(), game.id.clone(), game.id.clone(), game.id.clone());
+    let (id7, id8, id9, id10) = (
+        game.id.clone(),
+        game.id.clone(),
+        game.id.clone(),
+        game.id.clone(),
+    );
     let rb_place = match game.launch {
         LaunchTarget::Roblox(Some(p)) => Some(p),
         _ => None,
     };
     let is_roblox_exp = rb_place.is_some();
     let is_mc = game.source == Source::Minecraft;
-    let mc_target = game.id.strip_prefix("norisk:").map(|id| format!("norisk:{id}")).unwrap_or_else(|| "official".into());
-    let rb_page = rb_place.map(crate::roblox::experience_page).unwrap_or_default();
+    let mc_target = game
+        .id
+        .strip_prefix("norisk:")
+        .map(|id| format!("norisk:{id}"))
+        .unwrap_or_else(|| "official".into());
+    let rb_page = rb_place
+        .map(crate::roblox::experience_page)
+        .unwrap_or_default();
     let dir = game.install_dir.clone();
     let appid = game.steam_appid;
     let fav_label = t(if fav { "act.unfav" } else { "act.fav" });
-    let star_cls = if fav { "size-4 text-yellow-400" } else { "size-4" };
+    let star_cls = if fav {
+        "size-4 text-yellow-400"
+    } else {
+        "size-4"
+    };
     let hide_icon = if hidden { "eye" } else { "eye-off" };
     let hide_label = t(if hidden { "act.unhide" } else { "act.hide" });
     rsx! {
@@ -184,12 +237,23 @@ fn ActionList(game: Game, #[props(default = false)] steam_style: bool) -> Elemen
 #[component]
 fn AboutGame(id: String) -> Element {
     let app = use_app();
-    let own = app.settings.read().meta.get(&id).cloned().unwrap_or_default();
+    let own = app
+        .settings
+        .read()
+        .meta
+        .get(&id)
+        .cloned()
+        .unwrap_or_default();
     let auto = app.meta_cache.read().get(&id).cloned().unwrap_or_default();
-    let desc = if own.description.trim().is_empty() { auto.description.clone() } else { own.description.clone() };
+    let desc = if own.description.trim().is_empty() {
+        auto.description.clone()
+    } else {
+        own.description.clone()
+    };
     let genres = app.genres_of(&id);
     let own_desc = !own.description.trim().is_empty();
-    let wiki_page = (!own_desc && auto.source == "wikipedia" && auto.page.starts_with("https://")).then(|| auto.page.clone());
+    let wiki_page = (!own_desc && auto.source == "wikipedia" && auto.page.starts_with("https://"))
+        .then(|| auto.page.clone());
     let deck = auto.deck;
     let (req_min, req_rec) = (auto.req_min.clone(), auto.req_rec.clone());
     if desc.is_empty() && genres.is_empty() && deck == 0 && req_min.is_empty() {
@@ -202,7 +266,7 @@ fn AboutGame(id: String) -> Element {
             }
             {wiki_page.map(|page| rsx! {
                 button {
-                    class: "mt-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 cursor-pointer",
+                    class: "mt-1 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors cursor-pointer",
                     onclick: move |_| { let _ = sys::open_url(&page); },
                     {t("meta.source_wiki")}
                 }
@@ -217,7 +281,7 @@ fn AboutGame(id: String) -> Element {
                         rsx! {
                             button {
                                 key: "{g}",
-                                class: "h-6 px-2.5 rounded-full bg-secondary text-secondary-foreground text-xs hover:bg-accent cursor-pointer",
+                                class: "h-6 px-2.5 rounded-full bg-secondary text-secondary-foreground text-xs hover:bg-accent transition-colors cursor-pointer",
                                 onclick: move |_| {
                                     let mut gs = app.genre;
                                     gs.set(g2.clone());
@@ -256,7 +320,13 @@ fn DeckBadge(deck: u8) -> Element {
 /// Mindest- und empfohlene Anforderungen
 #[component]
 fn SpecsBox(req_min: Vec<(String, String)>, req_rec: Vec<(String, String)>) -> Element {
-    let os = if cfg!(target_os = "macos") { "macOS" } else if cfg!(target_os = "linux") { "Linux" } else { "Windows" };
+    let os = if cfg!(target_os = "macos") {
+        "macOS"
+    } else if cfg!(target_os = "linux") {
+        "Linux"
+    } else {
+        "Windows"
+    };
     let col = |title: String, rows: Vec<(String, String)>| {
         let empty = rows.is_empty();
         rsx! {
@@ -313,7 +383,7 @@ pub fn OrganizeBox(id: String) -> Element {
                         rsx! {
                             span { key: "{tag}", class: "inline-flex items-center gap-1 h-7 pl-2.5 pr-1 rounded-full bg-primary/15 text-primary text-xs font-medium",
                                 "# {tag}"
-                                button { class: "p-0.5 rounded-full hover:bg-primary/20 cursor-pointer", title: t("common.remove"),
+                                button { class: "p-0.5 rounded-full hover:bg-primary/20 transition-colors cursor-pointer", title: t("common.remove"),
                                     onclick: move |_| remove_tag(app, &gid, &t2),
                                     Icon { name: "x", class: "size-3" }
                                 }
@@ -342,11 +412,11 @@ pub fn OrganizeBox(id: String) -> Element {
                     div { class: "text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2", {t("nav.collections")} }
                     div { class: "flex flex-wrap gap-1.5",
                         {cols.into_iter().map(|c| {
-                            let inside = c.games.iter().any(|g| *g == id);
+                            let inside = c.games.contains(&id);
                             let cls = if inside {
                                 "h-7 px-3 rounded-full text-xs font-medium bg-primary text-primary-foreground cursor-pointer flex items-center gap-1"
                             } else {
-                                "h-7 px-3 rounded-full text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-primary cursor-pointer flex items-center gap-1"
+                                "h-7 px-3 rounded-full text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-primary transition-colors cursor-pointer flex items-center gap-1"
                             };
                             let (cid, gid) = (c.id.clone(), id.clone());
                             let name = c.name.clone();
@@ -422,15 +492,24 @@ pub fn DetailModal(id: String) -> Element {
     let name = game.name.clone();
     let grad = gradient_for(&game.name);
     let installed = game.installed;
-    let play_label = t(if installed { "game.play" } else { "game.install" });
+    let play_label = t(if installed {
+        "game.play"
+    } else {
+        "game.install"
+    });
     let play_icon = if installed { "play" } else { "download" };
     let id_play = game.id.clone();
     let g2 = game.clone();
     let g3 = game.clone();
     let source = game.source;
     let note = match (&game.launch, game.source) {
-        (LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_), _) => Some(t("detail.note_install")),
-        _ if !game.installed && game.source != Source::Roblox => Some(tf("detail.note_install_store", &[("store", &game.source.label())])),
+        (LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_), _) => {
+            Some(t("detail.note_install"))
+        }
+        _ if !game.installed && game.source != Source::Roblox => Some(tf(
+            "detail.note_install_store",
+            &[("store", &game.source.label())],
+        )),
         (_, Source::Custom) => Some(t("detail.note_custom")),
         _ => None,
     };
@@ -524,13 +603,20 @@ pub fn SteamDetail(game: Game) -> Element {
     let installed = game.installed;
     let id = game.id.clone();
     let play_cls = if installed {
-        "steam-play-btn is-green h-12 px-8 rounded-sm text-white font-semibold tracking-wide text-[15px] flex items-center gap-3 shadow-lg hover:brightness-110 cursor-pointer"
+        "steam-play-btn is-green h-12 px-8 rounded-sm text-white font-semibold tracking-wide text-[15px] flex items-center gap-3 shadow-lg hover:brightness-110 transition-colors cursor-pointer"
     } else {
-        "steam-play-btn h-12 px-8 rounded-sm text-white font-semibold tracking-wide text-[15px] flex items-center gap-3 shadow-lg hover:brightness-110 cursor-pointer"
+        "steam-play-btn h-12 px-8 rounded-sm text-white font-semibold tracking-wide text-[15px] flex items-center gap-3 shadow-lg hover:brightness-110 transition-colors cursor-pointer"
     };
-    let label = t(if installed { "game.play" } else { "game.install" }).to_uppercase();
+    let label = t(if installed {
+        "game.play"
+    } else {
+        "game.install"
+    })
+    .to_uppercase();
     let icon = if installed { "play" } else { "download" };
-    let playtime = Some(app.settings.read().playtime(&game)).filter(|m| *m > 0).map(sys::format_playtime);
+    let playtime = Some(app.settings.read().playtime(&game))
+        .filter(|m| *m > 0)
+        .map(sys::format_playtime);
     let rows = info_rows(app, &game);
     let source = game.source;
     rsx! {

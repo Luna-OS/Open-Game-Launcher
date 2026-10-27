@@ -6,10 +6,28 @@ use std::path::{Path, PathBuf};
 
 /// Vorlagen für bekannte Emulatoren: (Name, Startparameter, Dateiendungen)
 pub const PRESETS: &[(&str, &str, &[&str])] = &[
-    ("RetroArch", "-L \"CORE-PFAD\" \"{rom}\"", &["zip", "7z", "nes", "sfc", "smc", "gb", "gbc", "gba", "md", "n64", "z64", "cue", "chd"]),
-    ("Dolphin (GameCube/Wii)", "-b -e \"{rom}\"", &["iso", "gcm", "rvz", "wbfs", "ciso", "gcz", "wad"]),
-    ("PCSX2 (PS2)", "-batch -- \"{rom}\"", &["iso", "chd", "cso", "bin"]),
-    ("DuckStation (PS1)", "-batch \"{rom}\"", &["cue", "chd", "pbp", "m3u", "iso"]),
+    (
+        "RetroArch",
+        "-L \"CORE-PFAD\" \"{rom}\"",
+        &[
+            "zip", "7z", "nes", "sfc", "smc", "gb", "gbc", "gba", "md", "n64", "z64", "cue", "chd",
+        ],
+    ),
+    (
+        "Dolphin (GameCube/Wii)",
+        "-b -e \"{rom}\"",
+        &["iso", "gcm", "rvz", "wbfs", "ciso", "gcz", "wad"],
+    ),
+    (
+        "PCSX2 (PS2)",
+        "-batch -- \"{rom}\"",
+        &["iso", "chd", "cso", "bin"],
+    ),
+    (
+        "DuckStation (PS1)",
+        "-batch \"{rom}\"",
+        &["cue", "chd", "pbp", "m3u", "iso"],
+    ),
     ("PPSSPP (PSP)", "\"{rom}\"", &["iso", "cso", "pbp", "chd"]),
     ("mGBA (Game Boy)", "\"{rom}\"", &["gba", "gb", "gbc"]),
     ("Snes9x (SNES)", "\"{rom}\"", &["sfc", "smc"]),
@@ -54,7 +72,10 @@ pub fn build_args(template: &str, rom: &str) -> Vec<String> {
 
 /// Schöner Name aus dem Dateinamen: "Super Mario World (USA) [!].sfc" → "Super Mario World"
 pub fn clean_name(file: &Path) -> String {
-    let stem = file.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+    let stem = file
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
     let mut out = String::new();
     let mut depth = 0;
     for c in stem.chars() {
@@ -66,12 +87,20 @@ pub fn clean_name(file: &Path) -> String {
         }
     }
     let name = out.split_whitespace().collect::<Vec<_>>().join(" ");
-    if name.is_empty() { stem } else { name }
+    if name.is_empty() {
+        stem
+    } else {
+        name
+    }
 }
 
 /// ROM-Dateien in einem Ordner (inkl. Unterordner, max. 4 Ebenen)
 pub fn find_roms(dir: &Path, exts: &[String]) -> Vec<PathBuf> {
-    let exts: Vec<String> = exts.iter().map(|e| e.trim().trim_start_matches('.').to_lowercase()).filter(|e| !e.is_empty()).collect();
+    let exts: Vec<String> = exts
+        .iter()
+        .map(|e| e.trim().trim_start_matches('.').to_lowercase())
+        .filter(|e| !e.is_empty())
+        .collect();
     let mut out = Vec::new();
     if exts.is_empty() {
         return out;
@@ -85,7 +114,11 @@ pub fn find_roms(dir: &Path, exts: &[String]) -> Vec<PathBuf> {
                 if depth < 4 {
                     stack.push((p, depth + 1));
                 }
-            } else if p.extension().map(|x| exts.contains(&x.to_string_lossy().to_lowercase())).unwrap_or(false) {
+            } else if p
+                .extension()
+                .map(|x| exts.contains(&x.to_string_lossy().to_lowercase()))
+                .unwrap_or(false)
+            {
                 out.push(p);
             }
             if out.len() > 5000 {
@@ -96,11 +129,18 @@ pub fn find_roms(dir: &Path, exts: &[String]) -> Vec<PathBuf> {
     // .bin neben .cue nicht doppelt zählen
     let cues: Vec<String> = out
         .iter()
-        .filter(|p| p.extension().map(|x| x.eq_ignore_ascii_case("cue")).unwrap_or(false))
+        .filter(|p| {
+            p.extension()
+                .map(|x| x.eq_ignore_ascii_case("cue"))
+                .unwrap_or(false)
+        })
         .map(|p| p.with_extension("").to_string_lossy().to_lowercase())
         .collect();
     out.retain(|p| {
-        !(p.extension().map(|x| x.eq_ignore_ascii_case("bin")).unwrap_or(false) && cues.contains(&p.with_extension("").to_string_lossy().to_lowercase()))
+        !(p.extension()
+            .map(|x| x.eq_ignore_ascii_case("bin"))
+            .unwrap_or(false)
+            && cues.contains(&p.with_extension("").to_string_lossy().to_lowercase()))
     });
     out.sort();
     out
@@ -130,7 +170,10 @@ pub fn scan(emulators: &[Emulator]) -> Vec<Game> {
                     launch: LaunchTarget::Exe {
                         path: emu.exe.clone(),
                         args: build_args(&emu.args, &rom_s),
-                        dir: Path::new(&emu.exe).parent().map(|p| p.to_string_lossy().to_string()).unwrap_or_default(),
+                        dir: Path::new(&emu.exe)
+                            .parent()
+                            .map(|p| p.to_string_lossy().to_string())
+                            .unwrap_or_default(),
                     },
                     art: Art::default(),
                     size_bytes: std::fs::metadata(&rom).ok().map(|m| m.len()),
@@ -175,10 +218,22 @@ mod tests {
 
     #[test]
     fn args_and_names() {
-        assert_eq!(build_args("-b -e \"{rom}\"", "C:\\Games\\Mario Kart.iso"), vec!["-b", "-e", "C:\\Games\\Mario Kart.iso"]);
+        assert_eq!(
+            build_args("-b -e \"{rom}\"", "C:\\Games\\Mario Kart.iso"),
+            vec!["-b", "-e", "C:\\Games\\Mario Kart.iso"]
+        );
         assert_eq!(build_args("", "x.gba"), vec!["x.gba"]);
-        assert_eq!(build_args("-L \"C:\\RA\\cores\\snes9x.dll\" \"{rom}\"", "a.sfc"), vec!["-L", "C:\\RA\\cores\\snes9x.dll", "a.sfc"]);
-        assert_eq!(clean_name(Path::new("Super Mario World (USA) [!].sfc")), "Super Mario World");
-        assert_eq!(clean_name(Path::new("zelda_minish_cap.gba")), "zelda minish cap");
+        assert_eq!(
+            build_args("-L \"C:\\RA\\cores\\snes9x.dll\" \"{rom}\"", "a.sfc"),
+            vec!["-L", "C:\\RA\\cores\\snes9x.dll", "a.sfc"]
+        );
+        assert_eq!(
+            clean_name(Path::new("Super Mario World (USA) [!].sfc")),
+            "Super Mario World"
+        );
+        assert_eq!(
+            clean_name(Path::new("zelda_minish_cap.gba")),
+            "zelda minish cap"
+        );
     }
 }

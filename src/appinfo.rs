@@ -24,17 +24,19 @@ impl<'a> Reader<'a> {
         Some(v)
     }
     fn u32(&mut self) -> Option<u32> {
-        let b = self.data.get(self.pos..self.pos + 4)?;
+        let b = self.data.get(self.pos..self.pos.checked_add(4)?)?;
         self.pos += 4;
         Some(u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
     }
     fn i64(&mut self) -> Option<i64> {
-        let b = self.data.get(self.pos..self.pos + 8)?;
+        let b = self.data.get(self.pos..self.pos.checked_add(8)?)?;
         self.pos += 8;
-        Some(i64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
+        Some(i64::from_le_bytes([
+            b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
+        ]))
     }
     fn skip(&mut self, n: usize) -> Option<()> {
-        if self.pos + n > self.data.len() {
+        if self.pos.checked_add(n)? > self.data.len() {
             return None;
         }
         self.pos += n;
@@ -51,7 +53,16 @@ impl<'a> Reader<'a> {
 
 /// Liest einen binären KeyValues-Block und sammelt nur die Werte, die wir brauchen
 /// (Pfad `appinfo/common/name` und `appinfo/common/type`).
-fn read_kv(r: &mut Reader, strings: Option<&[String]>, path: &mut Vec<String>, out: &mut AppMeta) -> Option<()> {
+fn read_kv(
+    r: &mut Reader,
+    strings: Option<&[String]>,
+    path: &mut Vec<String>,
+    out: &mut AppMeta,
+) -> Option<()> {
+    // Schutz vor Stapelüberlauf bei kaputten Dateien
+    if path.len() > 64 {
+        return None;
+    }
     loop {
         let t = r.u8()?;
         if t == 0x08 || t == 0x0B {
@@ -112,7 +123,10 @@ pub fn parse(data: &[u8]) -> HashMap<u32, AppMeta> {
     let mut table: Option<Vec<String>> = None;
     if version >= 41 {
         let Some(offset) = r.i64() else { return out };
-        let mut t = Reader { data, pos: offset.max(0) as usize };
+        let mut t = Reader {
+            data,
+            pos: usize::try_from(offset).unwrap_or(usize::MAX),
+        };
         if let Some(count) = t.u32() {
             let mut v = Vec::with_capacity(count.min(1_000_000) as usize);
             for _ in 0..count {
@@ -124,20 +138,25 @@ pub fn parse(data: &[u8]) -> HashMap<u32, AppMeta> {
             table = Some(v);
         }
     }
-    loop {
-        let Some(appid) = r.u32() else { break };
+    while let Some(appid) = r.u32() {
         if appid == 0 {
             break;
         }
         let Some(size) = r.u32() else { break };
-        let end = r.pos + size as usize;
-        if end > data.len() {
+        let Some(end) = r
+            .pos
+            .checked_add(size as usize)
+            .filter(|e| *e <= data.len())
+        else {
             break;
-        }
+        };
         // InfoState, LastUpdated, Token, SHA1, ChangeNumber (+ BinarySHA1 ab v40)
         let header = 4 + 4 + 8 + 20 + 4 + if version >= 40 { 20 } else { 0 };
         if r.skip(header).is_some() {
-            let mut meta = AppMeta { name: String::new(), kind: String::new() };
+            let mut meta = AppMeta {
+                name: String::new(),
+                kind: String::new(),
+            };
             let mut path = Vec::new();
             let _ = read_kv(&mut r, table.as_deref(), &mut path, &mut meta);
             if !meta.name.is_empty() {
@@ -153,7 +172,14 @@ pub fn parse(data: &[u8]) -> HashMap<u32, AppMeta> {
 mod tests {
     use super::*;
 
-    fn kv_v41(name_idx: u32, type_idx: u32, appinfo: u32, common: u32, name: &str, kind: &str) -> Vec<u8> {
+    fn kv_v41(
+        name_idx: u32,
+        type_idx: u32,
+        appinfo: u32,
+        common: u32,
+        name: &str,
+        kind: &str,
+    ) -> Vec<u8> {
         let mut v = Vec::new();
         v.push(0x00);
         v.extend_from_slice(&appinfo.to_le_bytes());
@@ -184,7 +210,10 @@ mod tests {
         file.extend_from_slice(&1u32.to_le_bytes());
         let offset_pos = file.len();
         file.extend_from_slice(&0i64.to_le_bytes());
-        for (id, name, kind) in [(570u32, "Dota 2", "Game"), (228980, "Steamworks Common Redistributables", "Tool")] {
+        for (id, name, kind) in [
+            (570u32, "Dota 2", "Game"),
+            (228980, "Steamworks Common Redistributables", "Tool"),
+        ] {
             let kv = kv_v41(2, 3, 0, 1, name, kind);
             file.extend_from_slice(&id.to_le_bytes());
             file.extend_from_slice(&((4 + 4 + 8 + 20 + 4 + 20 + kv.len()) as u32).to_le_bytes());
@@ -236,9 +265,27 @@ mod tests {
     #[test]
     fn survives_garbage() {
         assert!(parse(b"").is_empty());
-        assert!(parse(&[0x29, 0x44, 0x56, 0x07, 1, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 127]).is_empty());
-        let mut f = vec![0x28, 0x44, 0x56, 0x07, 1, 0, 0, 0, 5, 0, 0, 0, 255, 255, 0, 0];
+        assert!(parse(&[
+            0x29, 0x44, 0x56, 0x07, 1, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 127
+        ])
+        .is_empty());
+        let mut f = vec![
+            0x28, 0x44, 0x56, 0x07, 1, 0, 0, 0, 5, 0, 0, 0, 255, 255, 0, 0,
+        ];
         f.extend_from_slice(&[0u8; 10]);
         let _ = parse(&f);
+        // Sehr tief verschachtelte Blöcke dürfen nicht zum Stapelüberlauf führen
+        let mut kv = vec![0u8; 0];
+        for _ in 0..100_000 {
+            kv.extend_from_slice(b"\x00k\x00");
+        }
+        let mut file = Vec::new();
+        file.extend_from_slice(&0x07564428u32.to_le_bytes());
+        file.extend_from_slice(&1u32.to_le_bytes());
+        file.extend_from_slice(&620u32.to_le_bytes());
+        file.extend_from_slice(&((60 + kv.len()) as u32).to_le_bytes());
+        file.extend_from_slice(&[0u8; 60]);
+        file.extend_from_slice(&kv);
+        assert!(parse(&file).is_empty());
     }
 }

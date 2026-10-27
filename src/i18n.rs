@@ -55,15 +55,28 @@ fn user_lang_dir() -> std::path::PathBuf {
 /// Eigene Sprachdateien des Nutzers: (Code, Name, Inhalt)
 fn user_languages() -> Vec<(String, String, String)> {
     let mut out = Vec::new();
-    let Ok(rd) = std::fs::read_dir(user_lang_dir()) else { return out };
+    let Ok(rd) = std::fs::read_dir(user_lang_dir()) else {
+        return out;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.extension().and_then(|x| x.to_str()) != Some("txt") {
             continue;
         }
-        let Some(code) = p.file_stem().and_then(|s| s.to_str()).map(|s| s.to_lowercase()) else { continue };
-        let Ok(text) = std::fs::read_to_string(&p) else { continue };
-        let name = parse(&text).get("lang.name").cloned().unwrap_or_else(|| code.clone());
+        let Some(code) = p
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(|s| s.to_lowercase())
+        else {
+            continue;
+        };
+        let Ok(text) = std::fs::read_to_string(&p) else {
+            continue;
+        };
+        let name = parse(&text)
+            .get("lang.name")
+            .cloned()
+            .unwrap_or_else(|| code.clone());
         out.push((code, name, text));
     }
     out
@@ -71,7 +84,10 @@ fn user_languages() -> Vec<(String, String, String)> {
 
 /// Alle verfügbaren Sprachen: (Code, Name)
 pub fn available() -> Vec<(String, String)> {
-    let mut v: Vec<(String, String)> = BUILTIN.iter().map(|(c, n, _)| (c.to_string(), n.to_string())).collect();
+    let mut v: Vec<(String, String)> = BUILTIN
+        .iter()
+        .map(|(c, n, _)| (c.to_string(), n.to_string()))
+        .collect();
     for (code, name, _) in user_languages() {
         if !v.iter().any(|(c, _)| *c == code) {
             v.push((code, name));
@@ -86,7 +102,10 @@ pub fn builtin(code: &str) -> Option<&'static str> {
 }
 
 fn builtin_text(code: &str) -> Option<&'static str> {
-    BUILTIN.iter().find(|(c, _, _)| *c == code).map(|(_, _, t)| *t)
+    BUILTIN
+        .iter()
+        .find(|(c, _, _)| *c == code)
+        .map(|(_, _, t)| *t)
 }
 
 /// Sprache der Windows-Oberfläche erkennen (z. B. "de", "en").
@@ -121,9 +140,16 @@ pub fn system_language() -> String {
             .collect();
         // macOS: Programme aus dem Finder bekommen kein LANG → Systemeinstellung lesen
         #[cfg(target_os = "macos")]
-        if let Ok(out) = std::process::Command::new("/usr/bin/defaults").args(["read", "-g", "AppleLanguages"]).output() {
+        if let Ok(out) = std::process::Command::new("/usr/bin/defaults")
+            .args(["read", "-g", "AppleLanguages"])
+            .output()
+        {
             let text = String::from_utf8_lossy(&out.stdout).to_string();
-            if let Some(first) = text.split('"').nth(1).or_else(|| text.lines().nth(1).map(|l| l.trim().trim_end_matches(','))) {
+            if let Some(first) = text
+                .split('"')
+                .nth(1)
+                .or_else(|| text.lines().nth(1).map(|l| l.trim().trim_end_matches(',')))
+            {
                 candidates.insert(0, first.to_string());
             }
         }
@@ -137,7 +163,11 @@ pub fn system_language() -> String {
 
 /// Sprache setzen ("auto" = Windows-Sprache).
 pub fn set_language(code: &str) {
-    let code = if code.is_empty() || code == "auto" { system_language() } else { code.to_lowercase() };
+    let code = if code.is_empty() || code == "auto" {
+        system_language()
+    } else {
+        code.to_lowercase()
+    };
     let mut map = HashMap::new();
     if let Some(t) = builtin_text(&code) {
         map = parse(t);
@@ -154,7 +184,11 @@ pub fn set_language(code: &str) {
     for (k, v) in parse(builtin_text("de").unwrap_or("")) {
         fallback.entry(k).or_insert(v);
     }
-    let lang = Lang { code, map, fallback };
+    let lang = Lang {
+        code,
+        map,
+        fallback,
+    };
     if let Ok(mut w) = CURRENT.write() {
         *w = Some(Arc::new(lang));
     }
@@ -167,9 +201,17 @@ fn current() -> Arc<Lang> {
         }
     }
     set_language("auto");
-    CURRENT.read().ok().and_then(|r| r.clone()).unwrap_or_else(|| {
-        Arc::new(Lang { code: "de".into(), map: HashMap::new(), fallback: HashMap::new() })
-    })
+    CURRENT
+        .read()
+        .ok()
+        .and_then(|r| r.clone())
+        .unwrap_or_else(|| {
+            Arc::new(Lang {
+                code: "de".into(),
+                map: HashMap::new(),
+                fallback: HashMap::new(),
+            })
+        })
 }
 
 pub fn current_code() -> String {
@@ -197,12 +239,20 @@ pub fn tf(key: &str, args: &[(&str, &str)]) -> String {
 
 /// Liste aus einem mehrzeiligen Eintrag (eine Zeile = ein Punkt)
 pub fn tl(key: &str) -> Vec<String> {
-    t(key).lines().map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect()
+    t(key)
+        .lines()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
 }
 
 /// Wie [`tl`], mit Platzhaltern
 pub fn tlf(key: &str, args: &[(&str, &str)]) -> Vec<String> {
-    tf(key, args).lines().map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect()
+    tf(key, args)
+        .lines()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
 }
 
 pub fn user_lang_folder() -> std::path::PathBuf {
@@ -218,7 +268,7 @@ mod tests {
         let m = parse("# Kommentar\na = Hallo {name}\nb=Zeile1\\nZeile2\n\nkaputt");
         assert_eq!(m.get("a").unwrap(), "Hallo {name}");
         assert_eq!(m.get("b").unwrap(), "Zeile1\nZeile2");
-        assert!(m.get("kaputt").is_none());
+        assert!(!m.contains_key("kaputt"));
     }
 
     #[test]
@@ -227,12 +277,18 @@ mod tests {
         for (code, _, text) in BUILTIN {
             let m = parse(text);
             let missing: Vec<_> = de.keys().filter(|k| !m.contains_key(*k)).collect();
-            assert!(missing.is_empty(), "Sprache {code}: fehlende Schlüssel {missing:?}");
+            assert!(
+                missing.is_empty(),
+                "Sprache {code}: fehlende Schlüssel {missing:?}"
+            );
             // Platzhalter müssen gleich sein
             for (k, v) in &de {
                 for part in v.split('{').skip(1) {
                     if let Some(name) = part.split('}').next() {
-                        assert!(m[k].contains(&format!("{{{name}}}")), "Sprache {code}: Platzhalter {{{name}}} fehlt in {k}");
+                        assert!(
+                            m[k].contains(&format!("{{{name}}}")),
+                            "Sprache {code}: Platzhalter {{{name}}} fehlt in {k}"
+                        );
                     }
                 }
             }

@@ -39,7 +39,7 @@ pub fn SettingsPage() -> Element {
                     let cls = if active {
                         "w-full flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium bg-sidenav-accent text-foreground cursor-pointer"
                     } else {
-                        "w-full flex items-center gap-3 px-3 h-10 rounded-lg text-sm text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground cursor-pointer"
+                        "w-full flex items-center gap-3 px-3 h-10 rounded-lg text-sm text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground transition-colors cursor-pointer"
                     };
                     rsx! {
                         button { key: "{label}", class: "{cls}", onclick: move |_| app.go(Page::Settings(tb)),
@@ -67,7 +67,11 @@ pub fn SettingsPage() -> Element {
 }
 
 #[component]
-pub fn Section(#[props(into)] title: String, #[props(into, default)] description: String, children: Element) -> Element {
+pub fn Section(
+    #[props(into)] title: String,
+    #[props(into, default)] description: String,
+    children: Element,
+) -> Element {
     rsx! {
         Card { class: "mb-6 bg-card/80 backdrop-blur",
             CardHeader {
@@ -107,7 +111,7 @@ pub fn LanguagePicker() -> Element {
                 let cls = if active {
                     "h-11 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground cursor-pointer flex items-center gap-2"
                 } else {
-                    "h-11 px-3 rounded-lg text-sm font-medium bg-muted text-foreground hover:bg-accent cursor-pointer flex items-center gap-2"
+                    "h-11 px-3 rounded-lg text-sm font-medium bg-muted text-foreground hover:bg-accent transition-colors cursor-pointer flex items-center gap-2"
                 };
                 let c2 = code.clone();
                 rsx! {
@@ -285,14 +289,27 @@ fn LayoutPreview(kind: &'static str) -> Element {
 
 /// Farbvorschau eines Designs (Kachel)
 #[component]
-fn ThemeTile(theme: CustomTheme, #[props(into)] name: String, active: bool, onselect: EventHandler<()>, #[props(optional)] onedit: Option<EventHandler<()>>) -> Element {
-    let ring = if active { "ring-2 ring-primary" } else { "ring-1 ring-border hover:ring-primary/50" };
+fn ThemeTile(
+    theme: CustomTheme,
+    #[props(into)] name: String,
+    active: bool,
+    onselect: EventHandler<()>,
+    #[props(optional)] onedit: Option<EventHandler<()>>,
+) -> Element {
+    let ring = if active {
+        "ring-2 ring-primary"
+    } else {
+        "ring-1 ring-border hover:ring-primary/50"
+    };
     let bg = format!(
         "background: linear-gradient(135deg, {} 0%, {} 55%, {} 150%);",
         theme.bg, theme.card, theme.accent
     );
     let side = format!("background: {};", theme.sidebar);
-    let acc = format!("background: linear-gradient(90deg, {}, {});", theme.accent, theme.accent2);
+    let acc = format!(
+        "background: linear-gradient(90deg, {}, {});",
+        theme.accent, theme.accent2
+    );
     let txt = format!("background: {};", theme.text);
     let mtx = format!("background: {};", theme.muted);
     let has_edit = onedit.is_some();
@@ -315,7 +332,7 @@ fn ThemeTile(theme: CustomTheme, #[props(into)] name: String, active: bool, onse
             div { class: "px-3 py-2 text-xs font-medium bg-muted flex items-center gap-1",
                 span { class: "truncate flex-1", "{name}" }
                 if has_edit {
-                    button { class: "p-1 -m-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent cursor-pointer",
+                    button { class: "p-1 -m-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer",
                         title: t("theme.edit"),
                         onclick: move |e| {
                             e.stop_propagation();
@@ -385,7 +402,11 @@ fn new_custom_id() -> String {
 }
 
 #[component]
-fn ColorRow(#[props(into)] label: String, value: String, onchange: EventHandler<String>) -> Element {
+fn ColorRow(
+    #[props(into)] label: String,
+    value: String,
+    onchange: EventHandler<String>,
+) -> Element {
     let hex = value.clone();
     rsx! {
         div { class: "flex items-center gap-3 py-2",
@@ -411,7 +432,11 @@ fn ColorRow(#[props(into)] label: String, value: String, onchange: EventHandler<
 
 /// Design aus einer .maztheme.json-Datei laden
 fn import_theme_file(app: App) {
-    let Some(path) = rfd::FileDialog::new().set_title(t("theme.import_file")).add_filter("OG Theme", &["json", "ogtheme", "maztheme"]).pick_file() else {
+    let Some(path) = rfd::FileDialog::new()
+        .set_title(t("theme.import_file"))
+        .add_filter("OG Theme", &["json", "ogtheme", "maztheme"])
+        .pick_file()
+    else {
         return;
     };
     // Design-Dateien sind klein – alles über 256 KB ist sicher keine
@@ -443,17 +468,32 @@ fn import_theme_file(app: App) {
 #[component]
 fn ThemeEditor(id: String, on_done: EventHandler<()>) -> Element {
     let app = use_app();
-    let Some(th) = app.settings.read().custom_themes.iter().find(|c| c.id == id).cloned() else {
+    let Some(th) = app
+        .settings
+        .read()
+        .custom_themes
+        .iter()
+        .find(|c| c.id == id)
+        .cloned()
+    else {
         return rsx! {};
     };
     let fields = [
         (ColorField::Bg, t("theme.c.bg"), th.bg.clone()),
         (ColorField::Card, t("theme.c.card"), th.card.clone()),
-        (ColorField::Sidebar, t("theme.c.sidebar"), th.sidebar.clone()),
+        (
+            ColorField::Sidebar,
+            t("theme.c.sidebar"),
+            th.sidebar.clone(),
+        ),
         (ColorField::Text, t("theme.c.text"), th.text.clone()),
         (ColorField::Muted, t("theme.c.muted"), th.muted.clone()),
         (ColorField::Accent, t("theme.c.accent"), th.accent.clone()),
-        (ColorField::Accent2, t("theme.c.accent2"), th.accent2.clone()),
+        (
+            ColorField::Accent2,
+            t("theme.c.accent2"),
+            th.accent2.clone(),
+        ),
         (ColorField::Border, t("theme.c.border"), th.border.clone()),
     ];
     let radius = match th.radius {
@@ -463,10 +503,15 @@ fn ThemeEditor(id: String, on_done: EventHandler<()>) -> Element {
         _ => "20",
     }
     .to_string();
-    let (id_n, id_r, id_dup, id_del, id_code) = (id.clone(), id.clone(), id.clone(), id.clone(), id.clone());
+    let (id_n, id_r, id_dup, id_del, id_code) =
+        (id.clone(), id.clone(), id.clone(), id.clone(), id.clone());
     let (id_f, id_d, id_l, id_file) = (id.clone(), id.clone(), id.clone(), id.clone());
     let name = th.name.clone();
-    let font = if th.font.is_empty() { "standard".to_string() } else { th.font.clone() };
+    let font = if th.font.is_empty() {
+        "standard".to_string()
+    } else {
+        th.font.clone()
+    };
     let density = th.density.clamp(1, 3).to_string();
     let th_layout = th.layout.clone();
     rsx! {
@@ -632,13 +677,20 @@ fn DesignTab() -> Element {
     let s = app.settings.read().clone();
     let mut editing = use_signal(|| None::<String>);
     let mut import_code = use_signal(String::new);
-    let accent_value = if s.accent.is_empty() { "#8b5cf6".to_string() } else { s.accent.clone() };
+    let accent_value = if s.accent.is_empty() {
+        "#8b5cf6".to_string()
+    } else {
+        s.accent.clone()
+    };
     let has_accent = !s.accent.is_empty();
     let size = s.card_size.to_string();
     let wallpaper = s.wallpaper.clone();
     let has_wallpaper = !wallpaper.is_empty();
     let dim = s.wallpaper_dim;
-    let presets: Vec<CustomTheme> = PRESETS.iter().filter_map(|(id, _)| theme::preset(id)).collect();
+    let presets: Vec<CustomTheme> = PRESETS
+        .iter()
+        .filter_map(|(id, _)| theme::preset(id))
+        .collect();
     let customs = s.custom_themes.clone();
     let editing_id = editing();
     let current = s.theme.clone();
@@ -857,7 +909,10 @@ fn RobloxSection() -> Element {
         }
     };
     let dl = if cfg!(target_os = "linux") {
-        ("https://flathub.org/apps/org.vinegarhq.Sober", t("fix.sober_dl"))
+        (
+            "https://flathub.org/apps/org.vinegarhq.Sober",
+            t("fix.sober_dl"),
+        )
     } else {
         ("https://www.roblox.com/download", t("fix.roblox_dl"))
     };
@@ -930,7 +985,11 @@ fn RobloxSection() -> Element {
 /// Epic-Konto verbinden → komplette Epic-Bibliothek
 /// Tastenkürzel passend zum System (Strg / ⌘)
 fn kbd_mod() -> &'static str {
-    if cfg!(target_os = "macos") { "⌘" } else { "Strg" }
+    if cfg!(target_os = "macos") {
+        "⌘"
+    } else {
+        "Strg"
+    }
 }
 
 #[component]
@@ -944,7 +1003,10 @@ fn EpicStep(n: u8, state: u8, #[props(into)] title: String, children: Element) -
     // state: 0 = noch nicht, 1 = jetzt, 2 = erledigt
     let (dot, txt) = match state {
         2 => ("bg-success text-white", "text-muted-foreground"),
-        1 => ("maz-gradient-bg text-glow-fg ring-4 ring-primary/20", "text-foreground"),
+        1 => (
+            "maz-gradient-bg text-glow-fg ring-4 ring-primary/20",
+            "text-foreground",
+        ),
         _ => ("bg-muted text-muted-foreground", "text-muted-foreground"),
     };
     rsx! {
@@ -986,7 +1048,9 @@ pub fn EpicAccount() -> Element {
                 continue;
             }
             if let Some(text) = sys::read_clipboard() {
-                if text.contains("authorizationCode") && crate::epicacct::extract_code(&text).is_some() {
+                if text.contains("authorizationCode")
+                    && crate::epicacct::extract_code(&text).is_some()
+                {
                     waiting.set(false);
                     // Code aus der Zwischenablage entfernen (er ist nur einmal gültig)
                     sys::copy_to_clipboard(" ");
@@ -1005,9 +1069,27 @@ pub fn EpicAccount() -> Element {
     drop(s);
     let n = count();
     let m = kbd_mod();
-    let pct = if total > 0 { (done as f64 / total as f64 * 100.0).min(100.0) } else { 0.0 };
-    let step = if busy { 3 } else if waiting() { 2 } else { 1 };
-    let st = |k: u8| if k < step { 2 } else if k == step { 1 } else { 0 };
+    let pct = if total > 0 {
+        (done as f64 / total as f64 * 100.0).min(100.0)
+    } else {
+        0.0
+    };
+    let step = if busy {
+        3
+    } else if waiting() {
+        2
+    } else {
+        1
+    };
+    let st = |k: u8| {
+        if k < step {
+            2
+        } else if k == step {
+            1
+        } else {
+            0
+        }
+    };
 
     rsx! {
         div { class: "mt-4 rounded-xl border border-border bg-muted/40 p-5",
@@ -1124,16 +1206,27 @@ pub fn EpicAccount() -> Element {
 #[component]
 fn StatusLine(status: StoreStatus, #[props(into)] store: String) -> Element {
     let (cls, icon, text) = if status.found {
-        ("text-success", "check-circle", tf("conn.connected", &[("store", &store)]))
+        (
+            "text-success",
+            "check-circle",
+            tf("conn.connected", &[("store", &store)]),
+        )
     } else {
-        ("text-muted-foreground", "x-circle", tf("conn.not_found", &[("store", &store)]))
+        (
+            "text-muted-foreground",
+            "x-circle",
+            tf("conn.not_found", &[("store", &store)]),
+        )
     };
     let mut details: Vec<String> = Vec::new();
     if let Some(a) = &status.account {
         details.push(tf("conn.account", &[("name", a)]));
     }
     if status.found {
-        details.push(tf("conn.installed", &[("n", &status.installed.to_string())]));
+        details.push(tf(
+            "conn.installed",
+            &[("n", &status.installed.to_string())],
+        ));
     }
     if status.owned > 0 {
         details.push(tf("conn.owned", &[("n", &status.owned.to_string())]));
@@ -1294,8 +1387,12 @@ fn MinecraftSection() -> Element {
     let has_key = !app.settings.read().curseforge_key.is_empty();
     let games = app.games.read();
     let official = games.iter().any(|g| g.id == "minecraft:launcher");
-    let profiles = games.iter().filter(|g| g.id.starts_with("norisk:")).count();
+    // Eine NoRisk-Kachel (oder, falls eingeschaltet, eine Kachel pro Profil)
+    let nr_found = games
+        .iter()
+        .any(|g| g.id == crate::minecraft::norisk::TILE_ID || g.id.starts_with("norisk:"));
     drop(games);
+    let profile_tiles = app.settings.read().norisk_profile_tiles;
     let mut show_guide = use_signal(|| false);
     let mut key_input = use_signal(String::new);
     rsx! {
@@ -1311,14 +1408,14 @@ fn MinecraftSection() -> Element {
                     }
                 }
                 div { class: "flex items-center gap-4 px-4 py-3",
-                    span { class: if profiles > 0 { "size-2.5 rounded-full bg-success" } else { "size-2.5 rounded-full bg-muted-foreground/40" } }
+                    span { class: if nr_found { "size-2.5 rounded-full bg-success" } else { "size-2.5 rounded-full bg-muted-foreground/40" } }
                     div { class: "flex-1 min-w-0",
                         div { class: "text-sm font-medium", "NoRisk Client" }
                         div { class: "text-xs text-muted-foreground mt-0.5",
-                            {if profiles > 0 { tf("mc.norisk_profiles", &[("n", &profiles.to_string())]) } else { t("mc.norisk_missing") }}
+                            {t(if nr_found { "mc.norisk_found" } else { "mc.norisk_missing" })}
                         }
                     }
-                    if profiles == 0 {
+                    if !nr_found {
                         Button { variant: ButtonVariant::Ghost, size: ButtonSize::Sm, onclick: move |_| { let _ = sys::open_url(crate::minecraft::NORISK_DOWNLOAD); },
                             Icon { name: "download", class: "size-3.5" } {t("conn.get_client")}
                         }
@@ -1335,6 +1432,15 @@ fn MinecraftSection() -> Element {
                             s.stores_off.push("minecraft".into());
                         }
                     });
+                    rescan(app);
+                },
+            }
+            SwitchRow {
+                title: t("mc.profile_tiles"),
+                description: t("mc.profile_tiles_hint"),
+                checked: profile_tiles,
+                onchange: move |v: bool| {
+                    app.update(|s| s.norisk_profile_tiles = v);
                     rescan(app);
                 },
             }
@@ -1515,11 +1621,24 @@ fn update_emu(app: App, id: &str, f: impl FnOnce(&mut crate::model::Emulator)) {
 #[component]
 fn EmulatorCard(emu: crate::model::Emulator) -> Element {
     let app = use_app();
-    let (i1, i2, i3, i4, i5, i6, i7) = (emu.id.clone(), emu.id.clone(), emu.id.clone(), emu.id.clone(), emu.id.clone(), emu.id.clone(), emu.id.clone());
+    let (i1, i2, i3, i4, i5, i6, i7) = (
+        emu.id.clone(),
+        emu.id.clone(),
+        emu.id.clone(),
+        emu.id.clone(),
+        emu.id.clone(),
+        emu.id.clone(),
+        emu.id.clone(),
+    );
     let exts = emu.extensions.join(", ");
     let emu_name = emu.name.clone();
     let exe_ok = !emu.exe.is_empty() && std::path::Path::new(&emu.exe).exists();
-    let count = app.games.read().iter().filter(|g| g.id.starts_with(&format!("emu:{}:", emu.id))).count();
+    let count = app
+        .games
+        .read()
+        .iter()
+        .filter(|g| g.id.starts_with(&format!("emu:{}:", emu.id)))
+        .count();
     rsx! {
         div { class: "rounded-xl border border-border p-4 grid gap-3",
             div { class: "flex items-center gap-3",
@@ -1564,13 +1683,13 @@ fn EmulatorCard(emu: crate::model::Emulator) -> Element {
             }
             div { class: "grid gap-1",
                 Label { {t("emu.folders")} }
-                {emu.rom_dirs.iter().cloned().map(|d| {
+                {emu.rom_dirs.iter().map(|d| {
                     let (eid, d2) = (emu.id.clone(), d.clone());
                     rsx! {
                         div { key: "{d}", class: "flex items-center gap-2 text-xs font-mono",
                             Icon { name: "folder", class: "size-3.5 text-muted-foreground" }
                             span { class: "flex-1 truncate", title: "{d}", "{d}" }
-                            button { class: "p-1 rounded text-muted-foreground hover:text-destructive cursor-pointer", title: t("act.remove"),
+                            button { class: "p-1 rounded text-muted-foreground hover:text-destructive transition-colors cursor-pointer", title: t("act.remove"),
                                 onclick: move |_| { let d3 = d2.clone(); update_emu(app, &eid, |x| x.rom_dirs.retain(|r| *r != d3)); rescan(app); },
                                 Icon { name: "x", class: "size-3.5" }
                             }
@@ -1707,7 +1826,9 @@ fn CustomTab() -> Element {
 fn GeneralTab() -> Element {
     let app = use_app();
     let s = app.settings.read().clone();
-    let exe = install::current_exe().map(|p| p.to_string_lossy().to_string()).unwrap_or_default();
+    let exe = install::current_exe()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
     let exe_dir = install::current_exe()
         .and_then(|p| p.parent().map(|d| d.to_string_lossy().to_string()))
         .unwrap_or_default();
@@ -1808,7 +1929,7 @@ fn AboutTab() -> Element {
     rsx! {
         div { class: "flex flex-col items-center text-center pt-6",
             MazLogo { class: "size-24 text-2xl rounded-3xl" }
-            h1 { class: "text-4xl font-black font-display mt-6", span { class: "maz-gradient-text", "MAZ Launcher" } }
+            h1 { class: "text-4xl font-black font-display mt-6", span { class: "maz-gradient-text", {crate::sys::APP_NAME} } }
             p { class: "text-muted-foreground mt-2", "{version}" }
             p { class: "text-sm text-muted-foreground mt-6 max-w-md leading-relaxed", {t("about.text")} }
             div { class: "flex gap-3 mt-8",
@@ -1825,7 +1946,6 @@ fn AboutTab() -> Element {
         }
     }
 }
-
 
 /// Updates: aktuelle Version, automatisch prüfen, jetzt prüfen
 #[component]

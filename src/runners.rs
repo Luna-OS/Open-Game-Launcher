@@ -40,21 +40,36 @@ fn add(out: &mut Vec<Runner>, path: PathBuf, name: String, kind: Kind) {
     }
     // Gleiche Datei (über Verknüpfungen) nur einmal
     let canon = std::fs::canonicalize(&path).unwrap_or(path.clone());
-    if out.iter().any(|r| std::fs::canonicalize(&r.path).ok().as_deref() == Some(canon.as_path())) {
+    if out
+        .iter()
+        .any(|r| std::fs::canonicalize(&r.path).ok().as_deref() == Some(canon.as_path()))
+    {
         return;
     }
-    out.push(Runner { path: path.to_string_lossy().to_string(), name, kind });
+    out.push(Runner {
+        path: path.to_string_lossy().to_string(),
+        name,
+        kind,
+    });
 }
 
 fn subdirs(dir: &Path) -> Vec<PathBuf> {
-    let mut v: Vec<PathBuf> = std::fs::read_dir(dir).into_iter().flatten().flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
+    let mut v: Vec<PathBuf> = std::fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_dir())
+        .collect();
     v.sort();
     v.reverse(); // neueste Versionen zuerst
     v
 }
 
 fn dir_name(p: &Path) -> String {
-    p.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()
+    p.file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default()
 }
 
 /// Alle gefundenen Wine-/Proton-Versionen (nur unter Linux, sonst leer)
@@ -63,8 +78,17 @@ pub fn list() -> Vec<Runner> {
     if !cfg!(target_os = "linux") {
         return out;
     }
-    for sys_wine in ["/usr/bin/wine", "/usr/local/bin/wine", "/usr/bin/wine-stable"] {
-        add(&mut out, PathBuf::from(sys_wine), "Wine (System)".into(), Kind::Wine);
+    for sys_wine in [
+        "/usr/bin/wine",
+        "/usr/local/bin/wine",
+        "/usr/bin/wine-stable",
+    ] {
+        add(
+            &mut out,
+            PathBuf::from(sys_wine),
+            "Wine (System)".into(),
+            Kind::Wine,
+        );
     }
     for root in steam_roots() {
         for d in subdirs(&root.join("compatibilitytools.d")) {
@@ -77,12 +101,24 @@ pub fn list() -> Vec<Runner> {
         }
     }
     let h = crate::sys::home_dir();
-    for base in [h.join(".local/share/lutris/runners/wine"), h.join(".config/heroic/tools/wine"), h.join(".var/app/com.heroicgameslauncher.hgl/config/heroic/tools/wine")] {
+    for base in [
+        h.join(".local/share/lutris/runners/wine"),
+        h.join(".config/heroic/tools/wine"),
+        h.join(".var/app/com.heroicgameslauncher.hgl/config/heroic/tools/wine"),
+    ] {
         for d in subdirs(&base) {
-            add(&mut out, d.join("bin/wine"), format!("{} (Wine)", dir_name(&d)), Kind::Wine);
+            add(
+                &mut out,
+                d.join("bin/wine"),
+                format!("{} (Wine)", dir_name(&d)),
+                Kind::Wine,
+            );
         }
     }
-    for base in [h.join(".config/heroic/tools/proton"), h.join(".var/app/com.heroicgameslauncher.hgl/config/heroic/tools/proton")] {
+    for base in [
+        h.join(".config/heroic/tools/proton"),
+        h.join(".var/app/com.heroicgameslauncher.hgl/config/heroic/tools/proton"),
+    ] {
         for d in subdirs(&base) {
             add(&mut out, d.join("proton"), dir_name(&d), Kind::Proton);
         }
@@ -92,6 +128,7 @@ pub fn list() -> Vec<Runner> {
 
 /// SICHERHEIT: Nur Programme starten, die wir selbst gefunden haben – ein manipulierter
 /// Eintrag in der Einstellungsdatei kann so kein beliebiges Programm starten.
+#[cfg_attr(windows, allow(dead_code))]
 pub fn find(path: &str) -> Option<Runner> {
     if path.is_empty() {
         return None;
@@ -100,14 +137,21 @@ pub fn find(path: &str) -> Option<Runner> {
 }
 
 /// Eigener Wine-Prefix für ein Spiel (bei Proton nötig)
+#[cfg_attr(windows, allow(dead_code))]
 pub fn prefix_for(game_id: &str) -> PathBuf {
-    let safe: String = game_id.chars().map(|c| if c.is_ascii_alphanumeric() { c } else { '_' }).take(60).collect();
+    let safe: String = game_id
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .take(60)
+        .collect();
     // Nicht im Cache-Ordner: im Prefix liegen Spielstände
-    let data = crate::sys::env_path("XDG_DATA_HOME").unwrap_or_else(|| crate::sys::home_dir().join(".local/share"));
+    let data = crate::sys::env_path("XDG_DATA_HOME")
+        .unwrap_or_else(|| crate::sys::home_dir().join(".local/share"));
     data.join("maz-launcher").join("prefixes").join(safe)
 }
 
-/// Steam-Ordner, den Proton zum Starten braucht
+/// Steam-Ordner, den Proton zum Starten braucht (nur unter Linux benutzt)
+#[cfg_attr(windows, allow(dead_code))]
 pub fn steam_root() -> Option<PathBuf> {
     steam_roots().into_iter().next()
 }

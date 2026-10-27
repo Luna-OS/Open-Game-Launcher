@@ -39,7 +39,10 @@ pub const FONTS: &[(&str, &str)] = &[
 ];
 
 pub fn font_css(key: &str) -> Option<&'static str> {
-    FONTS.iter().find(|(k, _)| *k == key && *k != "standard").map(|(_, css)| *css)
+    FONTS
+        .iter()
+        .find(|(k, _)| *k == key && *k != "standard")
+        .map(|(_, css)| *css)
 }
 
 /// Zoom-Faktor für die Abstände
@@ -74,41 +77,124 @@ impl Default for CustomTheme {
 
 /// Fertige Designs: (id, Hintergrund, Karten, Seitenleiste, Text, Text gedimmt, Akzent, Akzent 2, Rahmen)
 pub const PRESETS: &[(&str, [&str; 8])] = &[
-    ("maz", ["#0a0a12", "#13131f", "#0e0e18", "#ecebf5", "#9895b0", "#8b5cf6", "#22d3ee", "#26263b"]),
-    ("midnight", ["#070d1a", "#0f1828", "#0a1222", "#e6edf7", "#8b9bb6", "#3b82f6", "#06b6d4", "#1d2b45"]),
-    ("neon", ["#0b0613", "#150b22", "#0f0819", "#fbe9ff", "#b18fc4", "#ff2bd6", "#00f0ff", "#33184f"]),
-    ("synthwave", ["#12061f", "#1d0b31", "#170827", "#ffe9fb", "#b48ccf", "#f72585", "#ffb703", "#3a1a5c"]),
-    ("ocean", ["#04121a", "#0a1f2b", "#061823", "#e2f4fb", "#86a9b8", "#0ea5e9", "#2dd4bf", "#143444"]),
-    ("forest", ["#07110c", "#0e1c15", "#0a160f", "#e7f5ec", "#8bb09a", "#22c55e", "#a3e635", "#1b3527"]),
-    ("ember", ["#120a07", "#1d120c", "#160d08", "#fbeee6", "#bb9a85", "#f97316", "#facc15", "#3a2416"]),
-    ("crimson", ["#120607", "#1f0b0d", "#18080a", "#fbe9ea", "#b98a8e", "#e11d48", "#fb7185", "#3d1519"]),
-    ("gold", ["#0f0d07", "#1a160c", "#13100a", "#f7f1e1", "#b3a684", "#eab308", "#f59e0b", "#3a321b"]),
-    ("sakura", ["#140a10", "#1f1019", "#180c13", "#fdeef5", "#c497ad", "#f472b6", "#c084fc", "#3b1f2f"]),
-    ("dracula", ["#1e1f29", "#282a36", "#21222c", "#f8f8f2", "#9ea3c2", "#bd93f9", "#ff79c6", "#44475a"]),
-    ("nord", ["#2e3440", "#3b4252", "#2b303b", "#eceff4", "#a3acbd", "#88c0d0", "#b48ead", "#4c566a"]),
-    ("coffee", ["#16110d", "#221a14", "#1b1410", "#f3e9df", "#b09a86", "#c08457", "#e0b084", "#3d2f24"]),
-    ("oled", ["#000000", "#0b0b0b", "#000000", "#f5f5f5", "#8f8f8f", "#ffffff", "#d4d4d4", "#1f1f1f"]),
-    ("light", ["#f4f5fa", "#ffffff", "#ffffff", "#14142b", "#34364a", "#6d28d9", "#0ea5e9", "#dfe1ee"]),
-    ("mint", ["#f3fbf7", "#ffffff", "#ffffff", "#0f2a1f", "#2f4a3e", "#10b981", "#06b6d4", "#d6ebe1"]),
+    (
+        "maz",
+        [
+            "#0a0a12", "#13131f", "#0e0e18", "#ecebf5", "#9895b0", "#8b5cf6", "#22d3ee", "#26263b",
+        ],
+    ),
+    (
+        "midnight",
+        [
+            "#070d1a", "#0f1828", "#0a1222", "#e6edf7", "#8b9bb6", "#3b82f6", "#06b6d4", "#1d2b45",
+        ],
+    ),
+    (
+        "neon",
+        [
+            "#0b0613", "#150b22", "#0f0819", "#fbe9ff", "#b18fc4", "#ff2bd6", "#00f0ff", "#33184f",
+        ],
+    ),
+    (
+        "synthwave",
+        [
+            "#12061f", "#1d0b31", "#170827", "#ffe9fb", "#b48ccf", "#f72585", "#ffb703", "#3a1a5c",
+        ],
+    ),
+    (
+        "ocean",
+        [
+            "#04121a", "#0a1f2b", "#061823", "#e2f4fb", "#86a9b8", "#0ea5e9", "#2dd4bf", "#143444",
+        ],
+    ),
+    (
+        "forest",
+        [
+            "#07110c", "#0e1c15", "#0a160f", "#e7f5ec", "#8bb09a", "#22c55e", "#a3e635", "#1b3527",
+        ],
+    ),
+    (
+        "ember",
+        [
+            "#120a07", "#1d120c", "#160d08", "#fbeee6", "#bb9a85", "#f97316", "#facc15", "#3a2416",
+        ],
+    ),
+    (
+        "crimson",
+        [
+            "#120607", "#1f0b0d", "#18080a", "#fbe9ea", "#b98a8e", "#e11d48", "#fb7185", "#3d1519",
+        ],
+    ),
+    (
+        "gold",
+        [
+            "#0f0d07", "#1a160c", "#13100a", "#f7f1e1", "#b3a684", "#eab308", "#f59e0b", "#3a321b",
+        ],
+    ),
+    (
+        "sakura",
+        [
+            "#140a10", "#1f1019", "#180c13", "#fdeef5", "#c497ad", "#f472b6", "#c084fc", "#3b1f2f",
+        ],
+    ),
+    (
+        "dracula",
+        [
+            "#1e1f29", "#282a36", "#21222c", "#f8f8f2", "#9ea3c2", "#bd93f9", "#ff79c6", "#44475a",
+        ],
+    ),
+    (
+        "nord",
+        [
+            "#2e3440", "#3b4252", "#2b303b", "#eceff4", "#a3acbd", "#88c0d0", "#b48ead", "#4c566a",
+        ],
+    ),
+    (
+        "coffee",
+        [
+            "#16110d", "#221a14", "#1b1410", "#f3e9df", "#b09a86", "#c08457", "#e0b084", "#3d2f24",
+        ],
+    ),
+    (
+        "oled",
+        [
+            "#000000", "#0b0b0b", "#000000", "#f5f5f5", "#8f8f8f", "#ffffff", "#d4d4d4", "#1f1f1f",
+        ],
+    ),
+    (
+        "light",
+        [
+            "#f4f5fa", "#ffffff", "#ffffff", "#14142b", "#34364a", "#6d28d9", "#0ea5e9", "#dfe1ee",
+        ],
+    ),
+    (
+        "mint",
+        [
+            "#f3fbf7", "#ffffff", "#ffffff", "#0f2a1f", "#2f4a3e", "#10b981", "#06b6d4", "#d6ebe1",
+        ],
+    ),
 ];
 
 pub fn preset(id: &str) -> Option<CustomTheme> {
-    PRESETS.iter().find(|(p, _)| *p == id).map(|(p, c)| CustomTheme {
-        id: p.to_string(),
-        name: String::new(),
-        bg: c[0].into(),
-        card: c[1].into(),
-        sidebar: c[2].into(),
-        text: c[3].into(),
-        muted: c[4].into(),
-        accent: c[5].into(),
-        accent2: c[6].into(),
-        border: c[7].into(),
-        radius: 12,
-        font: String::new(),
-        density: 2,
-        layout: String::new(),
-    })
+    PRESETS
+        .iter()
+        .find(|(p, _)| *p == id)
+        .map(|(p, c)| CustomTheme {
+            id: p.to_string(),
+            name: String::new(),
+            bg: c[0].into(),
+            card: c[1].into(),
+            sidebar: c[2].into(),
+            text: c[3].into(),
+            muted: c[4].into(),
+            accent: c[5].into(),
+            accent2: c[6].into(),
+            border: c[7].into(),
+            radius: 12,
+            font: String::new(),
+            density: 2,
+            layout: String::new(),
+        })
 }
 
 pub fn parse_hex(s: &str) -> Option<(u8, u8, u8)> {
@@ -134,21 +220,33 @@ pub fn mix(a: &str, b: &str, t: f32) -> String {
     let (Some(x), Some(y)) = (parse_hex(a), parse_hex(b)) else {
         return a.to_string();
     };
-    let m = |p: u8, q: u8| (p as f32 + (q as f32 - p as f32) * t).round().clamp(0.0, 255.0) as u8;
+    let m = |p: u8, q: u8| {
+        (p as f32 + (q as f32 - p as f32) * t)
+            .round()
+            .clamp(0.0, 255.0) as u8
+    };
     to_hex((m(x.0, y.0), m(x.1, y.1), m(x.2, y.2)))
 }
 
 fn luminance(c: &str) -> f32 {
-    let Some((r, g, b)) = parse_hex(c) else { return 0.0 };
+    let Some((r, g, b)) = parse_hex(c) else {
+        return 0.0;
+    };
     (0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32) / 255.0
 }
 
 /// Relative Helligkeit nach WCAG
 fn rel_lum(c: &str) -> f32 {
-    let Some((r, g, b)) = parse_hex(c) else { return 0.0 };
+    let Some((r, g, b)) = parse_hex(c) else {
+        return 0.0;
+    };
     let ch = |v: u8| {
         let v = v as f32 / 255.0;
-        if v <= 0.03928 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+        if v <= 0.03928 {
+            v / 12.92
+        } else {
+            ((v + 0.055) / 1.055).powf(2.4)
+        }
     };
     0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
 }
@@ -223,9 +321,21 @@ impl CustomTheme {
             accent2: valid(&self.accent2, &d.accent2),
             border: valid(&self.border, &d.border),
             radius: self.radius.min(24),
-            font: if FONTS.iter().any(|(k, _)| *k == self.font) { self.font.clone() } else { String::new() },
-            density: if (1..=3).contains(&self.density) { self.density } else { 2 },
-            layout: if ["maz", "steam", "epic"].contains(&self.layout.as_str()) { self.layout.clone() } else { String::new() },
+            font: if FONTS.iter().any(|(k, _)| *k == self.font) {
+                self.font.clone()
+            } else {
+                String::new()
+            },
+            density: if (1..=3).contains(&self.density) {
+                self.density
+            } else {
+                2
+            },
+            layout: if ["maz", "steam", "epic"].contains(&self.layout.as_str()) {
+                self.layout.clone()
+            } else {
+                String::new()
+            },
         }
     }
 
@@ -234,7 +344,9 @@ impl CustomTheme {
         let t = self.sanitized();
         let mut out = String::new();
         if let Some(f) = font_css(&t.font) {
-            out.push_str(&format!("--font-sans:{f};--font-display:{f};font-family:{f};"));
+            out.push_str(&format!(
+                "--font-sans:{f};--font-display:{f};font-family:{f};"
+            ));
         }
         if let Some(z) = density_zoom(t.density) {
             out.push_str(&format!("zoom:{z};"));
@@ -246,7 +358,12 @@ impl CustomTheme {
     pub fn to_file(&self) -> String {
         let mut t = self.sanitized();
         t.id = String::new();
-        serde_json::to_string_pretty(&ThemeFile { format: "maz-theme".into(), version: 1, theme: t }).unwrap_or_default()
+        serde_json::to_string_pretty(&ThemeFile {
+            format: "maz-theme".into(),
+            version: 1,
+            theme: t,
+        })
+        .unwrap_or_default()
     }
 
     pub fn from_file(text: &str) -> Option<CustomTheme> {
@@ -271,9 +388,9 @@ impl CustomTheme {
         let sidenav_fg = readable(&mix(&t.text, &t.sidebar, 0.15), &t.sidebar, &t.text);
         format!(
             "--background:{bg};--foreground:{fg};--card:{card};--card-foreground:{fg};--popover:{pop};--popover-foreground:{fg};\
---primary:{acc};--primary-foreground:{accfg};--secondary:{sec};--secondary-foreground:{fg};--muted:{mut};--muted-foreground:{mfg};\
---accent:{abg};--accent-foreground:{fg};--border:{border};--input:{input};--ring:{acc};--sidenav:{side};--sidenav-foreground:{sfg};\
---sidenav-accent:{sacc};--glow:{acc};--glow-2:{acc2};--glow-fg:{gfg};--radius:{r}px;",
+        --primary:{acc};--primary-foreground:{accfg};--secondary:{sec};--secondary-foreground:{fg};--muted:{mut};--muted-foreground:{mfg};\
+        --accent:{abg};--accent-foreground:{fg};--border:{border};--input:{input};--ring:{acc};--sidenav:{side};--sidenav-foreground:{sfg};\
+        --sidenav-accent:{sacc};--glow:{acc};--glow-2:{acc2};--glow-fg:{gfg};--radius:{r}px;",
             bg = t.bg,
             fg = t.text,
             card = t.card,
@@ -305,7 +422,10 @@ impl CustomTheme {
     pub fn from_code(code: &str) -> Option<CustomTheme> {
         // Alte Codes (bis 1.7: „MAZTHEME:“) funktionieren weiter
         let c = code.trim();
-        let json = c.strip_prefix("OGTHEME:").or_else(|| c.strip_prefix("MAZTHEME:")).unwrap_or(c);
+        let json = c
+            .strip_prefix("OGTHEME:")
+            .or_else(|| c.strip_prefix("MAZTHEME:"))
+            .unwrap_or(c);
         let t: CustomTheme = serde_json::from_str(json).ok()?;
         Some(t.sanitized())
     }
@@ -368,7 +488,10 @@ mod tests {
         assert_eq!(back.font, "mono");
         assert_eq!(back.density, 1);
         assert!(back.extra_style().contains("zoom:0.9"));
-        let bad = CustomTheme::from_file(r#"{"format":"maz-theme","version":1,"theme":{"font":"url(evil)","density":9}}"#).unwrap();
+        let bad = CustomTheme::from_file(
+            r#"{"format":"maz-theme","version":1,"theme":{"font":"url(evil)","density":9}}"#,
+        )
+        .unwrap();
         assert_eq!(bad.font, "");
         assert_eq!(bad.density, 2);
     }

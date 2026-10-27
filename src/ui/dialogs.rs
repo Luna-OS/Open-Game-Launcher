@@ -2,12 +2,12 @@
 
 use super::components::*;
 use super::detail::DetailModal;
-use super::settings::{LanguagePicker, LayoutPicker};
 use super::icons::{Icon, MazLogo};
+use super::settings::{LanguagePicker, LayoutPicker};
 use super::state::*;
+use crate::i18n::{t, tf};
 use crate::model::CustomGame;
 use crate::problem::{Fix, Problem, Severity};
-use crate::i18n::{t, tf};
 use crate::{config, sys};
 use dioxus::prelude::*;
 use std::path::Path;
@@ -88,14 +88,23 @@ fn UpdateDialog() -> Element {
     let notes = r.notes.clone();
     let page = r.page.clone();
     let page2 = r.page.clone();
-    let busy = matches!(state, UpdateState::Downloading(..) | UpdateState::Installing | UpdateState::Checking);
+    let busy = matches!(
+        state,
+        UpdateState::Downloading(..) | UpdateState::Installing | UpdateState::Checking
+    );
     let pct = match state {
-        UpdateState::Downloading(got, total) if total > 0 => (got as f64 / total as f64 * 100.0).min(100.0),
+        UpdateState::Downloading(got, total) if total > 0 => {
+            (got as f64 / total as f64 * 100.0).min(100.0)
+        }
         UpdateState::Installing => 100.0,
         _ => 0.0,
     };
     let pct_s = format!("{:.0} %", pct);
-    let how = if kind.label().is_empty() { String::new() } else { tf("update.how", &[("kind", kind.label())]) };
+    let how = if kind.label().is_empty() {
+        String::new()
+    } else {
+        tf("update.how", &[("kind", kind.label())])
+    };
     rsx! {
         Dialog { on_close: move |_| if !busy { app.close_modal() }, class: "max-w-xl",
             div { class: "p-8",
@@ -203,7 +212,11 @@ fn UpdateDialog() -> Element {
 
 fn checklist_for(app: App, id: &str) -> Vec<String> {
     let s = app.settings.read();
-    let mut items: Vec<String> = s.effective_checklist().into_iter().filter(|x| !x.trim().is_empty()).collect();
+    let mut items: Vec<String> = s
+        .effective_checklist()
+        .into_iter()
+        .filter(|x| !x.trim().is_empty())
+        .collect();
     if let Some(c) = s.custom(id) {
         for line in c.checklist.lines() {
             let l = line.trim();
@@ -238,7 +251,13 @@ fn Checklist(items: Vec<String>) -> Element {
 #[component]
 fn ConfirmDialog(id: String) -> Element {
     let app = use_app();
-    let name = app.settings.read().custom(&id).map(|c| c.name.clone()).or_else(|| app.game(&id).map(|g| g.name)).unwrap_or_default();
+    let name = app
+        .settings
+        .read()
+        .custom(&id)
+        .map(|c| c.name.clone())
+        .or_else(|| app.game(&id).map(|g| g.name))
+        .unwrap_or_default();
     let items = checklist_for(app, &id);
     let (id_yes, id_no) = (id.clone(), id.clone());
     rsx! {
@@ -272,7 +291,13 @@ fn ConfirmDialog(id: String) -> Element {
 #[component]
 fn NotStartedDialog(id: String) -> Element {
     let app = use_app();
-    let name = app.settings.read().custom(&id).map(|c| c.name.clone()).or_else(|| app.game(&id).map(|g| g.name)).unwrap_or_default();
+    let name = app
+        .settings
+        .read()
+        .custom(&id)
+        .map(|c| c.name.clone())
+        .or_else(|| app.game(&id).map(|g| g.name))
+        .unwrap_or_default();
     let items = checklist_for(app, &id);
     let id2 = id.clone();
     rsx! {
@@ -310,7 +335,11 @@ fn fix_label(f: &Fix) -> (String, &'static str) {
     match f {
         Fix::RunAsAdmin => (t("fix.admin"), "shield"),
         Fix::EditGame => (t("fix.edit"), "pencil"),
-        Fix::OpenUrl { label, url } if url.starts_with("steam://validate") || url.contains("action=verify") => (label.clone(), "wrench"),
+        Fix::OpenUrl { label, url }
+            if url.starts_with("steam://validate") || url.contains("action=verify") =>
+        {
+            (label.clone(), "wrench")
+        }
         Fix::OpenUrl { label, .. } => (label.clone(), "external"),
         Fix::OpenFolder { label, .. } => (label.clone(), "folder"),
         Fix::Rescan => (t("fix.rescan"), "refresh"),
@@ -336,7 +365,10 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
     let steps = problem.steps.clone();
     let fixes = problem.fixes.clone();
     let copy_icon = if copied() { "check" } else { "copy" };
-    let can_edit = game_id.as_ref().map(|id| app.settings.read().custom(id).is_some()).unwrap_or(false);
+    let can_edit = game_id
+        .as_ref()
+        .map(|id| app.settings.read().custom(id).is_some())
+        .unwrap_or(false);
     rsx! {
         Dialog { on_close: move |_| app.close_modal(), class: "max-w-2xl",
             div { class: "p-8",
@@ -390,7 +422,7 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
                     }
                 }
                 details { class: "mt-7 rounded-xl border border-border group",
-                    summary { class: "cursor-pointer px-4 py-3 text-sm text-muted-foreground hover:text-foreground select-none",
+                    summary { class: "transition-colors cursor-pointer px-4 py-3 text-sm text-muted-foreground hover:text-foreground select-none",
                         {t("problem.tech")}
                     }
                     pre { class: "px-4 pb-4 text-xs text-muted-foreground whitespace-pre-wrap break-all select-text font-mono", "{tech}" }
@@ -416,7 +448,11 @@ fn ProblemDialog(problem: Problem, #[props(!optional)] game_id: Option<String>) 
 // ----------------------------------------------------------------------
 
 fn pretty_name(path: &str) -> String {
-    let stem = Path::new(path).file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+    let stem = Path::new(path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_string();
     let mut out = String::new();
     let mut prev_lower = false;
     for c in stem.chars() {
@@ -440,7 +476,11 @@ fn pretty_name(path: &str) -> String {
 }
 
 #[component]
-pub fn Field(#[props(into)] label: String, #[props(into, default)] hint: String, children: Element) -> Element {
+pub fn Field(
+    #[props(into)] label: String,
+    #[props(into, default)] hint: String,
+    children: Element,
+) -> Element {
     rsx! {
         div { class: "grid gap-2",
             Label { "{label}" }
@@ -455,7 +495,9 @@ pub fn Field(#[props(into)] label: String, #[props(into, default)] hint: String,
 #[component]
 fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
     let app = use_app();
-    let existing: Option<CustomGame> = id.as_ref().and_then(|i| app.settings.peek().custom(i).cloned());
+    let existing: Option<CustomGame> = id
+        .as_ref()
+        .and_then(|i| app.settings.peek().custom(i).cloned());
     let is_new = existing.is_none();
     let init = existing.clone().unwrap_or_default();
     let mut name = use_signal(|| init.name.clone());
@@ -511,7 +553,10 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
         refresh_custom(app, gid);
         app.close_modal();
         app.toast(
-            &tf(if is_new { "toast.added" } else { "toast.saved" }, &[("name", &n)]),
+            &tf(
+                if is_new { "toast.added" } else { "toast.saved" },
+                &[("name", &n)],
+            ),
             "check-circle",
         );
     };
@@ -648,7 +693,12 @@ fn EditGameDialog(#[props(!optional)] id: Option<String>) -> Element {
 #[component]
 fn DeleteDialog(id: String) -> Element {
     let app = use_app();
-    let name = app.settings.read().custom(&id).map(|c| c.name.clone()).unwrap_or_default();
+    let name = app
+        .settings
+        .read()
+        .custom(&id)
+        .map(|c| c.name.clone())
+        .unwrap_or_default();
     let id2 = id.clone();
     rsx! {
         Dialog { on_close: move |_| app.close_modal(), class: "max-w-md",
@@ -696,7 +746,7 @@ fn WelcomeDialog() -> Element {
                 div { class: "flex items-center gap-4",
                     MazLogo { class: "size-14 text-base" }
                     div {
-                        h2 { class: "text-3xl font-black font-display", {t("welcome.title")} " " span { class: "maz-gradient-text", "MAZ Launcher" } }
+                        h2 { class: "text-3xl font-black font-display", {t("welcome.title")} " " span { class: "maz-gradient-text", {crate::sys::APP_NAME} } }
                         p { class: "text-muted-foreground mt-1", {t("welcome.sub")} }
                     }
                 }
@@ -721,7 +771,11 @@ fn WelcomeDialog() -> Element {
 }
 
 #[component]
-fn WelcomeStep(icon: &'static str, #[props(into)] title: String, #[props(into)] text: String) -> Element {
+fn WelcomeStep(
+    icon: &'static str,
+    #[props(into)] title: String,
+    #[props(into)] text: String,
+) -> Element {
     rsx! {
         div { class: "rounded-xl bg-muted p-5",
             div { class: "size-10 rounded-lg bg-primary/15 text-primary grid place-items-center mb-3",

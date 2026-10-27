@@ -1,6 +1,8 @@
 //! Bibliothek: führt Steam, Epic und eigene Spiele zusammen.
 
-use crate::model::{normalize_name, Art, CustomGame, Game, LaunchTarget, Settings, Source, StoreStatus};
+use crate::model::{
+    normalize_name, Art, CustomGame, Game, LaunchTarget, Settings, Source, StoreStatus,
+};
 use crate::problem::Problem;
 use crate::stores::StoreLibrary;
 use crate::{emulators, epic, icons, roblox, steam, stores, sys};
@@ -25,7 +27,11 @@ pub fn scan(settings: &Settings) -> ScanResult {
     let mut result = ScanResult::default();
 
     if settings.steam_enabled {
-        let s = steam::scan(&settings.steam_api_key, &settings.steam_id, settings.steam_show_uninstalled);
+        let s = steam::scan(
+            &settings.steam_api_key,
+            &settings.steam_id,
+            settings.steam_show_uninstalled,
+        );
         result.games.extend(s.games);
         result.steam = s.status;
         if let Some(w) = s.warning {
@@ -76,7 +82,7 @@ pub fn scan(settings: &Settings) -> ScanResult {
     }
 
     if settings.store_on(Source::Minecraft) {
-        let (games, status) = crate::minecraft::scan();
+        let (games, status) = crate::minecraft::scan_with(settings.norisk_profile_tiles);
         result.games.extend(games);
         result.stores.push((Source::Minecraft, status));
     }
@@ -107,10 +113,18 @@ pub fn scan(settings: &Settings) -> ScanResult {
                     }
                 }
             }
-            Source::Gog | Source::Ea | Source::Ubisoft | Source::BattleNet | Source::Amazon | Source::Itch | Source::Xbox => {
+            Source::Gog
+            | Source::Ea
+            | Source::Ubisoft
+            | Source::BattleNet
+            | Source::Amazon
+            | Source::Itch
+            | Source::Xbox => {
                 if g.art.icon.is_empty() {
                     let exe = g.exe.clone().map(std::path::PathBuf::from).or_else(|| {
-                        g.install_dir.as_ref().and_then(|d| icons::guess_main_exe(Path::new(d), &g.name))
+                        g.install_dir
+                            .as_ref()
+                            .and_then(|d| icons::guess_main_exe(Path::new(d), &g.name))
                     });
                     if let Some(exe) = exe {
                         if let Some(icon) = icons::cached_icon(&exe) {
@@ -133,14 +147,20 @@ pub fn scan(settings: &Settings) -> ScanResult {
     }
 
     for c in &settings.custom_games {
-        result.games.push(custom_game(c, &settings.art_lookup, true));
+        result
+            .games
+            .push(custom_game(c, &settings.art_lookup, true));
     }
     if settings.merge_duplicates {
         let (games, dupes) = merge_duplicates(std::mem::take(&mut result.games));
         result.games = games;
         result.duplicates = dupes;
     }
-    for g in result.games.iter_mut().chain(result.duplicates.values_mut().flatten()) {
+    for g in result
+        .games
+        .iter_mut()
+        .chain(result.duplicates.values_mut().flatten())
+    {
         apply_meta(g, settings);
     }
     result
@@ -153,7 +173,9 @@ pub fn apply_meta(g: &mut Game, settings: &Settings) {
             g.name = m.name.trim().to_string();
         }
         if !m.hero.trim().is_empty() {
-            g.art.hero.insert(0, sys::file_url(Path::new(m.hero.trim())));
+            g.art
+                .hero
+                .insert(0, sys::file_url(Path::new(m.hero.trim())));
         }
     }
 }
@@ -161,7 +183,8 @@ pub fn apply_meta(g: &mut Game, settings: &Settings) {
 /// Dasselbe Spiel aus mehreren Stores nur einmal anzeigen (installierte Version bevorzugt).
 /// Eigene Spiele, Emulator-ROMs und Roblox bleiben immer einzeln.
 pub fn merge_duplicates(games: Vec<Game>) -> (Vec<Game>, BTreeMap<String, Vec<Game>>) {
-    let mergeable = |g: &Game| !matches!(g.source, Source::Custom | Source::Emulator | Source::Roblox);
+    let mergeable =
+        |g: &Game| !matches!(g.source, Source::Custom | Source::Emulator | Source::Roblox);
     let mut groups: BTreeMap<String, Vec<Game>> = BTreeMap::new();
     let mut out = Vec::new();
     for g in games {
@@ -215,6 +238,46 @@ pub fn custom_game(c: &CustomGame, lookup: &BTreeMap<String, u32>, with_icon: bo
     g
 }
 
+/// Hängt Steam-Store-Bilder an, wenn wir das Spiel dort gefunden haben.
+pub fn apply_lookup(g: &mut Game, lookup: &BTreeMap<String, u32>) {
+    if let Some(&appid) = lookup.get(&normalize_name(&g.name)) {
+        if appid != 0 {
+            let cdn = steam::cdn_art(appid);
+            g.art.cover.extend(cdn.cover);
+            g.art.hero.extend(cdn.hero);
+            g.art.logo.extend(cdn.logo);
+            g.art.header.extend(cdn.header);
+        }
+    }
+}
+
+/// Sucht für Epic- und eigene Spiele passende Cover im Steam-Store (Hintergrund).
+/// Gibt neue Einträge für den Cache zurück: normalisierter Name → AppID (0 = nichts gefunden).
+pub fn lookup_missing_art(
+    names: Vec<String>,
+    known: &BTreeMap<String, u32>,
+) -> BTreeMap<String, u32> {
+    let mut found = BTreeMap::new();
+    let todo: Vec<String> = names
+        .into_iter()
+        .filter(|n| !known.contains_key(&normalize_name(n)))
+        .take(40)
+        .collect();
+    if todo.is_empty() {
+        return found;
+    }
+    let agent = steam::http_agent();
+    for name in todo {
+        match steam::store_lookup(&agent, &name) {
+            Some(appid) => {
+                found.insert(normalize_name(&name), appid);
+            }
+            None => break, // Offline o. Ä. → später erneut versuchen
+        }
+    }
+    found
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -248,41 +311,4 @@ mod tests {
         assert!(list.iter().any(|x| x.id == "c1"));
         assert_eq!(d.get("g1").map(|v| v[0].id.as_str()), Some("s1"));
     }
-}
-
-/// Hängt Steam-Store-Bilder an, wenn wir das Spiel dort gefunden haben.
-pub fn apply_lookup(g: &mut Game, lookup: &BTreeMap<String, u32>) {
-    if let Some(&appid) = lookup.get(&normalize_name(&g.name)) {
-        if appid != 0 {
-            let cdn = steam::cdn_art(appid);
-            g.art.cover.extend(cdn.cover);
-            g.art.hero.extend(cdn.hero);
-            g.art.logo.extend(cdn.logo);
-            g.art.header.extend(cdn.header);
-        }
-    }
-}
-
-/// Sucht für Epic- und eigene Spiele passende Cover im Steam-Store (Hintergrund).
-/// Gibt neue Einträge für den Cache zurück: normalisierter Name → AppID (0 = nichts gefunden).
-pub fn lookup_missing_art(names: Vec<String>, known: &BTreeMap<String, u32>) -> BTreeMap<String, u32> {
-    let mut found = BTreeMap::new();
-    let todo: Vec<String> = names
-        .into_iter()
-        .filter(|n| !known.contains_key(&normalize_name(n)))
-        .take(40)
-        .collect();
-    if todo.is_empty() {
-        return found;
-    }
-    let agent = steam::http_agent();
-    for name in todo {
-        match steam::store_lookup(&agent, &name) {
-            Some(appid) => {
-                found.insert(normalize_name(&name), appid);
-            }
-            None => break, // Offline o. Ä. → später erneut versuchen
-        }
-    }
-    found
 }

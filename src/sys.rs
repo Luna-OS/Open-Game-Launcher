@@ -30,7 +30,9 @@ pub fn env_path(var: &str) -> Option<PathBuf> {
 }
 
 fn home() -> PathBuf {
-    env_path("HOME").or_else(|| env_path("USERPROFILE")).unwrap_or_else(|| PathBuf::from("."))
+    env_path("HOME")
+        .or_else(|| env_path("USERPROFILE"))
+        .unwrap_or_else(|| PathBuf::from("."))
 }
 
 /// Ordnernamen (neu, alt) je System
@@ -48,7 +50,9 @@ pub fn migrated_dir(base: &Path, new: &str, old: &str) -> PathBuf {
         return n;
     }
     let o = base.join(old);
-    let is_real_dir = std::fs::symlink_metadata(&o).map(|m| m.is_dir()).unwrap_or(false);
+    let is_real_dir = std::fs::symlink_metadata(&o)
+        .map(|m| m.is_dir())
+        .unwrap_or(false);
     if is_real_dir && std::fs::rename(&o, &n).is_err() {
         return o;
     }
@@ -91,7 +95,8 @@ fn local_base() -> PathBuf {
 /// - Linux: ~/.config/open-game-launcher (bzw. $XDG_CONFIG_HOME)
 pub fn roaming_dir() -> PathBuf {
     static DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    DIR.get_or_init(|| migrated_dir(&roaming_base(), DIR_NAMES.0, DIR_NAMES.1)).clone()
+    DIR.get_or_init(|| migrated_dir(&roaming_base(), DIR_NAMES.0, DIR_NAMES.1))
+        .clone()
 }
 
 /// Cache (Icons, WebView-Daten)
@@ -100,7 +105,8 @@ pub fn roaming_dir() -> PathBuf {
 /// - Linux: ~/.cache/open-game-launcher (bzw. $XDG_CACHE_HOME)
 pub fn local_dir() -> PathBuf {
     static DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
-    DIR.get_or_init(|| migrated_dir(&local_base(), DIR_NAMES.0, DIR_NAMES.1)).clone()
+    DIR.get_or_init(|| migrated_dir(&local_base(), DIR_NAMES.0, DIR_NAMES.1))
+        .clone()
 }
 
 /// Pfad aus einer Konfigurationsdatei in die Schreibweise des Systems bringen
@@ -152,7 +158,12 @@ pub fn now_secs() -> u64 {
 /// macOS/Linux: Systemprogramm mit festem Pfad (/usr/bin, /bin) statt Suche im PATH –
 /// so kann kein gleichnamiges Programm aus einem fremden Ordner untergeschoben werden.
 pub fn unix_tool(name: &str) -> PathBuf {
-    for dir in ["/usr/bin", "/bin", "/usr/local/bin", "/run/current-system/sw/bin"] {
+    for dir in [
+        "/usr/bin",
+        "/bin",
+        "/usr/local/bin",
+        "/run/current-system/sw/bin",
+    ] {
         let p = Path::new(dir).join(name);
         if p.is_file() {
             return p;
@@ -174,30 +185,72 @@ pub fn write_private(path: &Path, data: &[u8]) -> std::io::Result<()> {
             let _ = std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700));
         }
         let _ = std::fs::remove_file(path);
-        let mut f = std::fs::OpenOptions::new().write(true).create_new(true).mode(0o600).open(path)?;
+        let mut f = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(path)?;
         f.write_all(data)?;
         f.sync_all()
     }
     #[cfg(not(unix))]
     {
-        std::fs::write(path, data)
+        use std::io::Write;
+        let mut f = std::fs::File::create(path)?;
+        f.write_all(data)?;
+        f.sync_all()
     }
+}
+
+/// Datei sicher ersetzen: erst in eine eigene Temp-Datei daneben schreiben, dann umbenennen.
+/// So bleibt bei Absturz/Stromausfall immer die alte oder die neue Datei – nie eine halbe.
+/// Eindeutiger Temp-Name, damit zwei gleichzeitige Speichervorgänge sich nicht stören.
+pub fn write_atomic(path: &Path, data: &[u8]) -> std::io::Result<()> {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let n = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let tmp = path.with_file_name(format!("{name}.{}-{n}.tmp", std::process::id()));
+    let res = write_private(&tmp, data).and_then(|_| std::fs::rename(&tmp, path));
+    if res.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    res
 }
 
 /// Dateiname ohne verbotene Zeichen (für "Speichern unter")
 pub fn safe_file_name(name: &str) -> String {
     let s: String = name
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .take(60)
         .collect();
     let s = s.trim().to_string();
-    if s.is_empty() { "datei".into() } else { s }
+    if s.is_empty() {
+        "datei".into()
+    } else {
+        s
+    }
 }
 
 /// Zeigen zwei Pfade auf denselben Ordner? (Groß/klein und \\ vs. / egal)
 pub fn same_path(a: &str, b: &str) -> bool {
-    let n = |p: &str| p.trim().trim_matches('"').replace('\\', "/").trim_end_matches('/').to_lowercase();
+    let n = |p: &str| {
+        p.trim()
+            .trim_matches('"')
+            .replace('\\', "/")
+            .trim_end_matches('/')
+            .to_lowercase()
+    };
     let (a, b) = (n(a), n(b));
     !a.is_empty() && a == b
 }
@@ -216,7 +269,8 @@ pub fn drive_exists(path: &str) -> bool {
 pub fn system_program(name: &str) -> PathBuf {
     #[cfg(windows)]
     {
-        let sys32 = crate::winffi::system_dir().unwrap_or_else(|| PathBuf::from("C:\\Windows\\System32"));
+        let sys32 =
+            crate::winffi::system_dir().unwrap_or_else(|| PathBuf::from("C:\\Windows\\System32"));
         let win = crate::winffi::windows_dir().unwrap_or_else(|| PathBuf::from("C:\\Windows"));
         match name {
             "explorer.exe" => win.join(name),
@@ -243,7 +297,12 @@ pub fn host_command(program: impl AsRef<std::ffi::OsStr>) -> Command {
 }
 
 /// Wie `host_command`, aber mit Umgebungsvariablen und Arbeitsordner (auch im Flatpak)
-pub fn host_command_env(program: impl AsRef<std::ffi::OsStr>, envs: &[(String, String)], dir: Option<&Path>) -> Command {
+#[cfg_attr(windows, allow(dead_code))]
+pub fn host_command_env(
+    program: impl AsRef<std::ffi::OsStr>,
+    envs: &[(String, String)],
+    dir: Option<&Path>,
+) -> Command {
     if std::env::var_os("FLATPAK_ID").is_some() {
         let mut c = Command::new("flatpak-spawn");
         c.arg("--host");
@@ -285,8 +344,13 @@ pub fn open_folder(path: &str) {
     }
     #[cfg(windows)]
     {
-        let _ = crate::winffi::shell_execute(Some("open"), path, None, None)
-            .or_else(|_| Command::new(system_program("explorer.exe")).arg(path).spawn().map(|_| ()).map_err(|_| 0));
+        let _ = crate::winffi::shell_execute(Some("open"), path, None, None).or_else(|_| {
+            Command::new(system_program("explorer.exe"))
+                .arg(path)
+                .spawn()
+                .map(|_| ())
+                .map_err(|_| 0)
+        });
     }
     #[cfg(not(windows))]
     {
@@ -295,6 +359,7 @@ pub fn open_folder(path: &str) {
 }
 
 /// Datei im Explorer markieren.
+#[allow(dead_code)] // derzeit ungenutzt, für die Oberfläche bereitgehalten
 pub fn reveal_file(path: &str) {
     #[cfg(windows)]
     {
@@ -371,12 +436,21 @@ pub fn read_clipboard() -> Option<String> {
         let tools: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
             &[("/usr/bin/pbpaste", &[])]
         } else {
-            &[("wl-paste", &["--no-newline"]), ("xclip", &["-selection", "clipboard", "-o"]), ("xsel", &["--clipboard", "--output"])]
+            &[
+                ("wl-paste", &["--no-newline"]),
+                ("xclip", &["-selection", "clipboard", "-o"]),
+                ("xsel", &["--clipboard", "--output"]),
+            ]
         };
         for (cmd, args) in tools {
             if let Ok(out) = Command::new(unix_tool(cmd)).args(*args).output() {
                 if out.status.success() {
-                    return Some(String::from_utf8_lossy(&out.stdout).chars().take(65_536).collect());
+                    return Some(
+                        String::from_utf8_lossy(&out.stdout)
+                            .chars()
+                            .take(65_536)
+                            .collect(),
+                    );
                 }
             }
         }
@@ -396,10 +470,18 @@ pub fn copy_to_clipboard(text: &str) -> bool {
         let tools: &[(&str, &[&str])] = if cfg!(target_os = "macos") {
             &[("/usr/bin/pbcopy", &[])]
         } else {
-            &[("wl-copy", &[]), ("xclip", &["-selection", "clipboard"]), ("xsel", &["--clipboard", "--input"])]
+            &[
+                ("wl-copy", &[]),
+                ("xclip", &["-selection", "clipboard"]),
+                ("xsel", &["--clipboard", "--input"]),
+            ]
         };
         for (cmd, args) in tools {
-            if let Ok(mut child) = Command::new(unix_tool(cmd)).args(*args).stdin(Stdio::piped()).spawn() {
+            if let Ok(mut child) = Command::new(unix_tool(cmd))
+                .args(*args)
+                .stdin(Stdio::piped())
+                .spawn()
+            {
                 if let Some(mut stdin) = child.stdin.take() {
                     let _ = stdin.write_all(text.as_bytes());
                 }
@@ -452,6 +534,7 @@ pub fn reg_str(hive: Hive, path: &str, name: &str) -> Option<String> {
     }
 }
 
+#[allow(dead_code)] // derzeit ungenutzt
 pub fn reg_u32(hive: Hive, path: &str, name: &str) -> Option<u32> {
     #[cfg(windows)]
     {
@@ -482,7 +565,10 @@ pub fn protocol_registered(name: &str) -> bool {
     #[cfg(windows)]
     {
         reg_key_exists(Hive::ClassesRoot, &format!("{name}\\shell\\open\\command"))
-            || reg_key_exists(Hive::CurrentUser, &format!("Software\\Classes\\{name}\\shell\\open\\command"))
+            || reg_key_exists(
+                Hive::CurrentUser,
+                &format!("Software\\Classes\\{name}\\shell\\open\\command"),
+            )
     }
     #[cfg(target_os = "macos")]
     {
@@ -507,9 +593,18 @@ pub fn webview2_installed() -> bool {
     {
         const GUID: &str = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}";
         let paths = [
-            (Hive::LocalMachine, format!("SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{GUID}")),
-            (Hive::LocalMachine, format!("SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{GUID}")),
-            (Hive::CurrentUser, format!("Software\\Microsoft\\EdgeUpdate\\Clients\\{GUID}")),
+            (
+                Hive::LocalMachine,
+                format!("SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\{GUID}"),
+            ),
+            (
+                Hive::LocalMachine,
+                format!("SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{GUID}"),
+            ),
+            (
+                Hive::CurrentUser,
+                format!("Software\\Microsoft\\EdgeUpdate\\Clients\\{GUID}"),
+            ),
         ];
         for (hive, p) in paths.iter() {
             if let Some(v) = reg_str(*hive, p, "pv") {
@@ -521,7 +616,11 @@ pub fn webview2_installed() -> bool {
         // Fallback: fest installierte Runtime-Ordner
         for base in ["ProgramFiles(x86)", "ProgramFiles"] {
             if let Some(b) = env_path(base) {
-                if b.join("Microsoft").join("EdgeWebView").join("Application").exists() {
+                if b.join("Microsoft")
+                    .join("EdgeWebView")
+                    .join("Application")
+                    .exists()
+                {
                     return true;
                 }
             }
@@ -619,7 +718,10 @@ pub fn decode_file_url(url_path: &str) -> Option<PathBuf> {
     let text = String::from_utf8(bytes).ok()?;
     // SICHERHEIT: Keine Netzwerk- oder Gerätepfade (\\\\server\\… würde den Windows-Login-Hash senden)
     let b = text.as_bytes();
-    let drive_path = b.len() > 3 && b[0].is_ascii_alphabetic() && b[1] == b':' && (b[2] == b'\\' || b[2] == b'/');
+    let drive_path = b.len() > 3
+        && b[0].is_ascii_alphabetic()
+        && b[1] == b':'
+        && (b[2] == b'\\' || b[2] == b'/');
     if !drive_path && !text.starts_with('/') {
         return None;
     }
@@ -628,8 +730,16 @@ pub fn decode_file_url(url_path: &str) -> Option<PathBuf> {
     }
     let path = PathBuf::from(text);
     // SICHERHEIT: Nur Bilder ausliefern – nie Einstellungen, Tokens oder andere Dateien.
-    let ext = path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).unwrap_or_default();
-    matches!(ext.as_str(), "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "ico" | "avif").then_some(path)
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .unwrap_or_default();
+    matches!(
+        ext.as_str(),
+        "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "ico" | "avif"
+    )
+    .then_some(path)
 }
 
 #[cfg(test)]
@@ -683,7 +793,9 @@ pub fn url_encode(s: &str) -> String {
     let mut out = String::new();
     for b in s.as_bytes() {
         match *b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(*b as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(*b as char)
+            }
             b' ' => out.push_str("%20"),
             other => out.push_str(&format!("%{other:02X}")),
         }
@@ -710,7 +822,11 @@ pub fn format_playtime(min: u64) -> String {
         tf("fmt.minutes", &[("n", &min.to_string())])
     } else {
         let h = min as f64 / 60.0;
-        let n = if h < 10.0 { decimal(h) } else { format!("{h:.0}") };
+        let n = if h < 10.0 {
+            decimal(h)
+        } else {
+            format!("{h:.0}")
+        };
         tf("fmt.hours", &[("n", &n)])
     }
 }

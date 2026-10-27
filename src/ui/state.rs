@@ -1,8 +1,8 @@
 //! Globaler Zustand der Oberfläche + alle Aktionen (Spielen, Favorit, Neu laden …).
 
+use crate::i18n::{t, tf};
 use crate::model::{normalize_name, Game, LaunchTarget, Settings, Source, StoreStatus};
 use crate::problem::{Fix, Problem};
-use crate::i18n::{t, tf};
 use crate::{config, launch, library, sys};
 use dioxus::prelude::*;
 
@@ -72,7 +72,11 @@ impl Filter {
             Filter::Store(src) => g.source == src,
             Filter::Favorites => s.is_favorite(&g.id),
             Filter::Recent => s.last_played(&g.id) > 0,
-            Filter::Tag => s.tags.get(&g.id).map(|t| t.iter().any(|x| x.eq_ignore_ascii_case(arg))).unwrap_or(false),
+            Filter::Tag => s
+                .tags
+                .get(&g.id)
+                .map(|t| t.iter().any(|x| x.eq_ignore_ascii_case(arg)))
+                .unwrap_or(false),
             Filter::Collection => s.in_collection(arg, &g.id),
         }
     }
@@ -98,6 +102,7 @@ pub enum Page {
     Settings(SettingsTab),
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum Modal {
     /// Sicherheitsfrage vor dem Start eines eigenen Spiels
@@ -112,6 +117,7 @@ pub enum Modal {
     Detail(String),
     Welcome,
     /// Einfacher Hinweis (Titel, Text)
+    #[allow(dead_code)]
     Info(String, String),
     /// Neue Version verfügbar
     Update,
@@ -213,7 +219,10 @@ impl App {
         f(&mut s.write());
         let snapshot = s.peek().clone();
         if let Err(e) = config::save(&snapshot) {
-            self.toast(&tf("toast.save_failed", &[("error", &e.to_string())]), "alert");
+            self.toast(
+                &tf("toast.save_failed", &[("error", &e.to_string())]),
+                "alert",
+            );
         }
     }
 
@@ -232,9 +241,14 @@ impl App {
     }
 
     pub fn toast(&self, text: &str, icon: &'static str) {
-        let id = sys::now_secs().wrapping_mul(1000) + (self.toasts.peek().len() as u64) + rand_small();
+        let id =
+            sys::now_secs().wrapping_mul(1000) + (self.toasts.peek().len() as u64) + rand_small();
         let mut toasts = self.toasts;
-        toasts.write().push(Toast { id, text: text.to_string(), icon });
+        toasts.write().push(Toast {
+            id,
+            text: text.to_string(),
+            icon,
+        });
         dioxus::core::spawn_forever(async move {
             tokio::time::sleep(std::time::Duration::from_millis(5000)).await;
             toasts.write().retain(|t| t.id != id);
@@ -247,7 +261,14 @@ impl App {
             .iter()
             .find(|g| g.id == id)
             .cloned()
-            .or_else(|| self.dupes.peek().values().flatten().find(|g| g.id == id).cloned())
+            .or_else(|| {
+                self.dupes
+                    .peek()
+                    .values()
+                    .flatten()
+                    .find(|g| g.id == id)
+                    .cloned()
+            })
     }
 
     /// Filter setzen (Tag/Sammlung mit Namen bzw. ID)
@@ -266,7 +287,11 @@ impl App {
             return m.genres.clone();
         }
         drop(s);
-        self.meta_cache.read().get(id).map(|i| i.genres.clone()).unwrap_or_default()
+        self.meta_cache
+            .read()
+            .get(id)
+            .map(|i| i.genres.clone())
+            .unwrap_or_default()
     }
 
     pub fn go(&self, page: Page) {
@@ -341,12 +366,16 @@ pub fn rescan(app: App) {
                 .map(|g| g.name.clone())
                 .collect();
             let known = settings.art_lookup.clone();
-            if let Ok(found) = tokio::task::spawn_blocking(move || library::lookup_missing_art(names, &known)).await {
+            if let Ok(found) =
+                tokio::task::spawn_blocking(move || library::lookup_missing_art(names, &known))
+                    .await
+            {
                 if !found.is_empty() {
                     app.update(|s| s.art_lookup.extend(found.clone()));
                     let lookup = app.settings.peek().art_lookup.clone();
                     for g in games.write().iter_mut() {
-                        if g.source != Source::Steam && found.contains_key(&normalize_name(&g.name)) {
+                        if g.source != Source::Steam && found.contains_key(&normalize_name(&g.name))
+                        {
                             library::apply_lookup(g, &lookup);
                         }
                     }
@@ -362,7 +391,14 @@ fn meta_appid(app: App, g: &Game) -> Option<u32> {
     if g.source == Source::Emulator {
         return None;
     }
-    g.steam_appid.or_else(|| app.settings.peek().art_lookup.get(&normalize_name(&g.name)).copied().filter(|a| *a != 0))
+    g.steam_appid.or_else(|| {
+        app.settings
+            .peek()
+            .art_lookup
+            .get(&normalize_name(&g.name))
+            .copied()
+            .filter(|a| *a != 0)
+    })
 }
 
 /// Woher die Infos kommen: Steam-Store oder Wikipedia
@@ -398,7 +434,12 @@ fn run_meta_job(job: MetaJob, name: String, lang: String) -> Option<crate::metad
 }
 
 /// Eingebaute Quellen zuerst, danach Erweiterungen (falls dort nichts gefunden wurde)
-fn run_meta_with_ext(job: MetaJob, name: String, id: String, lang: String) -> Option<crate::metadata::Info> {
+fn run_meta_with_ext(
+    job: MetaJob,
+    name: String,
+    id: String,
+    lang: String,
+) -> Option<crate::metadata::Info> {
     let info = run_meta_job(job, name.clone(), lang);
     match info {
         Some(i) if i.fetched > 0 => Some(i),
@@ -412,7 +453,10 @@ pub fn apply_meta_covers(app: App) {
     let mut games = app.games;
     for g in games.write().iter_mut() {
         if g.art.cover.is_empty() {
-            if let Some(i) = cache.get(&g.id).filter(|i| i.cover.starts_with("https://upload.wikimedia.org/")) {
+            if let Some(i) = cache
+                .get(&g.id)
+                .filter(|i| i.cover.starts_with("https://upload.wikimedia.org/"))
+            {
                 g.art.cover.push(i.cover.clone());
             }
         }
@@ -446,7 +490,11 @@ async fn fill_metadata(app: App) {
         let l = lang.clone();
         // Keine Verbindung → aufhören, beim nächsten Mal weiter
         let gid = id.clone();
-        let Ok(Some(info)) = tokio::task::spawn_blocking(move || run_meta_with_ext(job, name, gid, l)).await else { break };
+        let Ok(Some(info)) =
+            tokio::task::spawn_blocking(move || run_meta_with_ext(job, name, gid, l)).await
+        else {
+            break;
+        };
         store_info(app, id, info);
         tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
     }
@@ -454,7 +502,14 @@ async fn fill_metadata(app: App) {
 
 /// Infos für ein Spiel sofort laden (beim Öffnen der Details)
 pub fn load_metadata(app: App, id: String) {
-    if !app.settings.peek().online_art || app.meta_cache.peek().get(&id).map(|i| i.is_current()).unwrap_or(false) {
+    if !app.settings.peek().online_art
+        || app
+            .meta_cache
+            .peek()
+            .get(&id)
+            .map(|i| i.is_current())
+            .unwrap_or(false)
+    {
         return;
     }
     let Some(g) = app.game(&id) else { return };
@@ -463,7 +518,9 @@ pub fn load_metadata(app: App, id: String) {
     let lang = crate::i18n::current_code();
     dioxus::core::spawn_forever(async move {
         let gid = id.clone();
-        if let Ok(Some(info)) = tokio::task::spawn_blocking(move || run_meta_with_ext(job, name, gid, lang)).await {
+        if let Ok(Some(info)) =
+            tokio::task::spawn_blocking(move || run_meta_with_ext(job, name, gid, lang)).await
+        {
             store_info(app, id, info);
         }
     });
@@ -556,7 +613,11 @@ fn matcher_for(game: &Game) -> Option<crate::playtime::Matcher> {
     match (&game.launch, game.source) {
         (LaunchTarget::Roblox(_), _) => Some(Matcher::Name("robloxplayer".into())),
         (LaunchTarget::Exe { path, .. }, Source::Emulator) => Some(Matcher::Exe(path.clone())),
-        _ => game.install_dir.clone().filter(|d| d.len() > 3).map(Matcher::Dir),
+        _ => game
+            .install_dir
+            .clone()
+            .filter(|d| d.len() > 3)
+            .map(Matcher::Dir),
     }
 }
 
@@ -570,7 +631,9 @@ pub fn track_playtime(app: App, game: &Game) {
     let mut tr = app.tracking;
     tr.write().push(id.clone());
     dioxus::core::spawn_forever(async move {
-        let minutes = tokio::task::spawn_blocking(move || crate::playtime::track(m)).await.unwrap_or(0);
+        let minutes = tokio::task::spawn_blocking(move || crate::playtime::track(m))
+            .await
+            .unwrap_or(0);
         let mut tr = app.tracking;
         tr.write().retain(|x| *x != id);
         if minutes > 0 {
@@ -583,7 +646,9 @@ pub fn track_playtime(app: App, game: &Game) {
 pub fn play(app: App, id: String) {
     let Some(game) = app.game(&id) else { return };
     if game.source == Source::Custom {
-        let Some(c) = app.settings.peek().custom(&id).cloned() else { return };
+        let Some(c) = app.settings.peek().custom(&id).cloned() else {
+            return;
+        };
         match launch::precheck_custom(&c) {
             // Vor JEDEM Start eines eigenen Spiels: Sicherheitsfrage
             Ok(()) => app.open(Modal::Confirm(id)),
@@ -592,7 +657,9 @@ pub fn play(app: App, id: String) {
         return;
     }
     // Programme aus Erweiterungen: wie eigene Spiele vorher die Sicherheitsfrage
-    if matches!(game.source, Source::Extension(_)) && matches!(game.launch, LaunchTarget::Exe { .. }) {
+    if matches!(game.source, Source::Extension(_))
+        && matches!(game.launch, LaunchTarget::Exe { .. })
+    {
         app.open(Modal::Confirm(id));
         return;
     }
@@ -604,10 +671,20 @@ fn start_store_game(app: App, game: Game) {
     let id = game.id.clone();
     match launch::launch_store(&game) {
         Ok(()) => {
-            let installing = !game.installed || matches!(game.launch, LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_));
+            let installing = !game.installed
+                || matches!(
+                    game.launch,
+                    LaunchTarget::SteamInstall(_) | LaunchTarget::EpicInstall(_)
+                );
             let store = game.source.label();
             if installing {
-                app.toast(&tf("toast.installing", &[("name", &game.name), ("store", &store)]), "download");
+                app.toast(
+                    &tf(
+                        "toast.installing",
+                        &[("name", &game.name), ("store", &store)],
+                    ),
+                    "download",
+                );
                 // Nach der Installation taucht das Spiel automatisch als installiert auf
                 rescan_later(app, &[90, 300, 900]);
                 return;
@@ -616,7 +693,10 @@ fn start_store_game(app: App, game: Game) {
             let text = if game.source == Source::Emulator {
                 tf("toast.started", &[("name", &game.name)])
             } else {
-                tf("toast.started_via", &[("name", &game.name), ("store", &store)])
+                tf(
+                    "toast.started_via",
+                    &[("name", &game.name), ("store", &store)],
+                )
             };
             app.toast(&text, "rocket");
             if app.settings.peek().minimize_on_launch {
@@ -655,7 +735,9 @@ pub fn start_confirmed(app: App, id: String) {
 /// Nach "Ja, alles deaktiviert" – eigenes Spiel wirklich starten.
 pub fn start_custom(app: App, id: String, force_admin: bool) {
     app.close_modal();
-    let Some(c) = app.settings.peek().custom(&id).cloned() else { return };
+    let Some(c) = app.settings.peek().custom(&id).cloned() else {
+        return;
+    };
     match launch::launch_custom(&c, force_admin) {
         Ok(child) => {
             mark_played(app, &id);
@@ -670,7 +752,8 @@ pub fn start_custom(app: App, id: String, force_admin: bool) {
                 let name = c.name.clone();
                 let exe = c.exe.clone();
                 dioxus::core::spawn_forever(async move {
-                    let res = tokio::task::spawn_blocking(move || launch::watch(child, name, exe)).await;
+                    let res =
+                        tokio::task::spawn_blocking(move || launch::watch(child, name, exe)).await;
                     if let Ok(Some(p)) = res {
                         restore_window();
                         app.show_problem(p, Some(id));
@@ -687,7 +770,10 @@ pub fn run_fix(app: App, fix: Fix, game_id: Option<String>) {
     match fix {
         Fix::RunAsAdmin => {
             if let Some(id) = game_id {
-                let is_custom = app.game(&id).map(|g| g.source == Source::Custom).unwrap_or(false);
+                let is_custom = app
+                    .game(&id)
+                    .map(|g| g.source == Source::Custom)
+                    .unwrap_or(false);
                 if is_custom {
                     start_custom(app, id, true);
                 } else {
@@ -731,17 +817,29 @@ pub fn add_roblox(app: App, input: &str) -> bool {
         app.toast(&t("roblox.invalid"), "alert");
         return false;
     };
-    if app.settings.peek().roblox_games.iter().any(|g| g.place_id == place) {
+    if app
+        .settings
+        .peek()
+        .roblox_games
+        .iter()
+        .any(|g| g.place_id == place)
+    {
         app.toast(&t("roblox.exists"), "info");
         return false;
     }
     app.update(|s| {
         s.roblox_enabled = true;
-        s.roblox_games.push(crate::model::RobloxGame { place_id: place, added: sys::now_secs(), ..Default::default() });
+        s.roblox_games.push(crate::model::RobloxGame {
+            place_id: place,
+            added: sys::now_secs(),
+            ..Default::default()
+        });
     });
     rescan(app);
     dioxus::core::spawn_forever(async move {
-        if let Ok(info) = tokio::task::spawn_blocking(move || crate::roblox::fetch_info(place)).await {
+        if let Ok(info) =
+            tokio::task::spawn_blocking(move || crate::roblox::fetch_info(place)).await
+        {
             let name = info.name.clone();
             app.update(|s| {
                 if let Some(g) = s.roblox_games.iter_mut().find(|g| g.place_id == place) {
@@ -750,7 +848,11 @@ pub fn add_roblox(app: App, input: &str) -> bool {
                     g.thumb = info.thumb;
                 }
             });
-            let shown = if name.is_empty() { format!("Roblox {place}") } else { name };
+            let shown = if name.is_empty() {
+                format!("Roblox {place}")
+            } else {
+                name
+            };
             app.toast(&tf("roblox.added", &[("name", &shown)]), "check-circle");
             rescan(app);
         }
@@ -759,7 +861,12 @@ pub fn add_roblox(app: App, input: &str) -> bool {
 }
 
 pub fn remove_roblox(app: App, id: &str) {
-    let Some(place) = id.strip_prefix("roblox:").and_then(|p| p.parse::<u64>().ok()) else { return };
+    let Some(place) = id
+        .strip_prefix("roblox:")
+        .and_then(|p| p.parse::<u64>().ok())
+    else {
+        return;
+    };
     app.update(|s| s.roblox_games.retain(|g| g.place_id != place));
     app.close_modal();
     rescan(app);
@@ -769,11 +876,20 @@ pub fn remove_roblox(app: App, id: &str) {
 pub fn start_help(app: App, id: String) {
     let Some(game) = app.game(&id) else { return };
     let custom = game.source == Source::Custom;
-    let dir = game
-        .install_dir
-        .clone()
-        .or_else(|| app.settings.peek().custom(&id).and_then(|c| std::path::Path::new(c.exe.trim().trim_matches('"')).parent().map(|p| p.to_string_lossy().to_string())));
-    let p = Problem::start_help(&game.name, &game.source.label(), launch::verify_fix(&game), dir, custom);
+    let dir = game.install_dir.clone().or_else(|| {
+        app.settings.peek().custom(&id).and_then(|c| {
+            std::path::Path::new(c.exe.trim().trim_matches('"'))
+                .parent()
+                .map(|p| p.to_string_lossy().to_string())
+        })
+    });
+    let p = Problem::start_help(
+        &game.name,
+        &game.source.label(),
+        launch::verify_fix(&game),
+        dir,
+        custom,
+    );
     app.show_problem(p, Some(id));
 }
 
@@ -783,7 +899,18 @@ fn confirm_uninstall(game: &str, u: &launch::Uninstaller) -> bool {
         use rfd::{MessageButtons, MessageDialog, MessageDialogResult, MessageLevel};
         let text = tf(
             "uninstall.custom_confirm",
-            &[("game", game), ("name", if u.display_name.is_empty() { game } else { u.display_name.as_str() }), ("program", &u.program)],
+            &[
+                ("game", game),
+                (
+                    "name",
+                    if u.display_name.is_empty() {
+                        game
+                    } else {
+                        u.display_name.as_str()
+                    },
+                ),
+                ("program", &u.program),
+            ],
         );
         MessageDialog::new()
             .set_level(MessageLevel::Warning)
@@ -803,7 +930,13 @@ pub fn uninstall(app: App, id: String) {
             // Steam fragt selbst noch einmal nach
             if sys::open_url(&format!("steam://uninstall/{appid}")).is_ok() {
                 app.close_modal();
-                app.toast(&tf("toast.uninstall_store", &[("name", &game.name), ("store", "Steam")]), "trash");
+                app.toast(
+                    &tf(
+                        "toast.uninstall_store",
+                        &[("name", &game.name), ("store", "Steam")],
+                    ),
+                    "trash",
+                );
                 rescan_later(app, &[20, 60, 180]);
             } else {
                 app.show_problem(Problem::steam_missing(), Some(id));
@@ -820,8 +953,12 @@ pub fn uninstall(app: App, id: String) {
             rescan_later(app, &[60, 180, 600]);
         }
         LaunchTarget::Custom => {
-            let Some(c) = app.settings.peek().custom(&id).cloned() else { return };
-            let dir = std::path::Path::new(c.exe.trim().trim_matches('"')).parent().map(|p| p.to_string_lossy().to_string());
+            let Some(c) = app.settings.peek().custom(&id).cloned() else {
+                return;
+            };
+            let dir = std::path::Path::new(c.exe.trim().trim_matches('"'))
+                .parent()
+                .map(|p| p.to_string_lossy().to_string());
             match launch::find_uninstaller(&c) {
                 Some(u) => {
                     // Vor dem Start genau zeigen, WAS deinstalliert wird
@@ -829,7 +966,8 @@ pub fn uninstall(app: App, id: String) {
                         return;
                     }
                     #[cfg(windows)]
-                    let res = crate::winffi::shell_execute(Some("open"), &u.program, Some(&u.args), None);
+                    let res =
+                        crate::winffi::shell_execute(Some("open"), &u.program, Some(&u.args), None);
                     #[cfg(not(windows))]
                     let res: Result<(), i32> = Err(0);
                     match res {
@@ -854,22 +992,32 @@ fn uninstall_other(app: App, game: &Game) {
     // Microsoft Store / Xbox: Windows-Einstellungen → Apps
     if game.source == Source::Xbox {
         let _ = sys::open_url("ms-settings:appsfeatures");
-        app.show_problem(Problem::store_uninstall(&game.name, &game.source.label()), Some(id));
+        app.show_problem(
+            Problem::store_uninstall(&game.name, &game.source.label()),
+            Some(id),
+        );
         return;
     }
     // ROMs gehören zu keinem Store – nur den Ordner zeigen
     if game.source == Source::Emulator {
-        app.show_problem(Problem::store_uninstall(&game.name, &t("source.emulator")), Some(id));
+        app.show_problem(
+            Problem::store_uninstall(&game.name, &t("source.emulator")),
+            Some(id),
+        );
         return;
     }
     let dir = game.install_dir.clone().unwrap_or_default();
-    let entry = crate::stores::uninstall_entries().into_iter().find(|e| {
-        launch::specific_dir(&dir) && sys::same_path(&e.install_location, &dir)
-    });
+    let entry = crate::stores::uninstall_entries()
+        .into_iter()
+        .find(|e| launch::specific_dir(&dir) && sys::same_path(&e.install_location, &dir));
     match entry {
         Some(e) if !e.uninstall_string.trim().is_empty() => {
             let (program, args) = launch::split_command(&e.uninstall_string);
-            let u = launch::Uninstaller { display_name: e.display_name.clone(), program, args };
+            let u = launch::Uninstaller {
+                display_name: e.display_name.clone(),
+                program,
+                args,
+            };
             if !confirm_uninstall(&game.name, &u) {
                 return;
             }
@@ -880,10 +1028,16 @@ fn uninstall_other(app: App, game: &Game) {
             match res {
                 Ok(()) => {
                     app.close_modal();
-                    app.toast(&tf("toast.uninstall_custom", &[("name", &game.name)]), "trash");
+                    app.toast(
+                        &tf("toast.uninstall_custom", &[("name", &game.name)]),
+                        "trash",
+                    );
                     rescan_later(app, &[30, 120, 600]);
                 }
-                Err(_) => app.show_problem(Problem::store_uninstall(&game.name, &game.source.label()), Some(id)),
+                Err(_) => app.show_problem(
+                    Problem::store_uninstall(&game.name, &game.source.label()),
+                    Some(id),
+                ),
             }
         }
         // Kein Eintrag gefunden → Store-Programm öffnen und erklären
@@ -893,7 +1047,10 @@ fn uninstall_other(app: App, game: &Game) {
                     let _ = sys::open_url(uri);
                 }
             }
-            app.show_problem(Problem::store_uninstall(&game.name, &game.source.label()), Some(id));
+            app.show_problem(
+                Problem::store_uninstall(&game.name, &game.source.label()),
+                Some(id),
+            );
         }
     }
 }
@@ -920,7 +1077,14 @@ pub fn toggle_hidden(app: App, id: &str) {
             hide = true;
         }
     });
-    app.toast(&t(if hide { "toast.hidden" } else { "toast.unhidden" }), "eye-off");
+    app.toast(
+        &t(if hide {
+            "toast.hidden"
+        } else {
+            "toast.unhidden"
+        }),
+        "eye-off",
+    );
 }
 
 // ----------------------------------------------------------------------
@@ -932,7 +1096,13 @@ pub fn create_collection(app: App, name: &str) -> String {
     let id = format!("c{:x}", sys::now_secs().wrapping_mul(1000) + rand_small());
     let name: String = name.trim().chars().take(40).collect();
     let nid = id.clone();
-    app.update(|s| s.collections.push(crate::model::Collection { id: nid, name, games: Vec::new() }));
+    app.update(|s| {
+        s.collections.push(crate::model::Collection {
+            id: nid,
+            name,
+            games: Vec::new(),
+        })
+    });
     id
 }
 
@@ -958,7 +1128,10 @@ pub fn delete_collection(app: App, coll: &str) {
 }
 
 pub fn rename_collection(app: App, coll: &str, name: &str) {
-    let (coll, name) = (coll.to_string(), name.trim().chars().take(40).collect::<String>());
+    let (coll, name) = (
+        coll.to_string(),
+        name.trim().chars().take(40).collect::<String>(),
+    );
     if name.is_empty() {
         return;
     }
@@ -970,12 +1143,23 @@ pub fn rename_collection(app: App, coll: &str, name: &str) {
 }
 
 pub fn add_tag(app: App, game: &str, tag: &str) {
-    let tag: String = tag.trim().trim_start_matches('#').chars().take(30).collect();
+    let tag: String = tag
+        .trim()
+        .trim_start_matches('#')
+        .chars()
+        .take(30)
+        .collect();
     if tag.is_empty() {
         return;
     }
     // Schreibweise eines vorhandenen Tags übernehmen
-    let tag = app.settings.peek().all_tags().into_iter().find(|t| t.eq_ignore_ascii_case(&tag)).unwrap_or(tag);
+    let tag = app
+        .settings
+        .peek()
+        .all_tags()
+        .into_iter()
+        .find(|t| t.eq_ignore_ascii_case(&tag))
+        .unwrap_or(tag);
     let game = game.to_string();
     app.update(|s| {
         let list = s.tags.entry(game).or_default();
@@ -1026,7 +1210,12 @@ pub fn pick_game_file(start: Option<&str>) -> Option<String> {
     } else if cfg!(target_os = "macos") {
         d = d.add_filter(t("pick.game_filter"), &["app", "command", "sh"]);
     } else {
-        d = d.add_filter(t("pick.game_filter"), &["sh", "AppImage", "appimage", "desktop", "x86_64", "exe", "py"]);
+        d = d.add_filter(
+            t("pick.game_filter"),
+            &[
+                "sh", "AppImage", "appimage", "desktop", "x86_64", "exe", "py",
+            ],
+        );
     }
     d = d.add_filter(t("pick.all_files"), &["*"]);
     if let Some(s) = start.filter(|s| !s.is_empty()) {
@@ -1047,7 +1236,10 @@ pub fn pick_folder(title: &str) -> Option<String> {
 pub fn pick_image_file() -> Option<String> {
     rfd::FileDialog::new()
         .set_title(t("pick.cover_title"))
-        .add_filter(t("pick.images"), &["jpg", "jpeg", "png", "webp", "gif", "bmp"])
+        .add_filter(
+            t("pick.images"),
+            &["jpg", "jpeg", "png", "webp", "gif", "bmp"],
+        )
         .pick_file()
         .map(|p| p.to_string_lossy().to_string())
 }

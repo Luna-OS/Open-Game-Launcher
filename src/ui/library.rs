@@ -5,8 +5,8 @@ use super::components::*;
 use super::detail::SteamDetail;
 use super::icons::{Icon, MazLogo};
 use super::state::*;
-use crate::model::{layout, Game, Settings, Source};
 use crate::i18n::{t, tf};
+use crate::model::{layout, Game, Settings, Source};
 use crate::sys;
 use dioxus::prelude::*;
 
@@ -31,22 +31,57 @@ pub fn visible_games(app: App) -> Vec<Game> {
         })
         .filter(|g| {
             genre.is_empty() || {
-                let own = s.meta.get(&g.id).map(|m| m.genres.clone()).filter(|v| !v.is_empty());
-                let auto = || cache.get(&g.id).map(|i| i.genres.clone()).unwrap_or_default();
-                own.unwrap_or_else(auto).iter().any(|x| x.eq_ignore_ascii_case(&genre))
+                let own = s
+                    .meta
+                    .get(&g.id)
+                    .map(|m| m.genres.clone())
+                    .filter(|v| !v.is_empty());
+                let auto = || {
+                    cache
+                        .get(&g.id)
+                        .map(|i| i.genres.clone())
+                        .unwrap_or_default()
+                };
+                own.unwrap_or_else(auto)
+                    .iter()
+                    .any(|x| x.eq_ignore_ascii_case(&genre))
             }
         })
         .filter(|g| {
-            q.is_empty() || g.name.to_lowercase().contains(&q) || s.tags_of(&g.id).iter().any(|t| t.to_lowercase().contains(&q))
+            q.is_empty()
+                || g.name.to_lowercase().contains(&q)
+                || s.tags_of(&g.id)
+                    .iter()
+                    .any(|t| t.to_lowercase().contains(&q))
         })
         .cloned()
         .collect();
-    let sort = if filter == Filter::Recent { "recent" } else { s.sort.as_str() };
+    let sort = if filter == Filter::Recent {
+        "recent"
+    } else {
+        s.sort.as_str()
+    };
     match sort {
-        "recent" => list.sort_by(|a, b| s.last_played(&b.id).cmp(&s.last_played(&a.id)).then(a.sort_key().cmp(&b.sort_key()))),
-        "playtime" => list.sort_by(|a, b| s.playtime(b).cmp(&s.playtime(a)).then(a.sort_key().cmp(&b.sort_key()))),
-        "installed" => list.sort_by(|a, b| b.installed.cmp(&a.installed).then(a.sort_key().cmp(&b.sort_key()))),
-        "added" => list.sort_by(|a, b| s.first_seen(&b.id).cmp(&s.first_seen(&a.id)).then(a.sort_key().cmp(&b.sort_key()))),
+        "recent" => list.sort_by(|a, b| {
+            s.last_played(&b.id)
+                .cmp(&s.last_played(&a.id))
+                .then(a.sort_key().cmp(&b.sort_key()))
+        }),
+        "playtime" => list.sort_by(|a, b| {
+            s.playtime(b)
+                .cmp(&s.playtime(a))
+                .then(a.sort_key().cmp(&b.sort_key()))
+        }),
+        "installed" => list.sort_by(|a, b| {
+            b.installed
+                .cmp(&a.installed)
+                .then(a.sort_key().cmp(&b.sort_key()))
+        }),
+        "added" => list.sort_by(|a, b| {
+            s.first_seen(&b.id)
+                .cmp(&s.first_seen(&a.id))
+                .then(a.sort_key().cmp(&b.sort_key()))
+        }),
         _ => list.sort_by_key(|a| a.sort_key()),
     }
     list
@@ -78,8 +113,17 @@ pub fn all_genres(app: App) -> Vec<String> {
     let cache = app.meta_cache.read();
     let mut v: Vec<String> = Vec::new();
     for g in app.games.read().iter() {
-        let own = s.meta.get(&g.id).map(|m| m.genres.clone()).filter(|v| !v.is_empty());
-        for genre in own.unwrap_or_else(|| cache.get(&g.id).map(|i| i.genres.clone()).unwrap_or_default()) {
+        let own = s
+            .meta
+            .get(&g.id)
+            .map(|m| m.genres.clone())
+            .filter(|v| !v.is_empty());
+        for genre in own.unwrap_or_else(|| {
+            cache
+                .get(&g.id)
+                .map(|i| i.genres.clone())
+                .unwrap_or_default()
+        }) {
             if !v.iter().any(|x| x.eq_ignore_ascii_case(&genre)) {
                 v.push(genre);
             }
@@ -130,6 +174,25 @@ pub fn filter_title(app: App) -> String {
             .map(|c| c.name.clone())
             .unwrap_or_else(|| f.label()),
         _ => f.label(),
+    }
+}
+
+/// Details eines Spiels öffnen – die NoRisk-Kachel öffnet stattdessen die NoRisk-Übersicht
+pub fn open_details(app: App, id: &str) {
+    if crate::minecraft::is_norisk_tile(id) {
+        super::minecraft::open_hub(app);
+    } else {
+        app.open(Modal::Detail(id.to_string()));
+    }
+}
+
+/// Steam-Ansicht: Spiel auswählen (NoRisk-Kachel öffnet die NoRisk-Übersicht)
+fn select_game(app: App, id: &str) {
+    if crate::minecraft::is_norisk_tile(id) {
+        super::minecraft::open_hub(app);
+    } else {
+        let mut s = app.selected;
+        s.set(Some(id.to_string()));
     }
 }
 
@@ -297,7 +360,7 @@ fn EpicHint() -> Element {
                 {t("epic.hint_button")}
             }
             button {
-                class: "p-1 text-muted-foreground hover:text-foreground cursor-pointer",
+                class: "p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer",
                 title: t("lib.dismiss"),
                 onclick: move |_| app.update(|s| s.epic_hint_dismissed = true),
                 Icon { name: "x", class: "size-4" }
@@ -330,7 +393,7 @@ fn WarningBanner() -> Element {
                         {t("lib.how_fix")}
                     }
                     button {
-                        class: "p-1 text-muted-foreground hover:text-foreground cursor-pointer",
+                        class: "p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer",
                         title: t("lib.dismiss"),
                         onclick: move |_| {
                             let mut ws = app.warnings;
@@ -372,7 +435,10 @@ fn EmptyState() -> Element {
             Filter::Roblox => (t("empty.roblox.title"), t("empty.roblox.text")),
             Filter::Tag | Filter::Collection => (t("empty.group.title"), t("empty.group.text")),
             Filter::Store(Source::Emulator) => (t("empty.emu.title"), t("empty.emu.text")),
-            Filter::Store(src) => (tf("empty.store.title", &[("store", &src.label())]), tf("store.client_missing", &[("store", &src.label())])),
+            Filter::Store(src) => (
+                tf("empty.store.title", &[("store", &src.label())]),
+                tf("store.client_missing", &[("store", &src.label())]),
+            ),
             _ => (t("empty.all.title"), t("empty.all.text")),
         }
     };
@@ -403,7 +469,12 @@ fn EmptyState() -> Element {
 
 /// Karte im MAZ-Stil
 #[component]
-pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] covers: Vec<String>) -> Element {
+pub fn GameCard(
+    game: Game,
+    favorite: bool,
+    show_name: bool,
+    #[props(into)] covers: Vec<String>,
+) -> Element {
     let app = use_app();
     let more = app.dupes.read().get(&game.id).map(|v| v.len()).unwrap_or(0);
     let id = game.id.clone();
@@ -416,14 +487,27 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
         "absolute inset-0 size-full object-cover grayscale opacity-60 transition-transform duration-500 group-hover:scale-105"
     };
     let play_icon = if installed { "play" } else { "download" };
-    let play_title = t(if installed { "game.play" } else { "game.install" });
+    let play_title = t(if installed {
+        "game.play"
+    } else {
+        "game.install"
+    });
     let g2 = game.clone();
     let g3 = game.clone();
+    let id_key = game.id.clone();
     rsx! {
         div {
-            class: "group relative cursor-pointer animate-pop-in",
-            onclick: move |_| app.open(Modal::Detail(id.clone())),
-            div { class: "relative aspect-[2/3] rounded-xl overflow-hidden bg-muted ring-1 ring-white/5 shadow-lg shadow-black/30 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:ring-2 group-hover:ring-primary group-hover:shadow-2xl card-shine",
+            class: "group relative cursor-pointer animate-pop-in rounded-xl",
+            tabindex: "0",
+            role: "button",
+            "aria-label": "{name}",
+            onclick: move |_| open_details(app, &id),
+            onkeydown: move |e| {
+                if e.key() == Key::Enter {
+                    open_details(app, &id_key);
+                }
+            },
+            div { class: "relative aspect-[2/3] rounded-xl overflow-hidden bg-muted ring-1 ring-white/5 shadow-lg shadow-black/30 transition-all duration-300 group-hover:-translate-y-1.5 group-hover:ring-2 group-hover:ring-primary group-hover:shadow-2xl group-focus-visible:-translate-y-1.5 group-focus-visible:ring-2 group-focus-visible:ring-primary card-shine",
                 ArtImage {
                     srcs: covers.clone(),
                     class: img_cls,
@@ -443,9 +527,11 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
                     }
                 }
                 if !installed {
-                    div { class: "absolute top-2 right-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/80", {t("badge.not_installed")} }
+                    div { class: if favorite { "absolute top-2.5 right-9 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/80" } else { "absolute top-2 right-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/80" },
+                        {t("badge.not_installed")}
+                    }
                 }
-                div { class: "absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                div { class: "absolute inset-0 grid place-items-center opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-200",
                     button {
                         class: "size-14 rounded-full maz-gradient-bg text-glow-fg grid place-items-center shadow-2xl shadow-black/50 scale-75 group-hover:scale-100 transition-transform duration-300 cursor-pointer hover:brightness-110",
                         title: "{play_title}",
@@ -453,6 +539,7 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
                             e.stop_propagation();
                             play(app, id_play.clone());
                         },
+                        onkeydown: move |e| e.stop_propagation(),
                         Icon { name: play_icon, class: "size-6 translate-x-0.5", filled: true }
                     }
                 }
@@ -461,7 +548,7 @@ pub fn GameCard(game: Game, favorite: bool, show_name: bool, #[props(into)] cove
                 }
             }
             if show_name {
-                div { class: "mt-2.5 px-0.5 text-[13px] font-medium leading-snug line-clamp-2 text-foreground/90 group-hover:text-foreground", "{name}" }
+                div { class: "mt-2.5 px-0.5 text-[13px] font-medium leading-snug line-clamp-2 break-words text-foreground/90 group-hover:text-foreground transition-colors", title: "{name}", "{name}" }
             }
         }
     }
@@ -497,15 +584,26 @@ fn GameGrid(games: Vec<Game>) -> Element {
 // ======================================================================
 
 #[component]
-fn NavItem(filter: Filter, count: usize, #[props(into, default)] arg: String, #[props(into, default)] label: String) -> Element {
+fn NavItem(
+    filter: Filter,
+    count: usize,
+    #[props(into, default)] arg: String,
+    #[props(into, default)] label: String,
+) -> Element {
     let app = use_app();
-    let active = *app.filter.read() == filter && *app.page.read() == Page::Library && (arg.is_empty() || *app.filter_arg.read() == arg);
+    let active = *app.filter.read() == filter
+        && *app.page.read() == Page::Library
+        && (arg.is_empty() || *app.filter_arg.read() == arg);
     let cls = if active {
         "w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium bg-sidenav-accent text-foreground cursor-pointer relative"
     } else {
-        "w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground cursor-pointer relative"
+        "w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground transition-colors cursor-pointer relative"
     };
-    let label = if label.is_empty() { filter.label() } else { label };
+    let label = if label.is_empty() {
+        filter.label()
+    } else {
+        label
+    };
     let icon = filter.icon();
     rsx! {
         button {
@@ -530,7 +628,7 @@ pub fn MazSidebar() -> Element {
     let set_cls = if settings_active {
         "w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm font-medium bg-sidenav-accent text-foreground cursor-pointer"
     } else {
-        "w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground cursor-pointer"
+        "w-full flex items-center gap-3 px-3 h-9 rounded-lg text-sm text-sidenav-foreground/80 hover:bg-sidenav-accent/60 hover:text-foreground transition-colors cursor-pointer"
     };
     rsx! {
         aside { class: "w-60 shrink-0 flex flex-col bg-sidenav border-r border-border/60",
@@ -599,7 +697,7 @@ fn CollectionsNav() -> Element {
             div { class: "flex items-center px-3 pb-2",
                 span { class: "flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground", {t("nav.collections")} }
                 button {
-                    class: "p-0.5 rounded text-muted-foreground hover:text-foreground cursor-pointer",
+                    class: "p-0.5 rounded text-muted-foreground hover:text-foreground transition-colors cursor-pointer",
                     title: t("coll.new"),
                     onclick: move |_| adding.set(!adding()),
                     Icon { name: "plus", class: "size-3.5" }
@@ -640,7 +738,14 @@ fn CollectionsNav() -> Element {
 fn CollectionBar() -> Element {
     let app = use_app();
     let id = app.filter_arg.read().clone();
-    let current = app.settings.read().collections.iter().find(|c| c.id == id).map(|c| c.name.clone()).unwrap_or_default();
+    let current = app
+        .settings
+        .read()
+        .collections
+        .iter()
+        .find(|c| c.id == id)
+        .map(|c| c.name.clone())
+        .unwrap_or_default();
     let renaming = use_signal(|| None::<String>);
     let (id_r, id_d) = (id.clone(), id.clone());
     rsx! {
@@ -752,7 +857,7 @@ fn ContinueHero() -> Element {
                         Icon { name: "play", class: "size-5", filled: true }
                         {t("game.play")}
                     }
-                    Button { variant: ButtonVariant::Secondary, size: ButtonSize::Lg, class: "bg-white/10 text-white hover:bg-white/20 backdrop-blur", onclick: move |_| app.open(Modal::Detail(id2.clone())),
+                    Button { variant: ButtonVariant::Secondary, size: ButtonSize::Lg, class: "bg-white/10 text-white hover:bg-white/20 backdrop-blur", onclick: move |_| open_details(app, &id2),
                         {t("game.details")}
                     }
                 }
@@ -805,7 +910,9 @@ fn SteamLayout() -> Element {
     let search = app.search.read().clone();
     let filter = *app.filter.read();
     let count = games.len();
-    let sel_game = selected.as_ref().and_then(|id| app.games.read().iter().find(|g| &g.id == id).cloned());
+    let sel_game = selected
+        .as_ref()
+        .and_then(|id| app.games.read().iter().find(|g| &g.id == id).cloned());
     let rows: Vec<Game> = games.clone();
     rsx! {
         div { class: "flex h-full min-h-0 text-[13px]",
@@ -813,7 +920,7 @@ fn SteamLayout() -> Element {
                 // Kopf: Startseite + Filter
                 div { class: "p-2 flex flex-col gap-2 border-b border-black/30",
                     button {
-                        class: "flex items-center gap-2 px-3 h-9 rounded-sm bg-secondary/70 hover:bg-secondary text-foreground font-semibold text-xs tracking-wide uppercase cursor-pointer",
+                        class: "flex items-center gap-2 px-3 h-9 rounded-sm bg-secondary/70 hover:bg-secondary text-foreground font-semibold text-xs tracking-wide uppercase transition-colors cursor-pointer",
                         onclick: move |_| {
                             let mut s = app.selected;
                             s.set(None);
@@ -903,22 +1010,19 @@ fn SteamLayout() -> Element {
                         let cls = if active {
                             "w-full flex items-center gap-2 px-3 h-7 text-left bg-[#3d4450] text-white cursor-pointer"
                         } else if g.installed {
-                            "w-full flex items-center gap-2 px-3 h-7 text-left text-foreground/90 hover:bg-white/5 cursor-pointer"
+                            "w-full flex items-center gap-2 px-3 h-7 text-left text-foreground/90 hover:bg-white/5 transition-colors cursor-pointer"
                         } else {
-                            "w-full flex items-center gap-2 px-3 h-7 text-left text-muted-foreground hover:bg-white/5 cursor-pointer"
+                            "w-full flex items-center gap-2 px-3 h-7 text-left text-muted-foreground hover:bg-white/5 transition-colors cursor-pointer"
                         };
                         let name = g.name.clone();
                         rsx! {
                             button {
                                 key: "{id}",
                                 class: "{cls}",
-                                onclick: move |_| {
-                                    let mut s = app.selected;
-                                    s.set(Some(id.clone()));
-                                },
+                                onclick: move |_| select_game(app, &id),
                                 ondoubleclick: move |_| play(app, id2.clone()),
                                 GameIcon { game: g.clone(), class: "size-4 rounded-[2px]" }
-                                span { class: "truncate", "{name}" }
+                                span { class: "truncate", title: "{name}", "{name}" }
                             }
                         }
                     })}
@@ -928,7 +1032,7 @@ fn SteamLayout() -> Element {
                         Icon { name: "plus", class: "size-3.5" }
                         {t("lib.add").to_uppercase()}
                     }
-                    Button { variant: ButtonVariant::Secondary, size: ButtonSize::IconSm, class: "rounded-sm", title: "Einstellungen", onclick: move |_| app.go(Page::Settings(SettingsTab::Design)),
+                    Button { variant: ButtonVariant::Secondary, size: ButtonSize::IconSm, class: "rounded-sm", title: t("nav.settings"), onclick: move |_| app.go(Page::Settings(SettingsTab::Design)),
                         Icon { name: "settings", class: "size-4" }
                     }
                     Button { variant: ButtonVariant::Secondary, size: ButtonSize::IconSm, class: "rounded-sm", title: t("lib.reload"), onclick: move |_| rescan(app),
@@ -960,14 +1064,19 @@ fn SteamCapsule(game: Game, covers: Vec<String>, #[props(default = false)] big: 
     } else {
         "absolute inset-0 size-full object-cover grayscale opacity-60"
     };
+    let id_key = game.id.clone();
     let g2 = game.clone();
     rsx! {
         div {
             class: "group relative aspect-[2/3] cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:brightness-110 hover:shadow-[0_8px_30px_rgba(102,192,244,0.25)] shadow-lg shadow-black/50",
             title: "{name}",
-            onclick: move |_| {
-                let mut s = app.selected;
-                s.set(Some(id.clone()));
+            tabindex: "0",
+            role: "button",
+            onclick: move |_| select_game(app, &id),
+            onkeydown: move |e| {
+                if e.key() == Key::Enter {
+                    select_game(app, &id_key);
+                }
             },
             ondoubleclick: move |_| play(app, id2.clone()),
             ArtImage {
@@ -998,8 +1107,20 @@ fn SteamHome(games: Vec<Game>) -> Element {
         .collect();
     recent.sort_by_key(|g| std::cmp::Reverse(s.last_played(&g.id)));
     recent.truncate(8);
-    let recent: Vec<(Game, Vec<String>)> = recent.into_iter().map(|g| { let c = effective_cover(&s, &g); (g, c) }).collect();
-    let all: Vec<(Game, Vec<String>)> = games.into_iter().map(|g| { let c = effective_cover(&s, &g); (g, c) }).collect();
+    let recent: Vec<(Game, Vec<String>)> = recent
+        .into_iter()
+        .map(|g| {
+            let c = effective_cover(&s, &g);
+            (g, c)
+        })
+        .collect();
+    let all: Vec<(Game, Vec<String>)> = games
+        .into_iter()
+        .map(|g| {
+            let c = effective_cover(&s, &g);
+            (g, c)
+        })
+        .collect();
     let min = min_card_width(&s);
     drop(s);
     let n = all.len();
@@ -1041,11 +1162,16 @@ fn SteamHome(games: Vec<Game>) -> Element {
 // ======================================================================
 
 #[component]
-fn EpicNav(#[props(into)] label: String, icon: &'static str, active: bool, onclick: EventHandler<()>) -> Element {
+fn EpicNav(
+    #[props(into)] label: String,
+    icon: &'static str,
+    active: bool,
+    onclick: EventHandler<()>,
+) -> Element {
     let cls = if active {
         "w-full flex items-center gap-3 px-4 h-11 rounded-lg text-sm font-medium bg-accent text-white cursor-pointer"
     } else {
-        "w-full flex items-center gap-3 px-4 h-11 rounded-lg text-sm text-sidenav-foreground hover:bg-accent/60 hover:text-white cursor-pointer"
+        "w-full flex items-center gap-3 px-4 h-11 rounded-lg text-sm text-sidenav-foreground hover:bg-accent/60 hover:text-white transition-colors cursor-pointer"
     };
     rsx! {
         button { class: "{cls}", onclick: move |_| onclick.call(()),
@@ -1063,13 +1189,25 @@ fn EpicLayout() -> Element {
     let page = *app.page.read();
     let search = app.search.read().clone();
     let sort = app.settings.read().sort.clone();
-    let mut chips = vec![Filter::All, Filter::Installed, Filter::Favorites, Filter::Steam, Filter::Epic];
+    let mut chips = vec![
+        Filter::All,
+        Filter::Installed,
+        Filter::Favorites,
+        Filter::Steam,
+        Filter::Epic,
+    ];
     if !cfg!(windows) && count_for(app, Filter::Roblox) > 0 {
         chips.push(Filter::Roblox);
     }
     chips.extend(stores_with_games(app).into_iter().map(Filter::Store));
     chips.extend([Filter::Custom, Filter::Recent]);
-    let coll_chips: Vec<(String, String)> = app.settings.read().collections.iter().map(|c| (c.id.clone(), c.name.clone())).collect();
+    let coll_chips: Vec<(String, String)> = app
+        .settings
+        .read()
+        .collections
+        .iter()
+        .map(|c| (c.id.clone(), c.name.clone()))
+        .collect();
     let arg_now = app.filter_arg.read().clone();
     let s = app.settings.read();
     let min = min_card_width(&s) + 20;
@@ -1113,7 +1251,7 @@ fn EpicLayout() -> Element {
                             let cls = if active {
                                 "h-9 px-4 rounded-full text-sm font-medium bg-white text-black cursor-pointer"
                             } else {
-                                "h-9 px-4 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-accent cursor-pointer"
+                                "h-9 px-4 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-accent transition-colors cursor-pointer"
                             };
                             let label = c.label();
                             rsx! {
@@ -1125,7 +1263,7 @@ fn EpicLayout() -> Element {
                             let cls = if active {
                                 "h-9 px-4 rounded-full text-sm font-medium bg-white text-black cursor-pointer"
                             } else {
-                                "h-9 px-4 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-accent cursor-pointer"
+                                "h-9 px-4 rounded-full text-sm font-medium bg-secondary text-secondary-foreground hover:bg-accent transition-colors cursor-pointer"
                             };
                             let key = format!("coll-{cid}");
                             rsx! {
@@ -1174,10 +1312,21 @@ fn EpicCard(game: Game, covers: Vec<String>, favorite: bool) -> Element {
     } else {
         game.source.label()
     };
-    let action = t(if game.installed { "epic.start" } else { "game.install" });
+    let action = t(if game.installed {
+        "epic.start"
+    } else {
+        "game.install"
+    });
+    let id_key = game.id.clone();
     let g2 = game.clone();
     rsx! {
-        div { class: "group cursor-pointer animate-pop-in", onclick: move |_| app.open(Modal::Detail(id.clone())),
+        div { class: "group cursor-pointer animate-pop-in rounded-lg", tabindex: "0", role: "button",
+            onclick: move |_| open_details(app, &id),
+            onkeydown: move |e| {
+                if e.key() == Key::Enter {
+                    open_details(app, &id_key);
+                }
+            },
             div { class: "relative aspect-[3/4] rounded-lg overflow-hidden bg-card transition-all duration-200 group-hover:brightness-110",
                 ArtImage {
                     srcs: covers,
@@ -1191,18 +1340,19 @@ fn EpicCard(game: Game, covers: Vec<String>, favorite: bool) -> Element {
                         Icon { name: "star", class: "size-4", filled: true }
                     }
                 }
-                div { class: "absolute inset-x-3 bottom-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200",
+                div { class: "absolute inset-x-3 bottom-3 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0 transition-all duration-200",
                     button {
-                        class: "w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 cursor-pointer shadow-lg",
+                        class: "w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110 transition-colors cursor-pointer shadow-lg",
                         onclick: move |e| {
                             e.stop_propagation();
                             play(app, id2.clone());
                         },
+                        onkeydown: move |e| e.stop_propagation(),
                         "{action}"
                     }
                 }
             }
-            div { class: "mt-3 font-semibold text-[15px] leading-tight line-clamp-2", "{name}" }
+            div { class: "mt-3 font-semibold text-[15px] leading-tight line-clamp-2 break-words", title: "{name}", "{name}" }
             div { class: "mt-1 text-xs text-muted-foreground", "{status}" }
         }
     }
