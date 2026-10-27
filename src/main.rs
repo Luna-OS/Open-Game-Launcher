@@ -5,6 +5,9 @@
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 // `Problem` ist absichtlich ein großer Fehlertyp (Erklärung + Lösungen); die Pfade sind nicht heiß.
 #![allow(clippy::result_large_err)]
+// Viele Store-/Registry-Helfer werden nur unter Windows aufgerufen; auf macOS/Linux
+// wären sie "never used". Unter Windows bleibt dead_code streng geprüft.
+#![cfg_attr(not(windows), allow(dead_code))]
 
 mod appinfo;
 mod appx;
